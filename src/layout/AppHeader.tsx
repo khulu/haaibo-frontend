@@ -83,17 +83,20 @@ const AppHeader: React.FC = () => {
             {/* Cross Icon */}
           </button>
 
-          <Link to="/" className="lg:hidden">
+          <Link to="/" className="lg:hidden flex items-center gap-2">
             <img
               className="dark:hidden"
-              src="./images/logo/logo.svg"
-              alt="Logo"
+              src="./images/haaibo-logo.jpeg"
+              alt="Haaibo Logo"
+              style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8 }}
             />
             <img
               className="hidden dark:block"
-              src="./images/logo/logo-dark.svg"
-              alt="Logo"
+              src="./images/haaibo-logo.jpeg"
+              alt="Haaibo Logo"
+              style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8 }}
             />
+            <span className="font-bold text-lg text-gray-900 dark:text-white ml-2">Haaibo</span>
           </Link>
 
           <button

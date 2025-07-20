@@ -305,28 +305,32 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
+            <div className="flex items-center gap-2">
               <img
                 className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
+                src="/images/haaibo-logo.jpeg"
+                alt="Haaibo Logo"
+                width={40}
                 height={40}
+                style={{ objectFit: 'contain', borderRadius: 8 }}
               />
               <img
                 className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
+                src="/images/haaibo-logo.jpeg"
+                alt="Haaibo Logo"
+                width={40}
                 height={40}
+                style={{ objectFit: 'contain', borderRadius: 8 }}
               />
-            </>
+              <span className="font-bold text-lg text-gray-900 dark:text-white ml-2">Haaibo</span>
+            </div>
           ) : (
             <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
+              src="/images/haaibo-logo.jpeg"
+              alt="Haaibo Logo"
               width={32}
               height={32}
+              style={{ objectFit: 'contain', borderRadius: 8 }}
             />
           )}
         </Link>
