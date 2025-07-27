@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
+import PrivateRoute from "./components/auth/PrivateRoute";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import Videos from "./pages/UiElements/Videos";
@@ -27,30 +28,119 @@ export default function App() {
         <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
-
-            {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/blank" element={<Blank />} />
-
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
-
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
-
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
-
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
+            <Route
+              index
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Home />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <UserProfiles />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <PrivateRoute>
+                  <Calendar />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/blank"
+              element={
+                <PrivateRoute>
+                  <Blank />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/form-elements"
+              element={
+                <PrivateRoute>
+                  <FormElements />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/basic-tables"
+              element={
+                <PrivateRoute>
+                  <BasicTables />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/alerts"
+              element={
+                <PrivateRoute>
+                  <Alerts />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/avatars"
+              element={
+                <PrivateRoute>
+                  <Avatars />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/badge"
+              element={
+                <PrivateRoute>
+                  <Badges />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/buttons"
+              element={
+                <PrivateRoute>
+                  <Buttons />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/images"
+              element={
+                <PrivateRoute>
+                  <Images />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/videos"
+              element={
+                <PrivateRoute>
+                  <Videos />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/line-chart"
+              element={
+                <PrivateRoute>
+                  <LineChart />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/bar-chart"
+              element={
+                <PrivateRoute>
+                  <BarChart />
+                </PrivateRoute>
+              }
+            />
           </Route>
 
           {/* Auth Layout */}
