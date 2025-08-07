@@ -321,16 +321,16 @@ const AppSidebar: React.FC = () => {
             <div className="flex items-center gap-2">
               <img
                 className="dark:hidden"
-                src="/images/haaibo-logo.jpeg"
-                alt="Haaibo Logo"
+                src="/images/haiibo-logo.jpeg"
+                alt="Haiibo Logo"
                 width={40}
                 height={40}
                 style={{ objectFit: 'contain', borderRadius: 8 }}
               />
               <img
                 className="hidden dark:block"
-                src="/images/haaibo-logo.jpeg"
-                alt="Haaibo Logo"
+                src="/images/haiibo-logo.jpeg"
+                alt="Haiibo Logo"
                 width={40}
                 height={40}
                 style={{ objectFit: 'contain', borderRadius: 8 }}

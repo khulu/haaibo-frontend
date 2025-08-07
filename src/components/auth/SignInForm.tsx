@@ -59,7 +59,7 @@ const postLogin = usePostLogin(email, password);
           <img
             width={231}
             height={48}
-            src="/images/logo/haaibo-logo-white-background.png"
+            src="/images/logo/haiibo-logo-white-background.png"
             alt="Logo"
           />
         </div>
@@ -80,7 +80,7 @@ const postLogin = usePostLogin(email, password);
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
                   <Input
-                    placeholder="info@haaibo.com"
+                    placeholder="info@haiibo.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                   />
@@ -129,7 +129,7 @@ const postLogin = usePostLogin(email, password);
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm" type="submit">
+                  <Button className="w-full" size="sm">
                     Sign in
                   </Button>
                 </div>
