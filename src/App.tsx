@@ -1,9 +1,26 @@
+import OrganizationsPage from "./pages/organizations/OrganizationsPage";
+import OrganizationDetails from "./pages/organizations/OrganizationDetails";
+import OrganizationCreate from "./pages/organizations/OrganizationCreate";
+import OrganizationEdit from "./pages/organizations/OrganizationEdit";
+import UserCreate from "./pages/users/UserCreate";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
+
+import UsersPage from "./pages/users/UsersPage";
+import UserDetails from "./pages/users/UserDetails";
+import UserEdit from "./pages/users/UserEdit";
+            <Route
+              path="/users/edit/:id"
+              element={
+                <PrivateRoute>
+                  <UserEdit />
+                </PrivateRoute>
+              }
+            />
+            {/* Optionally, you can add a delete route if you want a confirmation page, but delete is usually handled inline. */}
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
 import Alerts from "./pages/UiElements/Alerts";
@@ -37,11 +54,36 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+
             <Route
-              path="/profile"
+              path="/users"
               element={
                 <PrivateRoute>
-                  <UserProfiles />
+                  <UsersPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/users/:id"
+              element={
+                <PrivateRoute>
+                  <UserDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/users/edit/:id"
+              element={
+                <PrivateRoute>
+                  <UserEdit />
+                </PrivateRoute>
+              }
+            />
+                        <Route
+              path="/users/create"
+              element={
+                <PrivateRoute>
+                  <UserCreate />
                 </PrivateRoute>
               }
             />

@@ -105,7 +105,13 @@ const othersItems: NavItem[] = [
   },
 ];
 
-const AppSidebar: React.FC = () => {
+interface AppSidebarProps {
+  role?: number | string | null;
+}
+
+const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
+
+
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 
@@ -296,6 +302,14 @@ const AppSidebar: React.FC = () => {
     </ul>
   );
 
+  // Example: Only show 'Organizations' for admin roles (role === 1 or 'SuperAdmin')
+  const filteredNavItems = navItems.filter(item => {
+    if (item.name === "Organizations") {
+      return role === 0 || role === "SuperAdmin";
+    }
+    return true;
+  });
+
   return (
     <aside
       className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
@@ -365,7 +379,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(navItems, "main")}
+              {renderMenuItems(filteredNavItems, "main")}
             </div>
             <div className="">
               <h2

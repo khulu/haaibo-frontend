@@ -3,14 +3,28 @@ import { Outlet } from "react-router";
 import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
+import { useEffect, useState } from "react";
 
 const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const [role, setRole] = useState<number | string | null>(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setRole(user.role);
+      } catch {
+        setRole(null);
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen xl:flex">
       <div>
-        <AppSidebar />
+        <AppSidebar role={role} />
         <Backdrop />
       </div>
       <div
