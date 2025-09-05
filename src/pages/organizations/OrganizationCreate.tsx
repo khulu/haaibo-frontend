@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useOrganizationsApi, { CreateOrganizationInput } from "../../hooks/api/useOrganizations";
+import useOrganizationsApi, { CreateOrganizationInput } from "../../hooks/api/useOrganization";
 
 export default function OrganizationCreate() {
   const { createOrganization } = useOrganizationsApi();

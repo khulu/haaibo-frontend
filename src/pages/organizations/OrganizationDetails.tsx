@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import useOrganizationsApi, { Organization } from "../../hooks/api/useOrganizations";
+import useOrganizationsApi, { Organization } from "../../hooks/api/useOrganization";
 
 export default function OrganizationDetails() {
   const { id } = useParams<{ id: string }>();

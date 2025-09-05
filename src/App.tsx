@@ -183,6 +183,38 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/organizations"
+              element={
+                <PrivateRoute>
+                  <OrganizationsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/organizations/create"
+              element={
+                <PrivateRoute>
+                  <OrganizationCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/organizations/:id"
+              element={
+                <PrivateRoute>
+                  <OrganizationDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/organizations/edit/:id"
+              element={
+                <PrivateRoute>
+                  <OrganizationEdit />
+                </PrivateRoute>
+              }
+            />
           </Route>
 
           {/* Auth Layout */}

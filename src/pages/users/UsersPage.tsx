@@ -41,7 +41,7 @@ export default function UsersPage() {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Users</h1>
+        <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Users</h1>
         <button
           className="px-4 py-2 bg-blue-600 text-white rounded"
           onClick={() => navigate("/users/create")}
