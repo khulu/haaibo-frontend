@@ -17,7 +17,7 @@ export default function AssetsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { data: dataAssets, isLoading } = useAssetList();
+  const { data: dataAssets, isLoading } = useAssetList({});
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this asset?')) {

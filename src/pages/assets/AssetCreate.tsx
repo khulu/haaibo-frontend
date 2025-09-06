@@ -84,21 +84,13 @@ const AssetCreate: React.FC = () => {
           />
         </div>
         <div>
-          <Label htmlFor="assetId">Asset ID</Label>
-          <Input
-            id="assetId"
-            name="assetId"
-            value={form.assetId || ''}
-            onChange={handleChange}
-          />
-        </div>
-        <div>
-          <Label htmlFor="laptopTagNumber">Laptop Tag Number</Label>
+          <Label htmlFor="laptopTagNumber"> Tag Number</Label>
           <Input
             id="laptopTagNumber"
             name="laptopTagNumber"
             value={form.laptopTagNumber || ''}
             onChange={handleChange}
+            required
           />
         </div>
         <div>
@@ -108,6 +100,7 @@ const AssetCreate: React.FC = () => {
             placeholder="Select a user"
             onChange={(value) => setForm((prev) => ({ ...prev, assignedUserId: value }))}
             className="dark:bg-dark-900"
+            required
           />
         </div>
      
@@ -118,6 +111,7 @@ const AssetCreate: React.FC = () => {
             name="condition"
             value={form.condition || ''}
             onChange={handleChange}
+            required
           />
         </div>
         <div>
@@ -128,6 +122,7 @@ const AssetCreate: React.FC = () => {
             type="number"
             value={form.status || ''}
             onChange={handleChange}
+            required
           />
         </div>
         <div>
@@ -138,6 +133,7 @@ const AssetCreate: React.FC = () => {
             type="date"
             value={form.purchaseDate || ''}
             onChange={handleChange}
+            required
           />
         </div>
         <div>
@@ -148,6 +144,7 @@ const AssetCreate: React.FC = () => {
             type="date"
             value={form.warrantyExpiryDate || ''}
             onChange={handleChange}
+            required
           />
         </div>
         <div>
@@ -157,6 +154,7 @@ const AssetCreate: React.FC = () => {
             placeholder="Select a company"
             onChange={(value) => setForm((prev) => ({ ...prev, companyId: value }))}
             className="dark:bg-dark-900"
+            required
           />
         </div>
 
