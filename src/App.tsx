@@ -36,6 +36,10 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import AssetsPage from "./pages/assets/AssetsPage";
+import AssetCreate from "./pages/assets/AssetCreate";
+import AssetDetails from "./pages/assets/AssetDetails";
+import AssetEdit from "./pages/assets/AssetEdit";
 
 export default function App() {
   return (
@@ -212,6 +216,38 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <OrganizationEdit />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets"
+              element={
+                <PrivateRoute>
+                  <AssetsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/create"
+              element={
+                <PrivateRoute>
+                  <AssetCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/:id"
+              element={
+                <PrivateRoute>
+                  <AssetDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/edit/:id"
+              element={
+                <PrivateRoute>
+                  <AssetEdit />
                 </PrivateRoute>
               }
             />

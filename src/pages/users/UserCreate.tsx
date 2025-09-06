@@ -1,18 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useUserApi, { CreateUserInput } from "../../hooks/api/useUser";
+import useUserApi, { CreateUserInput } from "../../hooks/api/useUserApi";
+import ComponentCard from "../../components/common/ComponentCard";
+import Label from "../../components/form/Label";
+import Input from "../../components/form/input/InputField";
+import Select from "../../components/form/Select";
+import useOrganization from "@hooks/organization/useOrganization";
 
 export default function UserCreate() {
   const { createUser } = useUserApi();
+  const { useOrganizationList } = useOrganization();
+  const { data: organizations } = useOrganizationList();
   const navigate = useNavigate();
   const [form, setForm] = useState<CreateUserInput>({
     fullName: "",
     email: "",
     phone: "",
     department: "",
-    role: 0,
+    role: "0", // Ensure role is a string
     password: "",
-    companyId: ""
+    companyId: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,56 +34,121 @@ export default function UserCreate() {
     setLoading(true);
     setError(null);
     try {
-      await createUser(form);
+      const payload = { ...form };
+      if (!payload.companyId) {
+        delete payload.companyId;
+      }
+      await createUser(payload);
       navigate("/users");
-    } catch (err: any) {
-      setError(err?.message || "Failed to create user");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const roleOptions = [
+    { value: "0", label: "Super Admin" },
+    { value: "1", label: "Company Admin" },
+    { value: "2", label: "Security" },
+    { value: "3", label: "Employee" },
+  ];
+
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Create User</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <ComponentCard title="Create User">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block mb-1 font-medium">Full Name</label>
-          <input name="fullName" value={form.fullName} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
+          <Label htmlFor="fullName">Full Name</Label>
+          <Input
+            id="fullName"
+            name="fullName"
+            value={form.fullName || ""}
+            onChange={handleChange}
+            required
+          />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Email</label>
-          <input name="email" type="email" value={form.email} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={form.email || ""}
+            onChange={handleChange}
+            required
+          />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Phone</label>
-          <input name="phone" value={form.phone} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            name="phone"
+            value={form.phone || ""}
+            onChange={handleChange}
+            required
+          />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Department</label>
-          <input name="department" value={form.department} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+          <Label htmlFor="department">Department</Label>
+          <Input
+            id="department"
+            name="department"
+            value={form.department || ""}
+            onChange={handleChange}
+            required
+          />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Role</label>
-          <select name="role" value={form.role} onChange={handleChange} className="w-full border px-3 py-2 rounded">
-            <option value={0}>User</option>
-            <option value={1}>Admin</option>
-          </select>
+          <Label htmlFor="role">Role</Label>
+          <Select
+            options={roleOptions}
+            defaultValue={String(form.role)}
+            onChange={(value) => setForm((prev) => ({ ...prev, role: value }))}
+            required
+          />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Password</label>
-          <input name="password" type="password" value={form.password} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            value={form.password || ""}
+            onChange={handleChange}
+            required
+          />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Company ID</label>
-          <input name="companyId" value={form.companyId} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+          <Label htmlFor="companyId">Company</Label>
+          <Select
+            options={organizations?.map((org) => ({ value: org.id, label: org.name })) || []}
+            placeholder="Select a company"
+            onChange={(value) => setForm((prev) => ({ ...prev, companyId: value }))}
+            className="dark:bg-dark-900"
+          />
         </div>
         {error && <div className="text-red-500">{error}</div>}
         <div className="flex gap-4">
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded" disabled={loading}>{loading ? "Creating..." : "Create"}</button>
-          <button type="button" className="px-4 py-2 bg-gray-300 text-gray-800 rounded" onClick={() => navigate("/users")}>Cancel</button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+            disabled={loading}
+          >
+            {loading ? "Creating..." : "Create"}
+          </button>
+          <button
+            type="button"
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
+            onClick={() => navigate("/users")}
+          >
+            Cancel
+          </button>
         </div>
       </form>
-    </div>
+    </ComponentCard>
   );
 }

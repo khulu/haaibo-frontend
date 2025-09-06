@@ -1,4 +1,3 @@
-
 import useAxios from './useAxios';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
@@ -20,7 +19,6 @@ export type CreateUserInput = Omit<User, 'id' | 'profilePicture' | 'companyName'
 
 const useUserApi = () => {
   const axios = useAxios();
-
 
   // Helper to get token from localStorage
   const getToken = () => {
@@ -164,6 +162,23 @@ const useUserApi = () => {
     }
   };
 
+  // Fetch user roles
+  const getRoles = async (): Promise<{ value: string; label: string }[]> => {
+    try {
+      const token = getToken();
+      const response = await axios.request({
+        baseURL,
+        url: '/Users/roles',
+        method: 'GET',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data;
+    } catch (error) {
+      console.error('getRoles error:', error);
+      throw error;
+    }
+  };
+
   return {
     getUsers,
     getUserById,
@@ -172,6 +187,7 @@ const useUserApi = () => {
     updateUser,
     deleteUser,
     uploadProfilePicture,
+    getRoles,
   };
 };
 

@@ -1,15 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import useUserApi, { User } from "../../hooks/api/useUser";
+import useUserApi, { User } from "../../hooks/api/useUserApi";
+import { useModal } from "../../hooks/useModal";
+import { Modal } from "../../components/ui/modal/Modal";
+import Button from "../../components/ui/button/Button";
+import Input from "../../components/form/input/InputField";
+import Label from "../../components/form/Label";
 import Badge from "../../components/ui/badge/Badge";
+import useUser from "../../hooks/user/useUser";
 
 export default function UserDetails() {
   const { id } = useParams<{ id: string }>();
-  const { getUserById, deleteUser } = useUserApi();
+  const { getUserById } = useUserApi();
+  const { useRoles } = useUser();
+  const { data: dataRoles } = useRoles();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isOpen, closeModal } = useModal();
   const navigate = useNavigate();
+
+  const dropdownRoles = dataRoles?.map((role, index) => ({ value: index, text: role }));
 
   useEffect(() => {
     if (!id) return;
@@ -17,56 +28,143 @@ export default function UserDetails() {
       try {
         const data = await getUserById(id);
         setUser(data);
-      } catch (err: any) {
-        setError(err?.message || "Failed to fetch user");
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message || "Failed to fetch user");
+        } else {
+          setError("Failed to fetch user");
+        }
       } finally {
         setLoading(false);
       }
     })();
   }, [id, getUserById]);
 
-  const handleDelete = async () => {
-    if (!id) return;
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
-    try {
-      await deleteUser(id);
-      navigate("/users");
-    } catch (err: any) {
-      setError(err?.message || "Failed to delete user");
-    }
-  };
+
 
   if (loading) return <div className="p-6">Loading user...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
   if (!user) return <div className="p-6">User not found.</div>;
-
+             const role = dropdownRoles?.find((r) => r.value === user.role);
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">User Details</h1>
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
-          {user.profilePicture ? (
-            <img width={64} height={64} src={user.profilePicture} alt={user.fullName} />
-          ) : (
-            <span className="text-gray-400 text-2xl font-bold">{user.fullName?.[0] || "?"}</span>
-          )}
+    <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
+            {user.profilePicture ? (
+              <img
+                width={64}
+                height={64}
+                src={user.profilePicture}
+                alt={user.fullName}
+              />
+            ) : (
+              <span className="text-gray-400 text-2xl font-bold">
+                {user.fullName?.[0] || "?"}
+              </span>
+            )}
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+              {user.fullName}
+            </h4>
+            <Badge size="sm" color={role?.text.toString() === "SuperAdmin" ? "success" : "warning"}>
+                      {role?.text.toString()}
+                    </Badge>
+          </div>
         </div>
-        <div>
-          <div className="font-bold text-lg">{user.fullName}</div>
-          <div className="text-gray-500 text-sm">{user.email}</div>
-          <Badge size="sm" color={user.role === 1 || user.role === "SuperAdmin" ? "success" : "warning"}>
-            {typeof user.role === "number" ? (user.role === 1 ? "Admin" : "User") : user.role}
-          </Badge>
+
+        <div className="flex gap-4">
+          <Button
+            size="sm"
+            onClick={() => navigate(`/users/edit/${id}`)}
+          >
+            Edit
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => navigate("/users")}>
+            Back
+          </Button>
         </div>
       </div>
-      <div className="mb-2"><b>Department:</b> {user.department || "-"}</div>
-      <div className="mb-2"><b>Phone:</b> {user.phone || "-"}</div>
-      <div className="mb-2"><b>Company:</b> {user.companyName || "-"}</div>
-      <div className="flex gap-4 mt-6">
-        <button onClick={() => navigate(`/users/edit/${user.id}`)} className="px-4 py-2 bg-blue-600 text-white rounded">Edit</button>
-        <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded">Delete</button>
-        <button onClick={() => navigate("/users")} className="px-4 py-2 bg-gray-300 text-gray-800 rounded">Back</button>
+
+      <div className="mt-6">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
+          Personal Information
+        </h4>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
+          <div>
+            <Label>Email</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {user.email}
+            </p>
+          </div>
+          <div>
+            <Label>Phone</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {user.phone || "-"}
+            </p>
+          </div>
+          <div>
+            <Label>Department</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {user.department || "-"}
+            </p>
+          </div>
+          <div>
+            <Label>Company</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {user.companyName || "-"}
+            </p>
+          </div>
+        </div>
       </div>
+
+      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
+        <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
+          <div className="px-2 pr-14">
+            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+              Edit Personal Information
+            </h4>
+            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
+              Update your details to keep your profile up-to-date.
+            </p>
+          </div>
+          <form className="flex flex-col">
+            <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                <div className="col-span-2 lg:col-span-1">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={user.email || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setUser({ ...user, email: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="col-span-2 lg:col-span-1">
+                  <Label>Phone</Label>
+                  <Input
+                    type="text"
+                    value={user.phone || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setUser({ ...user, phone: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
+              <Button size="sm" variant="outline" onClick={closeModal}>
+                Close
+              </Button>
+              <Button size="sm" onClick={() => console.log("Save changes")}>
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Modal>
     </div>
   );
 }

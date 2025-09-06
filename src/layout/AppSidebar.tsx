@@ -8,12 +8,8 @@ import {
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
   UserCircleIcon,
+  GroupIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
@@ -39,78 +35,89 @@ const navItems: NavItem[] = [
     path: "/users",
   },
       {
-    icon: <UserCircleIcon />,
+    icon: <GroupIcon />,
     name: "Organizations",
     path: "/organizations",
   },
        {
     icon: <BoxCubeIcon />,
-    name: "Devices",
-    path: "/devices",
-  },
-  
+    name: "Items",
 
-  {
+    subItems: [
+           { name: "Devices", path: "/assets" },
+      { name: "Bookings", path: "/assets/bookings" },
+      { name: "Reminders", path: "/assets/reminders" },
+      { name: "Issues", path: "/assets/issues" },
+      { name: "Reports", path: "/assets/reports" },
+    ],
+  },
+    {
     icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
+    name: "Events",
+    path: "/events",
   },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
-    ],
-  },
+
+  // {
+  //   icon: <CalenderIcon />,
+  //   name: "Calendar",
+  //   path: "/calendar",
+  // },
+  // {
+  //   icon: <UserCircleIcon />,
+  //   name: "User Profile",
+  //   path: "/profile",
+  // },
+  // {
+  //   name: "Forms",
+  //   icon: <ListIcon />,
+  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+  // },
+  // {
+  //   name: "Tables",
+  //   icon: <TableIcon />,
+  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
+  // },
+  // {
+  //   name: "Pages",
+  //   icon: <PageIcon />,
+  //   subItems: [
+  //     { name: "Blank Page", path: "/blank", pro: false },
+  //     { name: "404 Error", path: "/error-404", pro: false },
+  //   ],
+  // },
 ];
 
-const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
-];
-
+// const othersItems: NavItem[] = [
+//   {
+//     icon: <PieChartIcon />,
+//     name: "Charts",
+//     subItems: [
+//       { name: "Line Chart", path: "/line-chart", pro: false },
+//       { name: "Bar Chart", path: "/bar-chart", pro: false },
+//     ],
+//   },
+//   {
+//     icon: <BoxCubeIcon />,
+//     name: "UI Elements",
+//     subItems: [
+//       { name: "Alerts", path: "/alerts", pro: false },
+//       { name: "Avatar", path: "/avatars", pro: false },
+//       { name: "Badge", path: "/badge", pro: false },
+//       { name: "Buttons", path: "/buttons", pro: false },
+//       { name: "Images", path: "/images", pro: false },
+//       { name: "Videos", path: "/videos", pro: false },
+//     ],
+//   },
+//   {
+//     icon: <PlugInIcon />,
+//     name: "Authentication",
+//     subItems: [
+//       { name: "Sign In", path: "/signin", pro: false },
+//       { name: "Sign Up", path: "/signup", pro: false },
+//     ],
+//   },
+// ];
+const othersItems: NavItem[] = [];
 interface AppSidebarProps {
   role?: number | string | null;
 }
@@ -396,7 +403,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  ""
                 ) : (
                   <HorizontaLDots />
                 )}
