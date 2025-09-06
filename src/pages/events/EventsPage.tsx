@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import useEvent from "@hooks/event/useEvent";
 
 import {
@@ -12,15 +10,10 @@ import {
 
 const EventsPage: React.FC = () => {
   const { useEventList } = useEvent();
-  const navigate = useNavigate();
-
-  const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
   const { data: events, isLoading } = useEventList({});
 
   if (isLoading) return <div className="p-6">Loading events...</div>;
-  if (error) return <div className="p-6 text-red-500">{error}</div>;
+
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
