@@ -40,6 +40,7 @@ import AssetsPage from "./pages/assets/AssetsPage";
 import AssetCreate from "./pages/assets/AssetCreate";
 import AssetDetails from "./pages/assets/AssetDetails";
 import AssetEdit from "./pages/assets/AssetEdit";
+import EventsPage from "./pages/events/EventsPage";
 
 export default function App() {
   return (
@@ -248,6 +249,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <AssetEdit />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                <PrivateRoute>
+                  <EventsPage />
                 </PrivateRoute>
               }
             />

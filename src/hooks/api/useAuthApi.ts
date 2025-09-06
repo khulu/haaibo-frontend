@@ -22,8 +22,26 @@ const loginUser = async (email: string, password: string) => {
   }
 };
 
+  // Helper to get token from localStorage
+  const getToken = () => {
+    let token = null;
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const userObj = JSON.parse(userData);
+        token = userObj.token || localStorage.getItem('token');
+      } catch {
+        token = localStorage.getItem('token');
+      }
+    } else {
+      token = localStorage.getItem('token');
+    }
+    return token;
+  };
+
   return {
-    loginUser
+    loginUser,
+    getToken
   };
 };
 
