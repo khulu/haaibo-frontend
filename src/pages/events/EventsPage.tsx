@@ -29,6 +29,12 @@ const EventsPage: React.FC = () => {
                 isHeader
                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
               >
+                Asset Photo
+              </TableCell>
+              <TableCell
+                isHeader
+                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+              >
                 Asset Tag
               </TableCell>
               <TableCell
@@ -42,6 +48,12 @@ const EventsPage: React.FC = () => {
                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
               >
                 Exit Time
+              </TableCell>
+              <TableCell
+                isHeader
+                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+              >
+                User Photo
               </TableCell>
               <TableCell
                 isHeader
@@ -62,6 +74,9 @@ const EventsPage: React.FC = () => {
             {events?.map((event) => (
               <TableRow key={event.id}>
                 <TableCell className="px-5 py-4 sm:px-6 text-start">
+               {"-"}
+                </TableCell>
+                <TableCell className="px-5 py-4 sm:px-6 text-start">
                   <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
                     {event.assetTag}
                   </span>
@@ -71,6 +86,9 @@ const EventsPage: React.FC = () => {
                 </TableCell>
                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                   {event.exitTime || "-"}
+                </TableCell>
+                <TableCell className="px-5 py-4 sm:px-6 text-start">
+                  {"-"}
                 </TableCell>
                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                   {event.userName}
