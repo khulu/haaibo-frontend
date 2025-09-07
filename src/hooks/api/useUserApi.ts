@@ -1,5 +1,5 @@
 import useAxios from './useAxios';
-
+import getToken from './useAuthApi';
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 export interface User {
@@ -19,23 +19,6 @@ export type CreateUserInput = Omit<User, 'id' | 'profilePicture' | 'companyName'
 
 const useUserApi = () => {
   const axios = useAxios();
-
-  // Helper to get token from localStorage
-  const getToken = () => {
-    let token = null;
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const userObj = JSON.parse(userData);
-        token = userObj.token || localStorage.getItem('token');
-      } catch {
-        token = localStorage.getItem('token');
-      }
-    } else {
-      token = localStorage.getItem('token');
-    }
-    return token;
-  };
 
   // Fetch all users, optionally filtered by companyId
   const getUsers = async (companyId?: string): Promise<User[]> => {

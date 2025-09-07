@@ -1,4 +1,5 @@
 import useAxios from './useAxios';
+import getToken from './useAuthApi';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -35,18 +36,6 @@ export interface AssetHistory {
 const useAssetApi = () => {
   const axios = useAxios();
 
-  const getToken = () => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const userObj = JSON.parse(userData);
-        return userObj.token || localStorage.getItem('token');
-      } catch {
-        return localStorage.getItem('token');
-      }
-    }
-    return localStorage.getItem('token');
-  };
 
   // Fetch all assets for a company
   const getAssetsByCompany = async (companyId?: string): Promise<Asset[]> => {
