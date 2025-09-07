@@ -22,11 +22,13 @@ export type CreateOrganizationInput = {
 
 const useOrganizationsApi = () => {
   const axios = useAxios();
+    const tokenApi = getToken();
+  const token = tokenApi.getToken();
 
   // Fetch all organizations
   const getOrganizations = async (): Promise<Organization[]> => {
     try {
-      const token = getToken();
+
       const response = await axios.request({
         baseURL,
         url: '/Companies',
@@ -43,7 +45,6 @@ const useOrganizationsApi = () => {
   // Create a new organization
   const createOrganization = async (org: CreateOrganizationInput): Promise<Organization> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: '/Companies',
@@ -61,7 +62,6 @@ const useOrganizationsApi = () => {
   // Get a single organization by id
   const getOrganizationById = async (id: string): Promise<Organization> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: `/Companies/${id}`,
@@ -78,7 +78,6 @@ const useOrganizationsApi = () => {
   // Update an organization
   const updateOrganization = async (id: string, org: Partial<CreateOrganizationInput>): Promise<Organization> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: `/Companies/${id}`,
@@ -96,7 +95,6 @@ const useOrganizationsApi = () => {
   // Delete an organization
   const deleteOrganization = async (id: string): Promise<void> => {
     try {
-      const token = getToken();
       await axios.request({
         baseURL,
         url: `/Companies/${id}`,
@@ -112,7 +110,6 @@ const useOrganizationsApi = () => {
   // Upload organization logo (multipart/form-data)
   const uploadLogo = async (id: string, file: File): Promise<Organization> => {
     try {
-      const token = getToken();
       const formData = new FormData();
       formData.append('file', file);
       const response = await axios.request({
@@ -135,7 +132,6 @@ const useOrganizationsApi = () => {
   // Update branding
   const updateBranding = async (id: string, branding: { primaryColor?: string; secondaryColor?: string }): Promise<Organization> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: `/Companies/${id}/branding`,

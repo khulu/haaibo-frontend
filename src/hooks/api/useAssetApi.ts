@@ -35,12 +35,13 @@ export interface AssetHistory {
 
 const useAssetApi = () => {
   const axios = useAxios();
-
+  const tokenApi = getToken();
+  const token = tokenApi.getToken();
 
   // Fetch all assets for a company
   const getAssetsByCompany = async (companyId?: string): Promise<Asset[]> => {
     try {
-      const token = getToken();
+
       const url = companyId ? `/Assets/${companyId}` : '/Assets';
       const response = await axios.request({
         baseURL,
@@ -58,7 +59,6 @@ const useAssetApi = () => {
   // Fetch a single laptop by ID
   const getAssetById = async (id: string): Promise<Asset> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: `/Assets/single/${id}`,
@@ -75,7 +75,6 @@ const useAssetApi = () => {
   // Create a new laptop
   const createAsset = async (laptop: CreateLaptopInput): Promise<Asset> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: '/Assets',
@@ -93,7 +92,6 @@ const useAssetApi = () => {
   // Update an existing laptop
   const updateAsset = async (id: string, laptop: Partial<CreateLaptopInput>): Promise<Asset> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: `/Assets/${id}`,
@@ -111,7 +109,6 @@ const useAssetApi = () => {
   // Delete a laptop by ID
   const deleteAsset = async (id: string): Promise<void> => {
     try {
-      const token = getToken();
       await axios.request({
         baseURL,
         url: `/Assets/${id}`,
@@ -127,7 +124,6 @@ const useAssetApi = () => {
   // Upload an asset-related file
   const uploadAssetFile = async (id: string, file: File): Promise<void> => {
     try {
-      const token = getToken();
       const formData = new FormData();
       formData.append('file', file);
       await axios.request({
@@ -149,7 +145,6 @@ const useAssetApi = () => {
   // Fetch the history of an asset
   const getAssetHistory = async (id: string): Promise<AssetHistory[]> => {
     try {
-      const token = getToken();
       const response = await axios.request({
         baseURL,
         url: `/Assets/${id}/history`,

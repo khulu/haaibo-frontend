@@ -19,11 +19,13 @@ export type CreateUserInput = Omit<User, 'id' | 'profilePicture' | 'companyName'
 
 const useUserApi = () => {
   const axios = useAxios();
+    const tokenApi = getToken();
+         const token = tokenApi.getToken();
 
   // Fetch all users, optionally filtered by companyId
   const getUsers = async (companyId?: string): Promise<User[]> => {
     try {
-      const token = getToken();
+ 
       const response = await axios.request({
         baseURL,
         url: '/Users',
@@ -40,7 +42,7 @@ const useUserApi = () => {
 
   const createUser = async (user: CreateUserInput): Promise<User> => {
     try {
-      const token = getToken();
+ 
       const response = await axios.request({
         baseURL,
         url: '/Users',
@@ -58,7 +60,7 @@ const useUserApi = () => {
     // Get a single user by id
   const getUserById = async (id: string): Promise<User> => {
     try {
-      const token = getToken();
+    
       const response = await axios.request({
         baseURL,
         url: `/Users/single/${id}`,
@@ -75,7 +77,7 @@ const useUserApi = () => {
   // Get users by companyId (path param)
   const getUsersByCompany = async (companyId: string): Promise<User[]> => {
     try {
-      const token = getToken();
+   
       const response = await axios.request({
         baseURL,
         url: `/Users/${companyId}`,
@@ -92,7 +94,7 @@ const useUserApi = () => {
   // Delete a user by id
   const deleteUser = async (id: string): Promise<void> => {
     try {
-      const token = getToken();
+
       await axios.request({
         baseURL,
         url: `/Users/${id}`,
@@ -108,7 +110,7 @@ const useUserApi = () => {
   // Upload profile picture (multipart/form-data)
   const uploadProfilePicture = async (id: string, file: File): Promise<User> => {
     try {
-      const token = getToken();
+ 
       const formData = new FormData();
       formData.append('file', file);
       const response = await axios.request({
@@ -130,7 +132,7 @@ const useUserApi = () => {
   // Update an existing user
   const updateUser = async (id: string, user: CreateUserInput): Promise<User> => {
     try {
-      const token = getToken();
+    
       const response = await axios.request({
         baseURL,
         url: `/Users/${id}`,
@@ -148,7 +150,7 @@ const useUserApi = () => {
   // Fetch user roles
   const getRoles = async (): Promise<{ value: string; label: string }[]> => {
     try {
-      const token = getToken();
+  
       const response = await axios.request({
         baseURL,
         url: '/Users/roles',

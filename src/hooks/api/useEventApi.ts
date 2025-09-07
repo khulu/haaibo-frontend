@@ -1,6 +1,5 @@
-import useAuthApi from './useAuthApi';
+import getToken from './useAuthApi';
 import useAxios from './useAxios';
-
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -21,13 +20,13 @@ export interface Event {
 
 const useEventApi = () => {
   const axios = useAxios();
-    const {
-    getToken,
-  } = useAuthApi();
+  const tokenApi = getToken();
+  const token = tokenApi.getToken();
+
 
   const getEvents = async (companyId?: string): Promise<Event[]> => {
     try {
-      const token = getToken();
+
       const response = await axios.request({
         baseURL,
         url: '/Events',

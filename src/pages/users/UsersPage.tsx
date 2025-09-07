@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useUser from "@hooks/user/useUser";
+import getUserId from "@hooks/api/useAuthApi";
 
 import {
   Table,
@@ -13,12 +14,14 @@ import Badge from "../../components/ui/badge/Badge";
 
 export default function UsersPage() {
   const { useUserList, deleteSingleUser, useRoles } = useUser();
+  const authApi = getUserId();
+  const companyId = authApi.getCompanyId();
 
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { data: dataUsers, isLoading } = useUserList({});
+  const { data: dataUsers, isLoading } = useUserList({companyId: companyId});
   const { data: dataRoles } = useRoles();
   const dropdownRoles = dataRoles?.map((role, index) => ({ value: index, text: role }));
 

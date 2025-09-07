@@ -1,5 +1,5 @@
 import useAxios from './useAxios';
-import getToken from './useAuthApi';
+
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const useAuthApi = () => {
@@ -39,9 +39,26 @@ const loginUser = async (email: string, password: string) => {
     return token;
   };
 
+    const getCompanyId = () => {
+    let companyId = null;
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const userObj = JSON.parse(userData);
+        companyId = userObj.companyId;
+      } catch (error) {
+          console.error("Error parsing user data from localStorage:", error);
+        }
+    } 
+    return companyId;
+  };
+
+  
+
   return {
     loginUser,
-    getToken
+    getToken,
+    getCompanyId
   };
 };
 

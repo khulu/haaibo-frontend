@@ -6,12 +6,15 @@ import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Select from "../../components/form/Select";
 import useOrganization from "@hooks/organization/useOrganization";
+import useUser from "@hooks/user/useUser";
 
 export default function UserCreate() {
   const { createUser } = useUserApi();
   const { useOrganizationList } = useOrganization();
   const { data: organizations } = useOrganizationList();
   const navigate = useNavigate();
+  const { useRoles } = useUser();
+  const { data: dataRoles } = useRoles();
   const [form, setForm] = useState<CreateUserInput>({
     fullName: "",
     email: "",
@@ -51,12 +54,7 @@ export default function UserCreate() {
     }
   };
 
-  const roleOptions = [
-    { value: "0", label: "Super Admin" },
-    { value: "1", label: "Company Admin" },
-    { value: "2", label: "Security" },
-    { value: "3", label: "Employee" },
-  ];
+  const roleOptions = dataRoles?.map((role, index) => ({ value: index.toString(), label: role.toString() })) || [];
 
   return (
     <ComponentCard title="Create User">
