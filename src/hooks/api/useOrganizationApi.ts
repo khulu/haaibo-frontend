@@ -22,7 +22,7 @@ export type CreateOrganizationInput = {
 
 const useOrganizationsApi = () => {
   const axios = useAxios();
-    const tokenApi = getToken();
+  const tokenApi = getToken();
   const token = tokenApi.getToken();
 
   // Fetch all organizations

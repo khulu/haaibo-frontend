@@ -42,11 +42,11 @@ const useAssetApi = () => {
   const getAssetsByCompany = async (companyId?: string): Promise<Asset[]> => {
     try {
 
-      const url = companyId ? `/Assets/${companyId}` : '/Assets';
       const response = await axios.request({
         baseURL,
-        url,
+        url: '/Assets',
         method: 'GET',
+        params: companyId ? { companyId } : undefined,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       return response.data;
@@ -63,6 +63,7 @@ const useAssetApi = () => {
         baseURL,
         url: `/Assets/single/${id}`,
         method: 'GET',
+        params: undefined,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       return response.data;

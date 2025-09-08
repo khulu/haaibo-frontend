@@ -2,6 +2,7 @@ import  { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAsset from '@hooks/asset/useAsset';
 import type { Asset } from '@hooks/api/useAssetApi';
+import getCompanyId from "@hooks/api/useAuthApi";
 import {
   Table,
   TableBody,
@@ -11,13 +12,15 @@ import {
 } from '../../components/ui/table';
 
 export default function AssetsPage() {
+  const authApi = getCompanyId();
+  const companyId = authApi.getCompanyId();
   const { useAssetList, deleteSingleAsset, uploadAsset } = useAsset();
 
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { data: dataAssets, isLoading } = useAssetList({});
+  const { data: dataAssets, isLoading } = useAssetList({companyId: companyId});
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this asset?')) {

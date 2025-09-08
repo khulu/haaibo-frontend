@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useUser from "@hooks/user/useUser";
-import getUserId from "@hooks/api/useAuthApi";
+import getCompanyId from "@hooks/api/useAuthApi";
 
 import {
   Table,
@@ -14,7 +14,7 @@ import Badge from "../../components/ui/badge/Badge";
 
 export default function UsersPage() {
   const { useUserList, deleteSingleUser, useRoles } = useUser();
-  const authApi = getUserId();
+  const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
 
   const [error, setError] = useState<string | null>(null);

@@ -1,5 +1,5 @@
 import useEvent from "@hooks/event/useEvent";
-
+import getCompanyId from "@hooks/api/useAuthApi";
 import {
   Table,
   TableBody,
@@ -10,7 +10,9 @@ import {
 
 const EventsPage: React.FC = () => {
   const { useEventList } = useEvent();
-  const { data: events, isLoading } = useEventList({});
+const authApi = getCompanyId();
+  const companyId = authApi.getCompanyId();
+  const { data: events, isLoading } = useEventList({companyId: companyId});
 
   if (isLoading) return <div className="p-6">Loading events...</div>;
 
