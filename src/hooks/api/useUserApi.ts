@@ -1,6 +1,7 @@
 import useAxios from './useAxios';
 import getToken from './useAuthApi';
 const baseURL = import.meta.env.VITE_API_BASE_URL;
+import getCompanyId from "@hooks/api/useAuthApi";
 
 export interface User {
   id: string;
@@ -19,8 +20,8 @@ export type CreateUserInput = Omit<User, 'id' | 'profilePicture' | 'companyName'
 
 const useUserApi = () => {
   const axios = useAxios();
-    const tokenApi = getToken();
-         const token = tokenApi.getToken();
+  const tokenApi = getToken();
+  const token = tokenApi.getToken();
 
   // Fetch all users, optionally filtered by companyId
   const getUsers = async (companyId?: string): Promise<User[]> => {
@@ -164,6 +165,31 @@ const useUserApi = () => {
     }
   };
 
+  // Bulk upload users using JSON payload
+  const bulkUploadUsers = async (users: CreateUserInput[]): Promise<User[]> => {
+      const authApi = getCompanyId();
+      const companyId = authApi.getCompanyId();
+    try {
+
+      const response = await axios.request({
+        baseURL,
+        url: '/Users/bulk-upload',
+        method: 'POST',
+        params: companyId ? { companyId } : undefined,
+        data: users, 
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json',
+          'Accept': 'text/plain',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('bulkUploadUsers error:', error);
+      throw error;
+    }
+  };
+
   return {
     getUsers,
     getUserById,
@@ -173,6 +199,7 @@ const useUserApi = () => {
     deleteUser,
     uploadProfilePicture,
     getRoles,
+    bulkUploadUsers,
   };
 };
 

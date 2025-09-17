@@ -13,7 +13,27 @@ export interface Asset {
   assignedUserId: string | null;
   assignedUserName: string | null;
   condition: string | null;
-  status: number;
+  status: string;
+  statusName: string | null;
+  purchaseDate: string | null;
+  warrantyExpiryDate: string | null;
+  companyId: string;
+  companyName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BulkAsset {
+  id: string;
+  make: string | null;
+  model: string | null;
+  serialNumber: string | null;
+  assetId: string | null;
+  laptopTagNumber: string | null;
+  assignedUserId: string | null;
+  assignedUserName: string | null;
+  condition: string | null;
+  status: string | null;
   statusName: string | null;
   purchaseDate: string | null;
   warrantyExpiryDate: string | null;
@@ -159,6 +179,23 @@ const useAssetApi = () => {
     }
   };
 
+
+  const bulkUploadAssets = async (assets: Omit<BulkAsset, 'id' | 'createdAt' | 'updatedAt' | 'statusName' | 'companyName' | 'assignedUserName'>[]): Promise<BulkAsset[]> => {
+    try {
+      const response = await axios.request({
+        baseURL,
+        url: '/Assets/bulk-upload',
+        method: 'POST',
+        data: assets, 
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data;
+    } catch (error) {
+      console.error('bulkUploadAssets error:', error);
+      throw error;
+    }
+  };
+
   return {
     getAssetsByCompany,
     getAssetById,
@@ -167,6 +204,7 @@ const useAssetApi = () => {
     deleteAsset,
     uploadAssetFile,
     getAssetHistory,
+    bulkUploadAssets,
   };
 };
 

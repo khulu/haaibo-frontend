@@ -3,6 +3,7 @@ import OrganizationDetails from "./pages/organizations/OrganizationDetails";
 import OrganizationCreate from "./pages/organizations/OrganizationCreate";
 import OrganizationEdit from "./pages/organizations/OrganizationEdit";
 import UserCreate from "./pages/users/UserCreate";
+import UserBulkUpload from "./pages/users/UserBulkUpload";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
@@ -40,6 +41,7 @@ import AssetsPage from "./pages/assets/AssetsPage";
 import AssetCreate from "./pages/assets/AssetCreate";
 import AssetDetails from "./pages/assets/AssetDetails";
 import AssetEdit from "./pages/assets/AssetEdit";
+import AssetBulkUpload from "./pages/assets/AssetBulkUpload";
 import EventsPage from "./pages/events/EventsPage";
 
 export default function App() {
@@ -89,6 +91,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <UserCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/users/create-bulk"
+              element={
+                <PrivateRoute>
+                  <UserBulkUpload />
                 </PrivateRoute>
               }
             />
@@ -233,6 +243,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <AssetCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/create-bulk"
+              element={
+                <PrivateRoute>
+                  <AssetBulkUpload />
                 </PrivateRoute>
               }
             />

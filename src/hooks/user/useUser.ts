@@ -1,5 +1,5 @@
 import useUsersApi from '@hooks/api/useUserApi';
-import type { User } from '@hooks/api/useUserApi'; 
+import type { CreateUserInput, User } from '@hooks/api/useUserApi'; 
 import {
   useQuery,
   useMutation,
@@ -17,7 +17,8 @@ const useUser = () => {
   const {
     getUsers,
     deleteUser,
-    getRoles
+    getRoles,
+    bulkUploadUsers: bulkUploadUsersApi
   } = useUsersApi();
   const queryClient = useQueryClient();
   
@@ -56,12 +57,21 @@ const useUser = () => {
       });
     },
   });
+  const bulkUploadUsers = useMutation({
+    mutationFn: (users: CreateUserInput[]) => bulkUploadUsersApi(users),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QueryKeyUserList,
+      });
+    },
+  });
 
 
   return {
     useUserList,
     useRoles,
     deleteSingleUser,
+    bulkUploadUsers,
   };
 };
 

@@ -51,12 +51,20 @@ export default function AssetsPage() {
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Assets</h1>
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-          onClick={() => navigate('/assets/create')}
-        >
-          Create Asset
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+            onClick={() => navigate('/assets/create')}
+          >
+            Create Asset
+          </button>
+          <button
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded"
+            onClick={() => navigate('/assets/create-bulk')}
+          >
+            Upload CSV/Excel
+          </button>
+        </div>
       </div>
       <div className="max-w-full overflow-x-auto">
         <Table>

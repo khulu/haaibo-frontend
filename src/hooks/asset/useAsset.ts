@@ -16,7 +16,7 @@ const useAsset = () => {
     getAssetById,
     updateAsset,
     deleteAsset,
-    uploadAssetFile,
+    bulkUploadAssets,
   } = useAssetsApi();
 
   const queryClient = useQueryClient();
@@ -83,7 +83,7 @@ const useAsset = () => {
   });
 
   const uploadAsset = useMutation({
-    mutationFn: (payload: { id: string; file: File }) => uploadAssetFile(payload.id, payload.file),
+    mutationFn: (payload: Partial<CreateLaptopInput>[]) => bulkUploadAssets(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeyAssetList });
     },
