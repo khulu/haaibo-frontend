@@ -49,12 +49,8 @@ const useAsset = () => {
       warrantyExpiryDate: string;
       companyId: string;
     }) => {
-      // Convert status to number if it's a string
-      const payloadWithNumberStatus = {
-        ...payload,
-        status: typeof payload.status === 'string' ? Number(payload.status) : payload.status,
-      };
-      return createAsset(payloadWithNumberStatus);
+      // Ensure status is a string as required by CreateLaptopInput
+      return createAsset(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeyAssetList });
@@ -83,7 +79,24 @@ const useAsset = () => {
   });
 
   const uploadAsset = useMutation({
-    mutationFn: (payload: Partial<CreateLaptopInput>[]) => bulkUploadAssets(payload),
+    mutationFn: (payload: Partial<CreateLaptopInput>[]) => {
+      // Map payload to ensure all required fields are present and 'make' is string|null
+      const mappedPayload = payload.map((item) => ({
+        ...item,
+        make: item.make ?? null,
+        model: item.model ?? null,
+        serialNumber: item.serialNumber ?? "",
+        assetId: item.assetId ?? "",
+        purchaseDate: item.purchaseDate ?? "",
+        status: item.status ?? "",
+        laptopTagNumber: item.laptopTagNumber ?? "",
+        assignedUserId: item.assignedUserId ?? "",
+        condition: item.condition ?? "",
+        warrantyExpiryDate: item.warrantyExpiryDate ?? "",
+        companyId: item.companyId ?? "",
+      }));
+      return bulkUploadAssets(mappedPayload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeyAssetList });
     },

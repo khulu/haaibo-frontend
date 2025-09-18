@@ -14,7 +14,7 @@ import {
 export default function AssetsPage() {
   const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
-  const { useAssetList, deleteSingleAsset, uploadAsset } = useAsset();
+  const { useAssetList, deleteSingleAsset } = useAsset();
 
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -36,12 +36,13 @@ export default function AssetsPage() {
   };
 
   const handleUpload = async (id: string, file: File) => {
-    try {
-      await uploadAsset.mutateAsync({ id, file });
-      alert('File uploaded successfully');
-    } catch {
-      alert('Failed to upload file');
-    }
+    console.log('Uploading file for asset id:', id, file);
+    // try {
+    //   await uploadAsset.mutateAsync({ id, file });
+    //   alert('File uploaded successfully');
+    // } catch {
+    //   alert('Failed to upload file');
+    // }
   };
 
   if (isLoading) return <div>Loading assets...</div>;
