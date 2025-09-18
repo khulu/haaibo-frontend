@@ -8,6 +8,7 @@ import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
 import Badge from "../../components/ui/badge/Badge";
 import useUser from "../../hooks/user/useUser";
+import PhotoModal from "./PhotoModal";
 
 export default function UserDetails() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,8 @@ export default function UserDetails() {
   const [error, setError] = useState<string | null>(null);
   const { isOpen, closeModal } = useModal();
   const navigate = useNavigate();
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const { uploadProfilePicture } = useUserApi();
 
   const dropdownRoles = dataRoles?.map((role, index) => ({ value: index, text: role }));
 
@@ -40,17 +43,27 @@ export default function UserDetails() {
     })();
   }, [id, getUserById]);
 
-
+  const handlePhotoSelected = async (fileOrBlob: File | Blob) => {
+    if (!user || !id) return;
+    try {
+      await uploadProfilePicture(id, fileOrBlob as File); // You may want to handle Blob conversion if needed
+      const updated = await getUserById(id);
+      setUser(updated);
+      setPhotoModalOpen(false);
+    } catch (err) {
+      alert("Failed to upload photo");
+    }
+  };
 
   if (loading) return <div className="p-6">Loading user...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
   if (!user) return <div className="p-6">User not found.</div>;
-             const role = dropdownRoles?.find((r) => r.value === user.role);
+  const role = dropdownRoles?.find((r) => r.value === user.role);
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
+          <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center cursor-pointer" onClick={() => setPhotoModalOpen(true)}>
             {user.profilePicture ? (
               <img
                 width={64}
@@ -69,8 +82,8 @@ export default function UserDetails() {
               {user.fullName}
             </h4>
             <Badge size="sm" color={role?.text.toString() === "SuperAdmin" ? "success" : "warning"}>
-                      {role?.text.toString()}
-                    </Badge>
+              {role?.text.toString()}
+            </Badge>
           </div>
         </div>
 
@@ -165,6 +178,8 @@ export default function UserDetails() {
           </form>
         </div>
       </Modal>
+
+      <PhotoModal isOpen={photoModalOpen} onClose={() => setPhotoModalOpen(false)} onPhotoSelected={handlePhotoSelected} />
     </div>
   );
 }
