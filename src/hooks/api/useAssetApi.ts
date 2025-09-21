@@ -34,6 +34,7 @@ export interface BulkAsset {
   assignedUserId: string | null;
   assignedUserName: string | null;
   condition: string | null;
+  // status should always be a string for bulk upload
   status: string | null;
   statusName: string | null;
   purchaseDate: string | null;
@@ -96,12 +97,14 @@ const useAssetApi = () => {
 
   // Create a new laptop
   const createAsset = async (laptop: CreateLaptopInput): Promise<Asset> => {
+    // Ensure status is a number for single asset creation
+    const payload = { ...laptop, status: Number(laptop.status) };
     try {
       const response = await axios.request({
         baseURL,
         url: '/Assets',
         method: 'POST',
-        data: laptop,
+        data: payload,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       return response.data;
@@ -182,13 +185,16 @@ const useAssetApi = () => {
   };
 
 
+  // bulkUploadAssets expects status as string (not number)
   const bulkUploadAssets = async (assets: Omit<BulkAsset, 'id' | 'createdAt' | 'updatedAt' | 'statusName' | 'companyName' | 'assignedUserName'>[]): Promise<BulkAsset[]> => {
+    // Ensure status is a string for bulk upload
+    const mappedAssets = assets.map(asset => ({ ...asset, status: asset.status !== null && asset.status !== undefined ? String(asset.status) : null }));
     try {
       const response = await axios.request({
         baseURL,
         url: '/Assets/bulk-upload',
         method: 'POST',
-        data: assets, 
+        data: mappedAssets, 
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       return response.data;

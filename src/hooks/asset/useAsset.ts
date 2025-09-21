@@ -1,5 +1,5 @@
 import useAssetsApi from '@hooks/api/useAssetApi';
-import type { Asset, CreateLaptopInput } from '@hooks/api/useAssetApi';
+import type { Asset, CreateLaptopInput, BulkAsset } from '@hooks/api/useAssetApi';
 import {
   useQuery,
   useMutation,
@@ -85,8 +85,8 @@ const useAsset = () => {
   });
 
   const uploadAsset = useMutation({
-    mutationFn: (payload: Partial<CreateLaptopInput>[]) => {
-      // Map payload to ensure all required fields are present and 'make' is string|null
+    // Use BulkAsset typing for bulk upload
+    mutationFn: (payload: Omit<BulkAsset, 'id' | 'createdAt' | 'updatedAt' | 'statusName' | 'companyName' | 'assignedUserName'>[]) => {
       const mappedPayload = payload.map((item) => ({
         ...item,
         make: item.make ?? null,
@@ -94,8 +94,7 @@ const useAsset = () => {
         serialNumber: item.serialNumber ?? "",
         assetId: item.assetId ?? "",
         purchaseDate: item.purchaseDate ?? "",
-        // Convert status to string for BulkAsset
-        status: item.status !== undefined && item.status !== null ? String(item.status) : null,
+        status: String(item.status ?? ''),
         laptopTagNumber: item.laptopTagNumber ?? "",
         assignedUserId: item.assignedUserId ?? "",
         condition: item.condition ?? "",

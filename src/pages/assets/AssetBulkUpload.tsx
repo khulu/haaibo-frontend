@@ -82,17 +82,14 @@ export default function AssetBulkUpload() {
     if (!file || previewRows.length === 0) return;
     setUploading(true);
     setError(null);
- 
-
-  
-
     const payload = previewRows.map(row => ({
+      assetId: "", // Provide a default value for assetId
       ...row,
       companyId,
       purchaseDate: row.purchaseDate ? row.purchaseDate : null,
       warrantyExpiryDate: row.warrantyExpiryDate ? row.warrantyExpiryDate : null,
       assignedUserId: null,
-      status: row.status ?? '',
+      status: String(row.status ?? ''),
     }));
     await uploadAsset.mutate(payload);
     setUploading(false);

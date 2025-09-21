@@ -22,7 +22,7 @@ const AssetCreate: React.FC = () => {
     laptopTagNumber: '',
     assignedUserId: '',
     condition: '',
-    status: '',
+    status: 0,
     purchaseDate: '',
     warrantyExpiryDate: '',
     companyId: '', 
