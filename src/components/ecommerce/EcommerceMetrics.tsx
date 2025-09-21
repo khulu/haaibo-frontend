@@ -7,14 +7,16 @@ import {
 // import Badge from "../ui/badge/Badge";
 import useUser from "@hooks/user/useUser";
 import getCompanyId from "@hooks/api/useAuthApi";
-import { co } from "@fullcalendar/core/internal-common";
+import useAsset from "@hooks/asset/useAsset";
+
 
 export default function EcommerceMetrics() {
   const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
   const { useTotalUsers } = useUser();
   const { data: totalUsers } = useTotalUsers(companyId);
-
+  const { useTotalAssets } = useAsset();
+  const { data: totalAssets } = useTotalAssets(companyId);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
@@ -52,7 +54,7 @@ export default function EcommerceMetrics() {
               Assets
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              5,359
+              {totalAssets}
             </h4>
           </div>
 
