@@ -13,7 +13,7 @@ export interface Asset {
   assignedUserId: string | null;
   assignedUserName: string | null;
   condition: string | null;
-  status: string;
+  status: number;
   statusName: string | null;
   purchaseDate: string | null;
   warrantyExpiryDate: string | null;
@@ -21,6 +21,7 @@ export interface Asset {
   companyName: string | null;
   createdAt: string;
   updatedAt: string;
+  imageUrls?: string[];
 }
 
 export interface BulkAsset {
@@ -163,6 +164,7 @@ const useAssetApi = () => {
     }
   };
 
+
   // Fetch the history of an asset
   const getAssetHistory = async (id: string): Promise<AssetHistory[]> => {
     try {
@@ -196,6 +198,44 @@ const useAssetApi = () => {
     }
   };
 
+  // Upload an asset picture
+  const uploadAssetPicture = async (id: string, file: File): Promise<void> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await axios.request({
+        baseURL,
+        url: `/Assets/${id}/pictures`,
+        method: 'POST',
+        data: formData,
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } catch (error) {
+      console.error('uploadAssetPicture error:', error);
+      throw error;
+    }
+  };
+
+  // Get total assets (optionally by companyId)
+  const getTotalAssets = async (companyId?: string): Promise<number> => {
+    try {
+      const response = await axios.request({
+        baseURL,
+        url: '/Assets/total',
+        method: 'GET',
+        params: companyId ? { companyId } : undefined,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data;
+    } catch (error) {
+      console.error('getTotalAssets error:', error);
+      throw error;
+    }
+  };
+
   return {
     getAssetsByCompany,
     getAssetById,
@@ -205,6 +245,8 @@ const useAssetApi = () => {
     uploadAssetFile,
     getAssetHistory,
     bulkUploadAssets,
+    uploadAssetPicture,
+    getTotalAssets,
   };
 };
 

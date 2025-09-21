@@ -190,6 +190,23 @@ const useUserApi = () => {
     }
   };
 
+  // Get total users (optionally by companyId)
+  const getTotalUsers = async (companyId?: string): Promise<number> => {
+    try {
+      const response = await axios.request({
+        baseURL,
+        url: '/Users/total',
+        method: 'GET',
+        params: companyId ? { companyId } : undefined,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data;
+    } catch (error) {
+      console.error('getTotalUsers error:', error);
+      throw error;
+    }
+  };
+
   return {
     getUsers,
     getUserById,
@@ -200,6 +217,7 @@ const useUserApi = () => {
     uploadProfilePicture,
     getRoles,
     bulkUploadUsers,
+    getTotalUsers,
   };
 };
 

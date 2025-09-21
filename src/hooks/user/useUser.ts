@@ -21,6 +21,7 @@ const useUser = () => {
     bulkUploadUsers: bulkUploadUsersApi
   } = useUsersApi();
   const queryClient = useQueryClient();
+  const api = useUsersApi();
   
   const useUserList = (payload: {
     companyId?: string; 
@@ -65,6 +66,11 @@ const useUser = () => {
       });
     },
   });
+  const useTotalUsers = (companyId?: string) =>
+    useQuery({
+      queryKey: ['users', 'total', companyId],
+      queryFn: () => api.getTotalUsers(companyId),
+    });
 
 
   return {
@@ -72,6 +78,7 @@ const useUser = () => {
     useRoles,
     deleteSingleUser,
     bulkUploadUsers,
+    useTotalUsers,
   };
 };
 

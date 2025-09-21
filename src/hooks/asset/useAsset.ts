@@ -17,6 +17,8 @@ const useAsset = () => {
     updateAsset,
     deleteAsset,
     bulkUploadAssets,
+    uploadAssetPicture,
+    getTotalAssets,
   } = useAssetsApi();
 
   const queryClient = useQueryClient();
@@ -49,8 +51,12 @@ const useAsset = () => {
       warrantyExpiryDate: string;
       companyId: string;
     }) => {
-      // Ensure status is a string as required by CreateLaptopInput
-      return createAsset(payload);
+      // Convert status to number for CreateLaptopInput
+      const mappedPayload = {
+        ...payload,
+        status: Number(payload.status),
+      };
+      return createAsset(mappedPayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeyAssetList });
@@ -88,7 +94,8 @@ const useAsset = () => {
         serialNumber: item.serialNumber ?? "",
         assetId: item.assetId ?? "",
         purchaseDate: item.purchaseDate ?? "",
-        status: item.status ?? "",
+        // Convert status to string for BulkAsset
+        status: item.status !== undefined && item.status !== null ? String(item.status) : null,
         laptopTagNumber: item.laptopTagNumber ?? "",
         assignedUserId: item.assignedUserId ?? "",
         condition: item.condition ?? "",
@@ -102,6 +109,20 @@ const useAsset = () => {
     },
   });
 
+  const uploadAssetPictureMutation = useMutation({
+    mutationFn: (payload: { id: string; file: File }) =>
+      uploadAssetPicture(payload.id, payload.file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QueryKeyAssetList });
+    },
+  });
+
+  const useTotalAssets = (companyId?: string) =>
+    useQuery({
+      queryKey: ['assets', 'total', companyId],
+      queryFn: () => getTotalAssets(companyId),
+    });
+
   return {
     useAssetList,
     createNewAsset,
@@ -109,6 +130,8 @@ const useAsset = () => {
     updateExistingAsset,
     deleteSingleAsset,
     uploadAsset,
+    uploadAssetPictureMutation,
+    useTotalAssets,
   };
 };
 

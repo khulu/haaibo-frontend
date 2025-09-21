@@ -1,12 +1,21 @@
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
+  // ArrowDownIcon,
+  // ArrowUpIcon,
   BoxIconLine,
   GroupIcon,
 } from "../../icons";
-import Badge from "../ui/badge/Badge";
+// import Badge from "../ui/badge/Badge";
+import useUser from "@hooks/user/useUser";
+import getCompanyId from "@hooks/api/useAuthApi";
+import { co } from "@fullcalendar/core/internal-common";
 
 export default function EcommerceMetrics() {
+  const authApi = getCompanyId();
+  const companyId = authApi.getCompanyId();
+  const { useTotalUsers } = useUser();
+  const { data: totalUsers } = useTotalUsers(companyId);
+
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
       {/* <!-- Metric Item Start --> */}
@@ -18,16 +27,16 @@ export default function EcommerceMetrics() {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Customers
+             Total Users
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              3,782
+              {totalUsers}
             </h4>
           </div>
-          <Badge color="success">
+          {/* <Badge color="success">
             <ArrowUpIcon />
             11.01%
-          </Badge>
+          </Badge> */}
         </div>
       </div>
       {/* <!-- Metric Item End --> */}
@@ -40,17 +49,17 @@ export default function EcommerceMetrics() {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Orders
+              Assets
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
               5,359
             </h4>
           </div>
 
-          <Badge color="error">
+          {/* <Badge color="error">
             <ArrowDownIcon />
             9.05%
-          </Badge>
+          </Badge> */}
         </div>
       </div>
       {/* <!-- Metric Item End --> */}

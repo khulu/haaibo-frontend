@@ -35,16 +35,6 @@ export default function AssetsPage() {
     }
   };
 
-  const handleUpload = async (id: string, file: File) => {
-    console.log('Uploading file for asset id:', id, file);
-    // try {
-    //   await uploadAsset.mutateAsync({ id, file });
-    //   alert('File uploaded successfully');
-    // } catch {
-    //   alert('Failed to upload file');
-    // }
-  };
-
   if (isLoading) return <div>Loading assets...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
@@ -71,15 +61,31 @@ export default function AssetsPage() {
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
             <TableRow>
+              <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Device</TableCell>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Make</TableCell>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Model</TableCell>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
-              <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Upload</TableCell>
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
             {dataAssets?.map((asset: Asset) => (
               <TableRow key={asset.id}>
+                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
+                  <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
+                    {asset.imageUrls && asset.imageUrls.length > 0 ? (
+                      <img
+                        width={40}
+                        height={40}
+                        src={asset.imageUrls[0]}
+                        alt={asset.make || "Device"}
+                      />
+                    )  : (
+                      <span className="text-gray-400 text-lg font-bold">
+                        {asset.make?.[0] || "?"}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   {asset.make}
                 </TableCell>
@@ -98,13 +104,6 @@ export default function AssetsPage() {
                       {deletingId === asset.id ? 'Deleting...' : 'Delete'}
                     </button>
                   </div>
-                </TableCell>
-                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
-                  <input
-                    type="file"
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    onChange={(e) => e.target.files && handleUpload(asset.id, e.target.files[0])}
-                  />
                 </TableCell>
               </TableRow>
             ))}
