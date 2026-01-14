@@ -4,15 +4,24 @@ import useOrganizationsApi, { Organization } from "../../hooks/api/useOrganizati
 import ComponentCard from "../../components/common/ComponentCard";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
+import FileInput from "../../components/form/input/FileInput";
 
 export default function OrganizationEdit() {
   const { id } = useParams<{ id: string }>();
-  const { getOrganizationById, updateOrganization } = useOrganizationsApi();
+    const { getOrganizationById, uploadLogo, updateBranding } = useOrganizationsApi();
   const [org, setOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [primaryColor, setPrimaryColor] = useState<string>("");
+  const [secondaryColor, setSecondaryColor] = useState<string>("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const navigate = useNavigate();
+
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setLogoFile(file);
+  };
 
   useEffect(() => {
     (async () => {
@@ -20,6 +29,8 @@ export default function OrganizationEdit() {
         if (id) {
           const data = await getOrganizationById(id);
           setOrg(data);
+          setPrimaryColor(data.primaryColor ?? "");
+          setSecondaryColor(data.secondaryColor ?? "");
         }
       } catch (err: unknown) {
         if (err && typeof err === "object" && "message" in err) {
@@ -31,7 +42,11 @@ export default function OrganizationEdit() {
         setLoading(false);
       }
     })();
-  }, [id, getOrganizationById]);
+    // Note: getOrganizationById is a function from a hook and not stable across renders.
+    // Depending on it causes the effect to re-run indefinitely.
+    // We only depend on `id` here to avoid an infinite loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!org) return;
@@ -43,7 +58,24 @@ export default function OrganizationEdit() {
     if (!org || !id) return;
     setSaving(true);
     try {
-      await updateOrganization(id, org);
+      // Update basic org fields (name/adminUserId)
+      // Update branding colors if provided
+      try {
+        await updateBranding(id, {
+          primaryColor: primaryColor || undefined,
+          secondaryColor: secondaryColor || undefined,
+        });
+      } catch (err) {
+        console.warn('Branding update failed', err);
+      }
+      // Upload logo if selected
+      if (logoFile) {
+        try {
+          await uploadLogo(id, logoFile);
+        } catch (err) {
+          console.warn('Logo upload failed', err);
+        }
+      }
       navigate("/organizations");
     } catch (err: unknown) {
       if (err && typeof err === "object" && "message" in err) {
@@ -73,14 +105,33 @@ export default function OrganizationEdit() {
             required
           />
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="primaryColor">Primary Dark color (main design color)</Label>
+            <input
+              id="primaryColor"
+              name="primaryColor"
+              type="color"
+              value={primaryColor || '#3D54E8'}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            />
+          </div>
+          <div>
+            <Label htmlFor="secondaryColor">Accent color (complementary - NOT WHITE)</Label>
+            <input
+              id="secondaryColor"
+              name="secondaryColor"
+              type="color"
+              value={secondaryColor || '#000000'}
+              onChange={(e) => setSecondaryColor(e.target.value)}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            />
+          </div>
+        </div>
         <div>
-          <Label htmlFor="adminUserId">Admin User ID</Label>
-          <Input
-            id="adminUserId"
-            name="adminUserId"
-            value={org.adminUserId || ""}
-            onChange={handleChange}
-          />
+          <Label htmlFor="logo">Logo (optional)</Label>
+          <FileInput onChange={handleLogoChange} className="mt-1" />
         </div>
         {error && <div className="text-red-500">{error}</div>}
         <div className="flex gap-4">

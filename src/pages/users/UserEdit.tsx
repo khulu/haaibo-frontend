@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useUserApi, { User as BaseUser, CreateUserInput } from "@hooks/api/useUserApi";
 import useOrganization from "@hooks/organization/useOrganization";
+import useAuthApi from "@hooks/api/useAuthApi";
 import ComponentCard from "../../components/common/ComponentCard";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
@@ -16,6 +17,19 @@ export default function UserEdit() {
   const { getUserById, updateUser } = useUserApi();
   const { useOrganizationList } = useOrganization();
   const { data: organizations } = useOrganizationList();
+  const auth = useAuthApi();
+  const currentCompanyId = auth.getCompanyId();
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const u = JSON.parse(raw);
+      const role = u?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +82,7 @@ export default function UserEdit() {
     department: user?.department || "",
     role: user?.role || "",
     password: user?.password || "",
-    companyId: user?.companyId || "",
+    companyId: isSuperAdmin ? (user?.companyId || "") : (currentCompanyId ?? ""),
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,15 +176,17 @@ export default function UserEdit() {
             required
           />
         </div>
-        <div>
-          <Label htmlFor="companyId">Company</Label>
-          <Select
-            options={organizations?.map((org: { id: string; name: string }) => ({ value: org.id, label: org.name })) || []}
-            defaultValue={user?.companyId || ""}
-            onChange={handleCompanyChange}
-            className="dark:bg-dark-900"
-          />
-        </div>
+        {isSuperAdmin && (
+          <div>
+            <Label htmlFor="companyId">Company</Label>
+            <Select
+              options={organizations?.map((org: { id: string; name: string }) => ({ value: org.id, label: org.name })) || []}
+              defaultValue={user?.companyId || ""}
+              onChange={handleCompanyChange}
+              className="dark:bg-dark-900"
+            />
+          </div>
+        )}
         {error && <div className="text-red-500">{error}</div>}
         <div className="flex gap-4">
           <button

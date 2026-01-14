@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useOrganization from "@hooks/organization/useOrganization";
 import {
@@ -10,16 +9,12 @@ import {
 } from "../../components/ui/table";
 
 export default function OrganizationsPage() {
-  const { useOrganizationList, deleteSingleOrganization } = useOrganization();
-
-  const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { useOrganizationList } = useOrganization();
   const navigate = useNavigate();
 
   const { data: dataOrganizations, isLoading } = useOrganizationList();
 
   if (isLoading) return <div className="p-6">Loading organizations...</div>;
-  if (error) return <div className="p-6 text-red-500">{error}</div>;
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
@@ -54,27 +49,6 @@ export default function OrganizationsPage() {
                   <div className="flex gap-2">
                     <button className="px-2 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => navigate(`/organizations/${org.id}`)}>View</button>
                     <button className="px-2 py-1 bg-blue-500 text-white rounded" onClick={() => navigate(`/organizations/edit/${org.id}`)}>Edit</button>
-                    <button
-                      className="px-2 py-1 bg-red-500 text-white rounded"
-                      disabled={deletingId === org.id}
-                      onClick={async () => {
-                        if (!window.confirm("Are you sure you want to delete this organization?")) return;
-                        setDeletingId(org.id);
-                        try {
-                          await deleteSingleOrganization.mutateAsync(org.id);
-                        } catch (err: unknown) {
-                          if (err && typeof err === "object" && "message" in err) {
-                            setError((err as { message?: string }).message || "Failed to delete organization");
-                          } else {
-                            setError("Failed to delete organization");
-                          }
-                        } finally {
-                          setDeletingId(null);
-                        }
-                      }}
-                    >
-                      {deletingId === org.id ? "Deleting..." : "Delete"}
-                    </button>
                   </div>
                 </TableCell>
               </TableRow>

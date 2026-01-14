@@ -13,15 +13,6 @@ import NotFound from "./pages/OtherPage/NotFound";
 import UsersPage from "./pages/users/UsersPage";
 import UserDetails from "./pages/users/UserDetails";
 import UserEdit from "./pages/users/UserEdit";
-            <Route
-              path="/users/edit/:id"
-              element={
-                <PrivateRoute>
-                  <UserEdit />
-                </PrivateRoute>
-              }
-            />
-            {/* Optionally, you can add a delete route if you want a confirmation page, but delete is usually handled inline. */}
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
 import Alerts from "./pages/UiElements/Alerts";
@@ -43,6 +34,16 @@ import AssetDetails from "./pages/assets/AssetDetails";
 import AssetEdit from "./pages/assets/AssetEdit";
 import AssetBulkUpload from "./pages/assets/AssetBulkUpload";
 import EventsPage from "./pages/events/EventsPage";
+import CollectionsPage from "./pages/collections/CollectionsPage";
+import CollectionsCreate from "./pages/collections/CollectionsCreate";
+import CollectionsEdit from "./pages/collections/CollectionsEdit";
+import CollectionDetails from "./pages/collections/CollectionDetails";
+import AssetBookingsCreate from "./pages/bookings/AssetBookingsCreate";
+import BookingsPage from "./pages/bookings/BookingsPage";
+import LocationsPage from "./pages/locations/LocationsPage";
+import IssuesPage from "./pages/issues/IssuesPage";
+import IssueDetails from "./pages/issues/IssueDetails";
+import IssueCreate from "./pages/issues/IssueCreate";
 
 export default function App() {
   return (
@@ -239,6 +240,30 @@ export default function App() {
               }
             />
             <Route
+              path="/assets/issues"
+              element={
+                <PrivateRoute>
+                  <IssuesPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/issues/:id"
+              element={
+                <PrivateRoute>
+                  <IssueDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/:assetId/issues/new"
+              element={
+                <PrivateRoute>
+                  <IssueCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/assets/create"
               element={
                 <PrivateRoute>
@@ -275,6 +300,62 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <EventsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/locations"
+              element={
+                <PrivateRoute>
+                  <LocationsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/collections"
+              element={
+                <PrivateRoute>
+                  <CollectionsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/collections/create"
+              element={
+                <PrivateRoute>
+                  <CollectionsCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/bookings"
+              element={
+                <PrivateRoute>
+                  <BookingsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/bookings"
+              element={
+                <PrivateRoute>
+                  <AssetBookingsCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/collections/:id"
+              element={
+                <PrivateRoute>
+                  <CollectionDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/collections/edit/:id"
+              element={
+                <PrivateRoute>
+                  <CollectionsEdit />
                 </PrivateRoute>
               }
             />

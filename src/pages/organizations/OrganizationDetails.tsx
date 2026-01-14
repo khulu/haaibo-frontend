@@ -28,7 +28,8 @@ export default function OrganizationDetails() {
         setLoading(false);
       }
     })();
-  }, [id, getOrganizationById]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
 
 

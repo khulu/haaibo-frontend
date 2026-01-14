@@ -11,7 +11,7 @@
     "esModuleInterop": true,
 
     /* Bundler mode */
-    "moduleResolution": "node",
+  "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -22,7 +22,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     /* Alias - must manually match vite.config.ts */
-    "baseUrl": ".",
+  "baseUrl": ".",
+  "ignoreDeprecations": "6.0",
     "paths": {
       "@hooks/*": ["src/hooks/*"],
       "@components/*": ["src/components/*"],

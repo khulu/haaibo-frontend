@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useUser from "@hooks/user/useUser";
 import getCompanyId from "@hooks/api/useAuthApi";
+import useOrganization from "@hooks/organization/useOrganization";
+import Label from "../../components/form/Label";
 
 import {
   Table,
@@ -16,12 +18,33 @@ export default function UsersPage() {
   const { useUserList, deleteSingleUser, useRoles } = useUser();
   const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(companyId ?? undefined);
+
+  // Load organizations for company selection (for SuperAdmin filter)
+  const { useOrganizationList } = useOrganization();
+  const { data: organizations } = useOrganizationList();
+  const organizationOptions = useMemo(() => {
+    return (organizations ?? []).map((org) => ({ value: org.id, label: org.name }));
+  }, [organizations]);
+
+  // Only SuperAdmin can change company filter
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
 
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { data: dataUsers, isLoading } = useUserList({companyId: companyId});
+  const { data: dataUsers, isLoading } = useUserList({ companyId: selectedCompanyId });
   const { data: dataRoles } = useRoles();
   const dropdownRoles = dataRoles?.map((role, index) => ({ value: index, text: role }));
 
@@ -32,7 +55,22 @@ export default function UsersPage() {
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Users</h1>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2 mr-2">
+              <Label>Company</Label>
+              <select
+                value={selectedCompanyId ?? ''}
+                onChange={(e) => setSelectedCompanyId(e.target.value || undefined)}
+                className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="">Select a company</option>
+                {organizationOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded"
             onClick={() => navigate("/users/create")}

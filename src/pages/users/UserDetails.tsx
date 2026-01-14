@@ -50,7 +50,7 @@ export default function UserDetails() {
       const updated = await getUserById(id);
       setUser(updated);
       setPhotoModalOpen(false);
-    } catch (err) {
+    } catch {
       alert("Failed to upload photo");
     }
   };

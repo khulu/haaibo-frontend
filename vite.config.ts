@@ -14,6 +14,22 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      // Proxy API calls to the backend to avoid CORS during development
+      '/api': {
+        target: 'http://localhost:5251',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Proxy static logos served by the backend
+      '/logos': {
+        target: 'http://localhost:5251',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   resolve: {
     alias: {
       "@hooks": path.resolve(__dirname, "src/hooks"),

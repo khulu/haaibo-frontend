@@ -13,6 +13,8 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
+import getAuth from "../hooks/api/useAuthApi";
+import useOrganizationsApi from "../hooks/api/useOrganizationApi";
 
 type NavItem = {
   name: string;
@@ -45,11 +47,29 @@ const navItems: NavItem[] = [
 
     subItems: [
            { name: "Devices", path: "/assets" },
-      { name: "Bookings", path: "/assets/bookings" },
       { name: "Reminders", path: "/assets/reminders" },
-      { name: "Issues", path: "/assets/issues" },
       { name: "Reports", path: "/assets/reports" },
     ],
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Collections",
+    path: "/collections",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Bookings",
+    path: "/bookings",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Locations",
+    path: "/locations",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Issues",
+    path: "/assets/issues",
   },
     {
     icon: <CalenderIcon />,
@@ -127,6 +147,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
 
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+  const auth = getAuth();
+  const companyId = auth.getCompanyId();
+  const { getOrganizationById } = useOrganizationsApi();
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -142,6 +166,32 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     (path: string) => location.pathname === path,
     [location.pathname]
   );
+
+  useEffect(() => {
+    // Load company logo for company admins
+    const isCompanyAdmin = role === 1 || role === "Admin";
+    if (isCompanyAdmin && companyId) {
+      (async () => {
+        try {
+          const org = await getOrganizationById(companyId as string);
+          if (org?.logo) setCompanyLogoUrl(org.logo);
+        } catch {
+          // silently ignore; fall back to default logo
+        }
+      })();
+    } else {
+      setCompanyLogoUrl(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, companyId]);
+
+  const defaultLightLogo = "/images/haiibo-logo.jpeg";
+  const defaultDarkLogo = "/images/haiibo-logo.jpeg";
+  const defaultCollapsedLogo = "/images/haaibo-logo.jpeg";
+
+  const lightLogoSrc = companyLogoUrl || defaultLightLogo;
+  const darkLogoSrc = companyLogoUrl || defaultDarkLogo;
+  const collapsedLogoSrc = companyLogoUrl || defaultCollapsedLogo;
 
   useEffect(() => {
     let submenuMatched = false;
@@ -348,16 +398,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
             <div className="flex items-center gap-2">
               <img
                 className="dark:hidden"
-                src="/images/haiibo-logo.jpeg"
-                alt="Haiibo Logo"
+                src={lightLogoSrc}
+                alt="Logo"
                 width={40}
                 height={40}
                 style={{ objectFit: 'contain', borderRadius: 8 }}
               />
               <img
                 className="hidden dark:block"
-                src="/images/haiibo-logo.jpeg"
-                alt="Haiibo Logo"
+                src={darkLogoSrc}
+                alt="Logo"
                 width={40}
                 height={40}
                 style={{ objectFit: 'contain', borderRadius: 8 }}
@@ -366,8 +416,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
             </div>
           ) : (
             <img
-              src="/images/haaibo-logo.jpeg"
-              alt="Haaibo Logo"
+              src={collapsedLogoSrc}
+              alt="Logo"
               width={32}
               height={32}
               style={{ objectFit: 'contain', borderRadius: 8 }}

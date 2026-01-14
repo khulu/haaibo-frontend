@@ -31,7 +31,7 @@ const useOrganizationsApi = () => {
 
       const response = await axios.request({
         baseURL,
-        url: '/Companies',
+        url: '/companies',
         method: 'GET',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -47,7 +47,7 @@ const useOrganizationsApi = () => {
     try {
       const response = await axios.request({
         baseURL,
-        url: '/Companies',
+        url: '/companies',
         method: 'POST',
         data: org,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -64,7 +64,7 @@ const useOrganizationsApi = () => {
     try {
       const response = await axios.request({
         baseURL,
-        url: `/Companies/${id}`,
+        url: `/companies/${id}`,
         method: 'GET',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -80,7 +80,7 @@ const useOrganizationsApi = () => {
     try {
       const response = await axios.request({
         baseURL,
-        url: `/Companies/${id}`,
+        url: `/companies/${id}`,
         method: 'PUT',
         data: org,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -97,7 +97,7 @@ const useOrganizationsApi = () => {
     try {
       await axios.request({
         baseURL,
-        url: `/Companies/${id}`,
+        url: `/companies/${id}`,
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -114,7 +114,7 @@ const useOrganizationsApi = () => {
       formData.append('file', file);
       const response = await axios.request({
         baseURL,
-        url: `/Companies/${id}/logo`,
+        url: `/companies/${id}/logo`,
         method: 'POST',
         data: formData,
         headers: {
@@ -134,7 +134,7 @@ const useOrganizationsApi = () => {
     try {
       const response = await axios.request({
         baseURL,
-        url: `/Companies/${id}/branding`,
+        url: `/companies/${id}/branding`,
         method: 'PUT',
         data: branding,
         headers: token ? { Authorization: `Bearer ${token}` } : {},

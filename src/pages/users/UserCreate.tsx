@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useUserApi, { CreateUserInput } from "../../hooks/api/useUserApi";
 import ComponentCard from "../../components/common/ComponentCard";
@@ -7,6 +7,7 @@ import Input from "../../components/form/input/InputField";
 import Select from "../../components/form/Select";
 import useOrganization from "@hooks/organization/useOrganization";
 import useUser from "@hooks/user/useUser";
+import useAuthApi from "@hooks/api/useAuthApi";
 
 export default function UserCreate() {
   const { createUser } = useUserApi();
@@ -15,6 +16,19 @@ export default function UserCreate() {
   const navigate = useNavigate();
   const { useRoles } = useUser();
   const { data: dataRoles } = useRoles();
+  const auth = useAuthApi();
+  const currentCompanyId = auth.getCompanyId();
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
   const [form, setForm] = useState<CreateUserInput>({
     fullName: "",
     email: "",
@@ -22,7 +36,7 @@ export default function UserCreate() {
     department: "",
     role: "0", // Ensure role is a string
     password: "",
-    companyId: "",
+    companyId: isSuperAdmin ? "" : (currentCompanyId ?? ""),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +69,7 @@ export default function UserCreate() {
   };
 
   const roleOptions = dataRoles?.map((role, index) => ({ value: index.toString(), label: role.toString() })) || [];
+  const organizationOptions = useMemo(() => (organizations ?? []).map(org => ({ value: org.id, label: org.name })), [organizations]);
 
   return (
     <ComponentCard title="Create User">
@@ -120,15 +135,17 @@ export default function UserCreate() {
             required
           />
         </div>
-        <div>
-          <Label htmlFor="companyId">Company</Label>
-          <Select
-            options={organizations?.map((org) => ({ value: org.id, label: org.name })) || []}
-            placeholder="Select a company"
-            onChange={(value) => setForm((prev) => ({ ...prev, companyId: value }))}
-            className="dark:bg-dark-900"
-          />
-        </div>
+        {isSuperAdmin && (
+          <div>
+            <Label htmlFor="companyId">Company</Label>
+            <Select
+              options={organizationOptions}
+              placeholder="Select a company"
+              onChange={(value) => setForm((prev) => ({ ...prev, companyId: value }))}
+              className="dark:bg-dark-900"
+            />
+          </div>
+        )}
         {error && <div className="text-red-500">{error}</div>}
         <div className="flex gap-4">
           <button

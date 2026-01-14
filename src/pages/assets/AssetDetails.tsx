@@ -74,6 +74,9 @@ const AssetDetails: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-4">
+          <Button size="sm" variant="outline" onClick={() => navigate(`/assets/${id}/issues/new`)}>
+            Raise Issue
+          </Button>
           <Button size="sm" onClick={() => navigate(`/assets/edit/${id}`)}>
             Edit
           </Button>
