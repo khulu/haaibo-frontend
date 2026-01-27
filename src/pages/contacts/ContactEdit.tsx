@@ -9,19 +9,17 @@ export default function ContactEdit() {
   const navigate = useNavigate();
   const { useFetchContactById, updateContact } = useContacts();
 
-  const [isSuperAdmin, isAdmin] = useState(() => {
+  const [isSuperAdmin] = useState(() => {
     try {
       const raw = localStorage.getItem('user');
-      if (!raw) return [false, false] as const;
+      if (!raw) return false;
       const user = JSON.parse(raw);
       const role = user?.role;
-      const superAdmin = role === 0 || role === 'SuperAdmin';
-      const admin = role === 1 || role === 'Admin';
-      return [superAdmin, admin] as const;
+      return role === 0 || role === 'SuperAdmin';
     } catch {
-      return [false, false] as const;
+      return false;
     }
-  }) as unknown as [boolean, boolean];
+  });
 
   const { data: contact, isLoading } = useFetchContactById(id as string);
   const [form, setForm] = useState<{ fullName: string; phone?: string; notes?: string }>({ fullName: '', phone: '', notes: '' });
@@ -34,14 +32,12 @@ export default function ContactEdit() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!(isSuperAdmin || isAdmin)) {
-      alert('You do not have permission to update this contact');
+    if (!(isSuperAdmin)) {
       return;
     }
     const payload: UpdateContactDto = { fullName: form.fullName, phone: form.phone || null, notes: form.notes || null };
     try {
       await updateContact.mutateAsync({ id: id as string, data: payload });
-      alert('Contact updated');
       navigate('/admin/contacts');
     } catch {
       alert('Failed to update contact');

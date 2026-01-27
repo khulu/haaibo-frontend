@@ -1,12 +1,20 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useLocations from '@hooks/locations/useLocations';
 import getAuth from '@hooks/api/useAuthApi';
 import useOrganization from '@hooks/organization/useOrganization';
 import Label from '../../components/form/Label';
+import FileInput from '../../components/form/input/FileInput';
+import Switch from '../../components/form/switch/Switch';
+import useLocationsApi from '../../hooks/api/useLocationsApi';
 
 type FormState = {
   name: string;
   color?: string;
+  floorplanFile?: File | null;
+  floorplanPath?: string | null;
+  active?: boolean;
+  allowColleagueSearch?: boolean;
 };
 
 type NodeState = Record<string, boolean>;
@@ -14,7 +22,9 @@ type NodeState = Record<string, boolean>;
 export default function LocationsPage() {
   const auth = getAuth();
   const companyId = auth.getCompanyId?.();
+  const navigate = useNavigate();
   const { useLocationsTree, createLocation, updateLocation, deleteLocation } = useLocations();
+  const { uploadFloorplan } = useLocationsApi();
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(companyId);
   const { data: tree, isLoading, isError } = useLocationsTree(selectedCompanyId);
 
@@ -63,21 +73,42 @@ export default function LocationsPage() {
     setError(null);
     setAddingUnder(parentId ?? 'root');
     setEditingId(null);
-    setForm({ name: '', color: '' });
+    setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false });
   };
 
-  const startEdit = (node: { id: string; name: string; color?: string | null }) => {
+  const startEdit = (node: { id: string; name: string; color?: string | null; floorplanPath?: string | null; active?: boolean; allowColleagueSearch?: boolean }) => {
     setError(null);
     setEditingId(node.id);
     setAddingUnder(null);
-    setForm({ name: node.name, color: node.color ?? '' });
+    setForm({ name: node.name, color: node.color ?? '', floorplanFile: null, floorplanPath: node.floorplanPath ?? null, active: node.active ?? true, allowColleagueSearch: node.allowColleagueSearch ?? false });
   };
 
   const submit = async (parentId?: string | null) => {
     if (!canManage) return; // guard
     try {
+      let floorplanPath = form.floorplanPath;
+      
       if (editingId) {
-        await updateLocation.mutateAsync({ id: editingId, data: { name: form.name, color: form.color || null } });
+        // Upload floorplan if a new file is selected
+        if (form.floorplanFile) {
+          try {
+            const result = await uploadFloorplan(editingId, form.floorplanFile);
+            floorplanPath = result.path;
+          } catch {
+            setError('Failed to upload floorplan');
+            return;
+          }
+        }
+        await updateLocation.mutateAsync({ 
+          id: editingId, 
+          data: { 
+            name: form.name, 
+            color: form.color || null,
+            floorplanPath: floorplanPath || null,
+            active: form.active,
+            allowColleagueSearch: form.allowColleagueSearch
+          } 
+        });
       } else {
         if (!selectedCompanyId) {
           setError('Please select a company first.');
@@ -88,12 +119,24 @@ export default function LocationsPage() {
           color: form.color || null,
           parentId: parentId && parentId !== 'root' ? parentId : null,
           companyId: selectedCompanyId,
+          floorplanPath: floorplanPath || null,
+          active: form.active ?? true,
+          allowColleagueSearch: form.allowColleagueSearch ?? false,
         };
-        await createLocation.mutateAsync(payload);
+        const created = await createLocation.mutateAsync(payload);
+        
+        // Upload floorplan after creation if file provided
+        if (form.floorplanFile && created) {
+          try {
+            await uploadFloorplan(created.id, form.floorplanFile);
+          } catch (err) {
+            console.warn('Floorplan upload failed after location creation', err);
+          }
+        }
       }
       setAddingUnder(null);
       setEditingId(null);
-      setForm({ name: '', color: '' });
+      setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false });
     } catch {
       setError('Failed to save location');
     }
@@ -113,11 +156,15 @@ export default function LocationsPage() {
     id: string;
     name: string;
     color?: string | null;
+    floorplanPath?: string | null;
+    active?: boolean;
+    allowColleagueSearch?: boolean;
     children?: TreeNode[];
   };
 
   const renderNode = (node: TreeNode, depth = 0) => {
     const isExpanded = !!expanded[node.id];
+    const isInactive = node.active === false;
     return (
       <div key={node.id} className="ml-2">
         <div className="flex items-center gap-3 py-1">
@@ -127,10 +174,14 @@ export default function LocationsPage() {
             </button>
           )}
           <div className="flex-1">
-            <span className="font-medium text-gray-800 dark:text-white/90">{node.name}</span>
+            <span className={`font-medium ${isInactive ? 'text-gray-400 line-through dark:text-gray-600' : 'text-gray-800 dark:text-white/90'}`}>{node.name}</span>
             {node.color && <span className="ml-2 inline-block w-3 h-3 rounded" style={{ background: node.color }} />}
+            {isInactive && <span className="ml-2 text-xs text-red-500">(Inactive)</span>}
+            {node.floorplanPath && <span className="ml-2 text-xs text-blue-500" title="Has floorplan">📐</span>}
+            {node.allowColleagueSearch && <span className="ml-2 text-xs text-green-500" title="Colleague search enabled">👥</span>}
           </div>
           <div className="flex gap-2">
+            <button className="px-2 py-1 bg-green-600 text-white rounded" onClick={() => navigate(`/locations/${node.id}`)}>View</button>
             {canManage && (
               <>
                 <button className="px-2 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => startAdd(node.id)}>Add</button>
@@ -142,7 +193,7 @@ export default function LocationsPage() {
         </div>
         {addingUnder === node.id && (
           <div className="ml-6 my-2 p-3 border rounded border-gray-200 dark:border-white/[0.08]">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Name</Label>
                 <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
@@ -151,16 +202,26 @@ export default function LocationsPage() {
                 <Label>Color (optional)</Label>
                 <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.color} onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))} placeholder="#RRGGBB or name" />
               </div>
+              <div className="sm:col-span-2">
+                <Label>Floorplan (JPG/PNG/SVG, max 1920x1600)</Label>
+                <FileInput onChange={(e) => setForm((f) => ({ ...f, floorplanFile: e.target.files?.[0] || null }))} accept=".jpg,.jpeg,.png,.svg" className="mt-1" />
+              </div>
+              <div>
+                <Switch label="Active" defaultChecked={form.active ?? true} onChange={(checked) => setForm((f) => ({ ...f, active: checked }))} />
+              </div>
+              <div>
+                <Switch label="Allow Colleague Search" defaultChecked={form.allowColleagueSearch ?? false} onChange={(checked) => setForm((f) => ({ ...f, allowColleagueSearch: checked }))} />
+              </div>
             </div>
             <div className="mt-3 flex gap-2">
               <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(node.id)}>Save</button>
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '' }); }}>Cancel</button>
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false }); }}>Cancel</button>
             </div>
           </div>
         )}
         {editingId === node.id && (
           <div className="ml-6 my-2 p-3 border rounded border-gray-200 dark:border-white/[0.08]">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Name</Label>
                 <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
@@ -169,10 +230,23 @@ export default function LocationsPage() {
                 <Label>Color (optional)</Label>
                 <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.color} onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))} placeholder="#RRGGBB or name" />
               </div>
+              <div className="sm:col-span-2">
+                <Label>Floorplan (JPG/PNG/SVG, max 1920x1600)</Label>
+                {form.floorplanPath && (
+                  <div className="mb-2 text-xs text-gray-500">Current: <a href={form.floorplanPath} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a></div>
+                )}
+                <FileInput onChange={(e) => setForm((f) => ({ ...f, floorplanFile: e.target.files?.[0] || null }))} accept=".jpg,.jpeg,.png,.svg" className="mt-1" />
+              </div>
+              <div>
+                <Switch label="Active" defaultChecked={form.active ?? true} onChange={(checked) => setForm((f) => ({ ...f, active: checked }))} />
+              </div>
+              <div>
+                <Switch label="Allow Colleague Search" defaultChecked={form.allowColleagueSearch ?? false} onChange={(checked) => setForm((f) => ({ ...f, allowColleagueSearch: checked }))} />
+              </div>
             </div>
             <div className="mt-3 flex gap-2">
               <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(node.id)}>Update</button>
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditingId(null); setForm({ name: '', color: '' }); }}>Cancel</button>
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditingId(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false }); }}>Cancel</button>
             </div>
           </div>
         )}
@@ -204,17 +278,7 @@ export default function LocationsPage() {
                 ))}
               </select>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Label>Company</Label>
-              <input
-                type="text"
-                value={companyId ?? ''}
-                readOnly
-                className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-              />
-            </div>
-          )}
+          ) : ''}
           {canManage && (
             <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => startAdd(null)}>Add Location</button>
           )}
@@ -229,7 +293,7 @@ export default function LocationsPage() {
         <div>
           {addingUnder === 'root' && (
             <div className="my-2 p-3 border rounded border-gray-200 dark:border-white/[0.08]">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Name</Label>
                   <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
@@ -238,10 +302,20 @@ export default function LocationsPage() {
                   <Label>Color (optional)</Label>
                   <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.color} onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))} placeholder="#RRGGBB or name" />
                 </div>
+                <div className="sm:col-span-2">
+                  <Label>Floorplan (JPG/PNG/SVG, max 1920x1600)</Label>
+                  <FileInput onChange={(e) => setForm((f) => ({ ...f, floorplanFile: e.target.files?.[0] || null }))} accept=".jpg,.jpeg,.png,.svg" className="mt-1" />
+                </div>
+                <div>
+                  <Switch label="Active" defaultChecked={form.active ?? true} onChange={(checked) => setForm((f) => ({ ...f, active: checked }))} />
+                </div>
+                <div>
+                  <Switch label="Allow Colleague Search" defaultChecked={form.allowColleagueSearch ?? false} onChange={(checked) => setForm((f) => ({ ...f, allowColleagueSearch: checked }))} />
+                </div>
               </div>
               <div className="mt-3 flex gap-2">
                 <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(null)}>Save</button>
-                <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '' }); }}>Cancel</button>
+                <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false }); }}>Cancel</button>
               </div>
             </div>
           )}

@@ -40,7 +40,6 @@ export default function ContactCreate() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.fullName.trim()) {
-      alert('Full name is required');
       return;
     }
     const payload: CreateContactDto = {
@@ -51,7 +50,6 @@ export default function ContactCreate() {
     };
     try {
       await createContact.mutateAsync(payload);
-      alert('Contact created');
       navigate('/admin/contacts');
     } catch {
       alert('Failed to create contact');
@@ -104,17 +102,7 @@ export default function ContactCreate() {
               ))}
             </select>
           </div>
-        ) : (
-          <div>
-            <Label>Company</Label>
-            <input
-              type="text"
-              value={currentCompanyId ?? ''}
-              readOnly
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-            />
-          </div>
-        )}
+        ) : ''}
         <div className="flex gap-2">
           <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
           <button type="button" className="px-4 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => navigate('/admin/contacts')}>Cancel</button>

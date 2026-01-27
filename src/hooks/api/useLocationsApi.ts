@@ -9,6 +9,9 @@ export type LocationDto = {
   color?: string | null;
   parentId?: string | null;
   companyId: string;
+  floorplanPath?: string | null;
+  active?: boolean;
+  allowColleagueSearch?: boolean;
   createdAt: string;
   updatedAt: string;
   children: LocationDto[];
@@ -19,12 +22,18 @@ export type CreateLocationDto = {
   color?: string | null;
   parentId?: string | null;
   companyId: string;
+  floorplanPath?: string | null;
+  active?: boolean;
+  allowColleagueSearch?: boolean;
 };
 
 export type UpdateLocationDto = {
   name?: string;
   color?: string | null;
   parentId?: string | null;
+  floorplanPath?: string | null;
+  active?: boolean;
+  allowColleagueSearch?: boolean;
 };
 
 const useLocationsApi = () => {
@@ -84,7 +93,23 @@ const useLocationsApi = () => {
     });
   };
 
-  return { listTree, getSingle, create, update, remove };
+  const uploadFloorplan = async (id: string, file: File): Promise<{ path: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await axios.request({
+      baseURL,
+      url: `/locations/${id}/floorplan`,
+      method: 'POST',
+      data: formData,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data as { path: string };
+  };
+
+  return { listTree, getSingle, create, update, remove, uploadFloorplan };
 };
 
 export default useLocationsApi;

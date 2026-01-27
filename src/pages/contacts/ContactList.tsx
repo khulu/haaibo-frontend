@@ -75,7 +75,7 @@ export default function ContactList() {
               </select>
             </div>
           )}
-          {(isSuperAdmin) && (
+     
             <>
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded"
@@ -90,7 +90,7 @@ export default function ContactList() {
                 Bulk Upload
               </button>
             </>
-          )}
+    
         </div>
       </div>
 
