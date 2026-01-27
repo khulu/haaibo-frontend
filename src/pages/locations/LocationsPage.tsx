@@ -278,7 +278,17 @@ export default function LocationsPage() {
                 ))}
               </select>
             </div>
-          ) : ''}
+          ) :  (
+            <div className="flex items-center gap-2">
+     
+              <input
+                type="hidden"
+                value={companyId ?? ''}
+                readOnly
+                className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              />
+            </div>
+          )}
           {canManage && (
             <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => startAdd(null)}>Add Location</button>
           )}

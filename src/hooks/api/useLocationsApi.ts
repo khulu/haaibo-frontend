@@ -3,6 +3,42 @@ import getAuth from './useAuthApi';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
+export type FloorplanMarker = {
+  id: string;
+  name: string;
+  type: 0 | 1; // 0 = desk, 1 = meeting room
+  xPosition: number;
+  yPosition: number;
+  active: boolean;
+  companyId: string;
+  locationId: string;
+  deskCode?: string | null;
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateFloorplanMarkerDto = {
+  name: string;
+  type: 0 | 1;
+  xPosition: number;
+  yPosition: number;
+  active?: boolean;
+  locationId: string;
+  deskCode?: string | null;
+  description?: string | null;
+};
+
+export type UpdateFloorplanMarkerDto = {
+  name?: string;
+  type?: 0 | 1;
+  xPosition?: number;
+  yPosition?: number;
+  active?: boolean;
+  deskCode?: string | null;
+  description?: string | null;
+};
+
 export type LocationDto = {
   id: string;
   name: string;
@@ -15,6 +51,7 @@ export type LocationDto = {
   createdAt: string;
   updatedAt: string;
   children: LocationDto[];
+  markers?: FloorplanMarker[];
 };
 
 export type CreateLocationDto = {
@@ -109,7 +146,48 @@ const useLocationsApi = () => {
     return response.data as { path: string };
   };
 
-  return { listTree, getSingle, create, update, remove, uploadFloorplan };
+  const getMarkers = async (locationId: string): Promise<FloorplanMarker[]> => {
+    const response = await axios.request({
+      baseURL,
+      url: `/locations/${locationId}/markers`,
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data as FloorplanMarker[];
+  };
+
+  const createMarker = async (payload: CreateFloorplanMarkerDto): Promise<FloorplanMarker> => {
+    const response = await axios.request({
+      baseURL,
+      url: `/locations/${payload.locationId}/markers`,
+      method: 'POST',
+      data: payload,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data as FloorplanMarker;
+  };
+
+  const updateMarker = async (id: string, data: UpdateFloorplanMarkerDto): Promise<FloorplanMarker> => {
+    const response = await axios.request({
+      baseURL,
+      url: `/locations/markers/${id}`,
+      method: 'PUT',
+      data,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data as FloorplanMarker;
+  };
+
+  const deleteMarker = async (id: string): Promise<void> => {
+    await axios.request({
+      baseURL,
+      url: `/locations/markers/${id}`,
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  };
+
+  return { listTree, getSingle, create, update, remove, uploadFloorplan, getMarkers, createMarker, updateMarker, deleteMarker };
 };
 
 export default useLocationsApi;
