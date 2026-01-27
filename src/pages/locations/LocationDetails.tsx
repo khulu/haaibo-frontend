@@ -10,7 +10,6 @@ import Switch from '../../components/form/switch/Switch';
 type MarkerFormData = {
   name: string;
   type: 0 | 1;
-  deskCode: string;
   description: string;
   active: boolean;
 };
@@ -28,7 +27,6 @@ export default function LocationDetails() {
   const [markerFormData, setMarkerFormData] = useState<MarkerFormData>({
     name: '',
     type: 0,
-    deskCode: '',
     description: '',
     active: true,
   });
@@ -60,7 +58,8 @@ export default function LocationDetails() {
         setLoading(false);
       }
     })();
-  }, [id, getSingle, getMarkers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleFloorplanClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!floorplanRef.current || !location?.floorplanPath) return;
@@ -69,7 +68,7 @@ export default function LocationDetails() {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setPendingPosition({ x, y });
     setEditingMarker(null);
-    setMarkerFormData({ name: '', type: 0, deskCode: '', description: '', active: true });
+    setMarkerFormData({ name: '', type: 0, description: '', active: true });
     setShowMarkerModal(true);
   };
 
@@ -79,7 +78,6 @@ export default function LocationDetails() {
     setMarkerFormData({
       name: marker.name,
       type: marker.type,
-      deskCode: marker.deskCode || '',
       description: marker.description || '',
       active: marker.active,
     });
@@ -116,7 +114,6 @@ export default function LocationDetails() {
         const updated = await updateMarker(editingMarker.id, {
           name: markerFormData.name,
           type: markerFormData.type,
-          deskCode: markerFormData.deskCode || null,
           description: markerFormData.description || null,
           active: markerFormData.active,
         });
@@ -127,7 +124,6 @@ export default function LocationDetails() {
           type: markerFormData.type,
           xPosition: pendingPosition.x,
           yPosition: pendingPosition.y,
-          deskCode: markerFormData.deskCode || null,
           description: markerFormData.description || null,
           active: markerFormData.active,
           locationId: id,
@@ -265,30 +261,25 @@ export default function LocationDetails() {
                     left: `${marker.xPosition}%`,
                     top: `${marker.yPosition}%`,
                   }}
-                  title={`${marker.name}${marker.deskCode ? ` (${marker.deskCode})` : ''}`}
+                  title={marker.name}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg ${
                     marker.type === 0 
-                      ? 'bg-blue-500 hover:bg-blue-600' 
-                      : 'bg-purple-500 hover:bg-purple-600'
+                      ? 'bg-green-500 hover:bg-green-600' 
+                      : 'bg-yellow-500 hover:bg-yellow-600'
                   }`}>
                     {marker.type === 0 ? '🪑' : '👥'}
                   </div>
-                  {marker.deskCode && (
-                    <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 bg-black/75 text-white text-xs px-1.5 py-0.5 rounded whitespace-nowrap">
-                      {marker.deskCode}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
             <div className="mt-2 flex gap-4 items-center text-sm text-gray-600 dark:text-gray-400">
               <span className="flex items-center gap-1">
-                <span className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">🪑</span>
+                <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">🪑</span>
                 Desk
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">👥</span>
+                <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs">👥</span>
                 Meeting Room
               </span>
             </div>
@@ -375,17 +366,6 @@ export default function LocationDetails() {
                     <option value={0}>🪑 Desk</option>
                     <option value={1}>👥 Meeting Room</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Desk Code
-                  </label>
-                  <Input
-                    value={markerFormData.deskCode}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMarkerFormData({ ...markerFormData, deskCode: e.target.value })}
-                    placeholder="e.g., A-101"
-                  />
                 </div>
 
                 <div>
