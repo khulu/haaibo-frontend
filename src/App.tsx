@@ -25,6 +25,7 @@ const AssetBookingsCreate = lazy(() => import("./pages/bookings/AssetBookingsCre
 const BookingsPage = lazy(() => import("./pages/bookings/BookingsPage"));
 const LocationsPage = lazy(() => import("./pages/locations/LocationsPage"));
 const LocationDetails = lazy(() => import("./pages/locations/LocationDetails"));
+const ReservationsPage = lazy(() => import("./pages/reservations/ReservationsPage"));
 const IssuesPage = lazy(() => import("./pages/issues/IssuesPage"));
 const IssueDetails = lazy(() => import("./pages/issues/IssueDetails"));
 const IssueCreate = lazy(() => import("./pages/issues/IssueCreate"));
@@ -323,6 +324,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <LocationDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/reservations"
+              element={
+                <PrivateRoute>
+                  <ReservationsPage />
                 </PrivateRoute>
               }
             />
