@@ -130,7 +130,7 @@ export default function LocationDetails() {
                 className="dark:bg-gray-900"
               >
                 <ImageOverlay
-                  url={location.floorplanPath}
+                  url={`${import.meta.env.VITE_API_BASE_URL}${location.floorplanPath}`}
                   bounds={[
                     [0, 0],
                     [1000, 1000],
@@ -143,7 +143,7 @@ export default function LocationDetails() {
             </div>
             <div className="mt-2 flex gap-2">
               <a
-                href={location.floorplanPath}
+                href={`${import.meta.env.VITE_API_BASE_URL}${location.floorplanPath}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-500 hover:underline"
@@ -151,7 +151,7 @@ export default function LocationDetails() {
                 Open in new tab
               </a>
               <a
-                href={location.floorplanPath}
+                href={`${import.meta.env.VITE_API_BASE_URL}${location.floorplanPath}`}
                 download
                 className="text-sm text-blue-500 hover:underline"
               >
