@@ -23,7 +23,6 @@
     "noFallthroughCasesInSwitch": true,
     /* Alias - must manually match vite.config.ts */
   "baseUrl": ".",
-  "ignoreDeprecations": "6.0",
     "paths": {
       "@hooks/*": ["src/hooks/*"],
       "@components/*": ["src/components/*"],

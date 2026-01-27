@@ -11,6 +11,12 @@ export interface Organization {
   secondaryColor?: string | null;
   adminUserId?: string | null;
   adminUserName?: string | null;
+  enableOfficeReservations?: boolean | null;
+  reservationMenuLabel?: string | null;
+  hotDeskLicences?: number | null;
+  allowAssetTracking?: boolean | null;
+  enableEmployeeDashboardMenu?: boolean | null;
+  employeeDashboardName?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -18,6 +24,12 @@ export interface Organization {
 export type CreateOrganizationInput = {
   name: string;
   adminUserId?: string | null;
+  enableOfficeReservations?: boolean;
+  reservationMenuLabel?: string | null;
+  hotDeskLicences?: number | null;
+  allowAssetTracking?: boolean;
+  enableEmployeeDashboardMenu?: boolean;
+  employeeDashboardName?: string | null;
 };
 
 const useOrganizationsApi = () => {
@@ -146,6 +158,33 @@ const useOrganizationsApi = () => {
     }
   };
 
+  // Update settings: enableOfficeReservations, reservationMenuLabel, hotDeskLicences, allowAssetTracking, enableEmployeeDashboardMenu, employeeDashboardName
+  const updateSettings = async (
+    id: string,
+    settings: {
+      enableOfficeReservations?: boolean;
+      reservationMenuLabel?: string | null;
+      hotDeskLicences?: number | null;
+      allowAssetTracking?: boolean;
+      enableEmployeeDashboardMenu?: boolean;
+      employeeDashboardName?: string | null;
+    }
+  ): Promise<Organization> => {
+    try {
+      const response = await axios.request({
+        baseURL,
+        url: `/companies/${id}/settings`,
+        method: 'PUT',
+        data: settings,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data;
+    } catch (error) {
+      console.error('updateSettings error:', error);
+      throw error;
+    }
+  };
+
   return {
     getOrganizations,
     createOrganization,
@@ -154,6 +193,7 @@ const useOrganizationsApi = () => {
     deleteOrganization,
     uploadLogo,
     updateBranding,
+    updateSettings,
   };
 };
 

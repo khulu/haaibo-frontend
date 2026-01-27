@@ -5,6 +5,7 @@ import ComponentCard from "../../components/common/ComponentCard";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import FileInput from "../../components/form/input/FileInput";
+import Switch from "../../components/form/switch/Switch";
 
 export default function OrganizationCreate() {
   const { createOrganization, uploadLogo, updateBranding } = useOrganizationsApi();
@@ -15,6 +16,10 @@ export default function OrganizationCreate() {
   });
   const [primaryColor, setPrimaryColor] = useState<string>("");
   const [secondaryColor, setSecondaryColor] = useState<string>("");
+  const [enableOfficeReservations, setEnableOfficeReservations] = useState<boolean>(false);
+  const [reservationMenuLabel, setReservationMenuLabel] = useState<string>("");
+  const [hotDeskLicences, setHotDeskLicences] = useState<number>(0);
+  const [allowAssetTracking, setAllowAssetTracking] = useState<boolean>(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,10 +39,25 @@ export default function OrganizationCreate() {
     setLoading(true);
     setError(null);
     try {
+      // Validation
+      if (reservationMenuLabel && reservationMenuLabel.length > 100) {
+        setError("Reservation Menu Item Label must be at most 100 characters");
+        setLoading(false);
+        return;
+      }
+      if (!Number.isInteger(hotDeskLicences) || hotDeskLicences < 0) {
+        setError("Hot Desk Licences must be a non-negative integer");
+        setLoading(false);
+        return;
+      }
       const payload: CreateOrganizationInput = {
         name: form.name,
         // Send adminUserId only if provided; else null to mark optional
         adminUserId: form.adminUserId && form.adminUserId.trim() !== "" ? form.adminUserId : null,
+        enableOfficeReservations,
+        reservationMenuLabel: reservationMenuLabel ? reservationMenuLabel : null,
+        hotDeskLicences: hotDeskLicences,
+        allowAssetTracking,
       };
       const created = await createOrganization(payload);
       // Optional: upload logo
@@ -83,6 +103,48 @@ export default function OrganizationCreate() {
             onChange={handleChange}
             required
           />
+        </div>
+        <div>
+          <Switch
+            label="Allow Asset Tracking"
+            defaultChecked={allowAssetTracking}
+            onChange={(checked) => setAllowAssetTracking(checked)}
+          />
+        </div>
+        <div>
+          <Switch
+            label="Enable Users to Reserve Office Space"
+            defaultChecked={enableOfficeReservations}
+            onChange={(checked) => setEnableOfficeReservations(checked)}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="reservationMenuLabel">Reservation Menu Item Label (optional, max 100)</Label>
+            <Input
+              id="reservationMenuLabel"
+              name="reservationMenuLabel"
+              value={reservationMenuLabel}
+              onChange={(e) => setReservationMenuLabel(e.target.value)}
+              hint="Defaults to 'Reservations' if empty"
+            />
+          </div>
+          <div>
+            <Label htmlFor="hotDeskLicences">Hot Desk Licences (min 0)</Label>
+            <Input
+              id="hotDeskLicences"
+              name="hotDeskLicences"
+              type="number"
+              value={hotDeskLicences}
+              onChange={(e) => {
+                const v = e.target.value;
+                const num = v === "" ? 0 : parseInt(v, 10);
+                setHotDeskLicences(Number.isNaN(num) ? 0 : Math.max(0, num));
+              }}
+              min="0"
+              step={1}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

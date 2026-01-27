@@ -19,17 +19,30 @@ export default function CollectionsEdit() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const organizationOptions = useMemo(() => {
-    return (organizations ?? []).map((org) => ({ value: org.id, label: org.name }));
-  }, [organizations]);
+  // Only SuperAdmin can change company filter
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (data) {
-      setName(data.name);
-      setDescription(data.description || '');
+      setName(data.name ?? '');
+      setDescription(data.description ?? '');
       setSelectedCompanyId(data.companyId ?? undefined);
     }
   }, [data]);
+
+  const organizationOptions = useMemo(() => {
+    return (organizations ?? []).map((org) => ({ value: org.id, label: org.name }));
+  }, [organizations]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +50,7 @@ export default function CollectionsEdit() {
     setSaving(true);
     setError(null);
     try {
-  await updateExistingCollection.mutateAsync({ id, data: { name, description, companyId: selectedCompanyId } });
+      await updateExistingCollection.mutateAsync({ id, data: { name, description: description || null, companyId: selectedCompanyId ?? null } });
       navigate('/collections');
     } catch {
       setError('Failed to update collection');
@@ -52,19 +65,21 @@ export default function CollectionsEdit() {
   return (
     <ComponentCard title="Edit Collection">
       <form className="space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <Label>Company</Label>
-          <select
-            value={selectedCompanyId ?? ''}
-            onChange={(e) => setSelectedCompanyId(e.target.value || undefined)}
-            className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-          >
-            <option value="">Select a company</option>
-            {organizationOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+        {isSuperAdmin && (
+          <div>
+            <Label>Company</Label>
+            <select
+              value={selectedCompanyId ?? ''}
+              onChange={(e) => setSelectedCompanyId(e.target.value || undefined)}
+              className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            >
+              <option value="">Select a company</option>
+              {organizationOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <Label>Name</Label>
           <input

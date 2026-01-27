@@ -31,25 +31,18 @@ const navItems: NavItem[] = [
     // subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   },
 
-    {
+  {
     icon: <UserCircleIcon />,
-    name: "Users",
-    path: "/users",
+    name: "People",
+    subItems: [
+      { name: "Users", path: "/users" },
+      { name: "Contacts", path: "/admin/contacts" },
+    ],
   },
       {
     icon: <GroupIcon />,
     name: "Organizations",
     path: "/organizations",
-  },
-       {
-    icon: <BoxCubeIcon />,
-    name: "Items",
-
-    subItems: [
-           { name: "Devices", path: "/assets" },
-      { name: "Reminders", path: "/assets/reminders" },
-      { name: "Reports", path: "/assets/reports" },
-    ],
   },
   {
     icon: <BoxCubeIcon />,
@@ -75,6 +68,21 @@ const navItems: NavItem[] = [
     icon: <CalenderIcon />,
     name: "Events",
     path: "/events",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Devices",
+    path: "/assets",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Reminders",
+    path: "/assets/reminders",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Reports",
+    path: "/assets/reports",
   },
 
   // {
@@ -151,6 +159,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   const companyId = auth.getCompanyId();
   const { getOrganizationById } = useOrganizationsApi();
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [companyDetails, setCompanyDetails] = useState<{
+    enableOfficeReservations?: boolean | null;
+    reservationMenuLabel?: string | null;
+    enableEmployeeDashboardMenu?: boolean | null;
+    employeeDashboardName?: string | null;
+  } | null>(null);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -175,6 +189,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
         try {
           const org = await getOrganizationById(companyId as string);
           if (org?.logo) setCompanyLogoUrl(org.logo);
+          setCompanyDetails({
+            enableOfficeReservations: org.enableOfficeReservations ?? null,
+            reservationMenuLabel: org.reservationMenuLabel ?? null,
+            enableEmployeeDashboardMenu: org.enableEmployeeDashboardMenu ?? null,
+            employeeDashboardName: org.employeeDashboardName ?? null,
+          });
         } catch {
           // silently ignore; fall back to default logo
         }
@@ -258,6 +278,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
                   ? "lg:justify-center"
                   : "lg:justify-start"
               }`}
+              aria-expanded={
+                openSubmenu?.type === menuType && openSubmenu?.index === index
+                  ? true
+                  : false
+              }
+              aria-controls={`submenu-${menuType}-${index}`}
+              title={nav.name}
             >
               <span
                 className={`menu-item-icon-size  ${
@@ -317,6 +344,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
                     ? `${subMenuHeight[`${menuType}-${index}`]}px`
                     : "0px",
               }}
+              id={`submenu-${menuType}-${index}`}
             >
               <ul className="mt-2 space-y-1 ml-9">
                 {nav.subItems.map((subItem) => (
@@ -328,6 +356,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
                           ? "menu-dropdown-item-active"
                           : "menu-dropdown-item-inactive"
                       }`}
+                      aria-label={subItem.name}
+                      title={subItem.name}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
@@ -366,9 +396,33 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   );
 
   // Example: Only show 'Organizations' for admin roles (role === 1 or 'SuperAdmin')
-  const filteredNavItems = navItems.filter(item => {
+  // Build dynamic nav items including optional Reservations and Employee Dashboard menus
+  const dynamicNavItems: NavItem[] = (() => {
+    const items = [...navItems];
+    if (companyDetails?.enableOfficeReservations) {
+      items.push({
+        icon: <BoxCubeIcon />,
+        name: companyDetails.reservationMenuLabel || "Reservations",
+        path: "/reservations",
+      });
+    }
+    // Show Employee Dashboard menu item if enabled and user role is 'Employee'
+    if (companyDetails?.enableEmployeeDashboardMenu && (role === 'Employee' || role === 2)) {
+      items.push({
+        icon: <GridIcon />,
+        name: companyDetails.employeeDashboardName || "Employee Dashboard",
+        path: "/employee-dashboard",
+      });
+    }
+    return items;
+  })();
+
+  const filteredNavItems = dynamicNavItems.filter(item => {
     if (item.name === "Organizations") {
       return role === 0 || role === "SuperAdmin";
+    }
+    if (item.name === "Admin") {
+      return role === 0 || role === "SuperAdmin" || role === 1 || role === "Admin";
     }
     return true;
   });

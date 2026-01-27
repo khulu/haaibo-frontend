@@ -27,7 +27,8 @@ export default function UsersPage() {
     return (organizations ?? []).map((org) => ({ value: org.id, label: org.name }));
   }, [organizations]);
 
-  // Only SuperAdmin can change company filter
+  const { data: dataRoles } = useRoles();
+
   const [isSuperAdmin] = useState(() => {
     try {
       const raw = localStorage.getItem('user');
@@ -40,14 +41,25 @@ export default function UsersPage() {
     }
   });
 
+  // Map roles: if not superadmin, filter out SuperAdmin (index 0) and start values from 1
+  const dropdownRoles = useMemo(() => {
+    if (!dataRoles) return undefined;
+    if (isSuperAdmin) {
+      // SuperAdmin sees all roles with 0-based indexing
+      return dataRoles.map((role, index) => ({ value: index, text: role }));
+    } else {
+      // Non-superadmin: skip SuperAdmin role (index 0), values start from 1
+      return dataRoles
+        .slice(1)
+        .map((role, index) => ({ value: index + 1, text: role }));
+    }
+  }, [dataRoles, isSuperAdmin]);
+
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const { data: dataUsers, isLoading } = useUserList({ companyId: selectedCompanyId });
-  const { data: dataRoles } = useRoles();
-  const dropdownRoles = dataRoles?.map((role, index) => ({ value: index, text: role }));
-
   if (isLoading) return <div className="p-6">Loading users...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
@@ -92,7 +104,9 @@ export default function UsersPage() {
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">User</TableCell>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Department</TableCell>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Role</TableCell>
-              <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Company</TableCell>
+              {isSuperAdmin && (
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Company</TableCell>
+              )}
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
             </TableRow>
           </TableHeader>
@@ -136,9 +150,11 @@ export default function UsersPage() {
                       {role?.text.toString()}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {user.companyName || "-"}
-                  </TableCell>
+                  {isSuperAdmin && (
+                    <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                      {user.companyName || "-"}
+                    </TableCell>
+                  )}
                   <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                     <div className="flex gap-2">
                       <button

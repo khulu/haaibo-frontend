@@ -22,6 +22,19 @@ export default function IssuesPage() {
   const [companyId, setCompanyId] = useState<string | undefined>(initialCompanyId);
   const [assetId, setAssetId] = useState<string | undefined>(undefined);
 
+  // Only SuperAdmin can change company filter
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
+
   const { data: organizations } = useOrganizationList();
   const orgOptions = useMemo(() => (organizations ?? []).map(o => ({ value: o.id, label: o.name })), [organizations]);
 
@@ -42,13 +55,15 @@ export default function IssuesPage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Issues</h1>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Label>Company</Label>
-            <select value={companyId ?? ''} onChange={(e) => setCompanyId(e.target.value || undefined)} className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-              <option value="">All</option>
-              {orgOptions.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
-            </select>
-          </div>
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2">
+              <Label>Company</Label>
+              <select value={companyId ?? ''} onChange={(e) => setCompanyId(e.target.value || undefined)} className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                <option value="">All</option>
+                {orgOptions.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
+              </select>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Label>Asset</Label>
             <select value={assetId ?? ''} onChange={(e) => setAssetId(e.target.value || undefined)} className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">

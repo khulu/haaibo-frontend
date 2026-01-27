@@ -1,56 +1,63 @@
-import OrganizationsPage from "./pages/organizations/OrganizationsPage";
-import OrganizationDetails from "./pages/organizations/OrganizationDetails";
-import OrganizationCreate from "./pages/organizations/OrganizationCreate";
-import OrganizationEdit from "./pages/organizations/OrganizationEdit";
-import UserCreate from "./pages/users/UserCreate";
-import UserBulkUpload from "./pages/users/UserBulkUpload";
+import { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import NotFound from "./pages/OtherPage/NotFound";
-
-import UsersPage from "./pages/users/UsersPage";
-import UserDetails from "./pages/users/UserDetails";
-import UserEdit from "./pages/users/UserEdit";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
-import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
-import Buttons from "./pages/UiElements/Buttons";
-import LineChart from "./pages/Charts/LineChart";
-import BarChart from "./pages/Charts/BarChart";
-import Calendar from "./pages/Calendar";
-import BasicTables from "./pages/Tables/BasicTables";
-import FormElements from "./pages/Forms/FormElements";
-import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import AssetsPage from "./pages/assets/AssetsPage";
-import AssetCreate from "./pages/assets/AssetCreate";
-import AssetDetails from "./pages/assets/AssetDetails";
-import AssetEdit from "./pages/assets/AssetEdit";
-import AssetBulkUpload from "./pages/assets/AssetBulkUpload";
-import EventsPage from "./pages/events/EventsPage";
-import CollectionsPage from "./pages/collections/CollectionsPage";
-import CollectionsCreate from "./pages/collections/CollectionsCreate";
-import CollectionsEdit from "./pages/collections/CollectionsEdit";
-import CollectionDetails from "./pages/collections/CollectionDetails";
-import AssetBookingsCreate from "./pages/bookings/AssetBookingsCreate";
-import BookingsPage from "./pages/bookings/BookingsPage";
-import LocationsPage from "./pages/locations/LocationsPage";
-import IssuesPage from "./pages/issues/IssuesPage";
-import IssueDetails from "./pages/issues/IssueDetails";
-import IssueCreate from "./pages/issues/IssueCreate";
+// Lazy-loaded routes for performance
+const UsersPage = lazy(() => import("./pages/users/UsersPage"));
+const UserDetails = lazy(() => import("./pages/users/UserDetails"));
+const UserEdit = lazy(() => import("./pages/users/UserEdit"));
+const UserCreate = lazy(() => import("./pages/users/UserCreate"));
+const UserBulkUpload = lazy(() => import("./pages/users/UserBulkUpload"));
+const AssetsPage = lazy(() => import("./pages/assets/AssetsPage"));
+const AssetCreate = lazy(() => import("./pages/assets/AssetCreate"));
+const AssetDetails = lazy(() => import("./pages/assets/AssetDetails"));
+const AssetEdit = lazy(() => import("./pages/assets/AssetEdit"));
+const AssetBulkUpload = lazy(() => import("./pages/assets/AssetBulkUpload"));
+const EventsPage = lazy(() => import("./pages/events/EventsPage"));
+const CollectionsPage = lazy(() => import("./pages/collections/CollectionsPage"));
+const CollectionsCreate = lazy(() => import("./pages/collections/CollectionsCreate"));
+const CollectionsEdit = lazy(() => import("./pages/collections/CollectionsEdit"));
+const CollectionDetails = lazy(() => import("./pages/collections/CollectionDetails"));
+const AssetBookingsCreate = lazy(() => import("./pages/bookings/AssetBookingsCreate"));
+const BookingsPage = lazy(() => import("./pages/bookings/BookingsPage"));
+const LocationsPage = lazy(() => import("./pages/locations/LocationsPage"));
+const IssuesPage = lazy(() => import("./pages/issues/IssuesPage"));
+const IssueDetails = lazy(() => import("./pages/issues/IssueDetails"));
+const IssueCreate = lazy(() => import("./pages/issues/IssueCreate"));
+const ContactsPage = lazy(() => import("./pages/contacts/ContactsPage"));
+const ContactCreate = lazy(() => import("./pages/contacts/ContactCreate"));
+const ContactEdit = lazy(() => import("./pages/contacts/ContactEdit"));
+const ContactsBulkUpload = lazy(() => import("./pages/contacts/ContactsBulkUpload"));
+const ReportsPage = lazy(() => import("./pages/reports/ReportsPage"));
+const OrganizationsPage = lazy(() => import("./pages/organizations/OrganizationsPage"));
+const OrganizationDetails = lazy(() => import("./pages/organizations/OrganizationDetails"));
+const OrganizationCreate = lazy(() => import("./pages/organizations/OrganizationCreate"));
+const OrganizationEdit = lazy(() => import("./pages/organizations/OrganizationEdit"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const BasicTables = lazy(() => import("./pages/Tables/BasicTables"));
+const FormElements = lazy(() => import("./pages/Forms/FormElements"));
+const Blank = lazy(() => import("./pages/Blank"));
+const Videos = lazy(() => import("./pages/UiElements/Videos"));
+const Images = lazy(() => import("./pages/UiElements/Images"));
+const Alerts = lazy(() => import("./pages/UiElements/Alerts"));
+const Badges = lazy(() => import("./pages/UiElements/Badges"));
+const Avatars = lazy(() => import("./pages/UiElements/Avatars"));
+const Buttons = lazy(() => import("./pages/UiElements/Buttons"));
+const LineChart = lazy(() => import("./pages/Charts/LineChart"));
+const BarChart = lazy(() => import("./pages/Charts/BarChart"));
+const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
+const SignUp = lazy(() => import("./pages/AuthPages/SignUp"));
 
 export default function App() {
   return (
     <>
       <Router>
         <ScrollToTop />
-        <Routes>
+        <Suspense fallback={<div className="p-6 text-sm text-gray-600 dark:text-gray-300">Loading…</div>}>
+          <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
             <Route
@@ -144,7 +151,6 @@ export default function App() {
               }
             />
             <Route
-              path="/avatars"
               element={
                 <PrivateRoute>
                   <Avatars />
@@ -359,6 +365,55 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            {/* Admin Contacts */}
+            <Route
+              path="/admin/contacts"
+              element={
+                <PrivateRoute>
+                  <ContactsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/contacts/new"
+              element={
+                <PrivateRoute>
+                  <ContactCreate />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/contacts/:id/edit"
+              element={
+                <PrivateRoute>
+                  <ContactEdit />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/contacts/bulk"
+              element={
+                <PrivateRoute>
+                  <ContactsBulkUpload />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/assets/reports"
+              element={
+                <PrivateRoute>
+                  <ReportsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <PrivateRoute>
+                  <ReportsPage />
+                </PrivateRoute>
+              }
+            />
           </Route>
 
           {/* Auth Layout */}
@@ -368,6 +423,7 @@ export default function App() {
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </Router>
     </>
   );

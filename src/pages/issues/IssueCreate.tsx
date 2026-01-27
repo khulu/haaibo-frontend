@@ -37,6 +37,19 @@ export default function IssueCreate() {
   const { data: assets } = useAssetList({ companyId });
   const assetOptions = useMemo(() => (assets ?? []).map(a => ({ value: a.id, label: `${a.make || ''} ${a.model || ''}`.trim() || a.assetId })), [assets]);
 
+  // Only SuperAdmin can change company filter
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
     setFiles(selected);
@@ -69,10 +82,14 @@ export default function IssueCreate() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Company</Label>
-            <select value={companyId ?? ''} onChange={e=>setCompanyId(e.target.value || undefined)} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-              <option value="">Select a company</option>
-              {orgOptions.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
-            </select>
+            {isSuperAdmin ? (
+              <select value={companyId ?? ''} onChange={e=>setCompanyId(e.target.value || undefined)} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                <option value="">Select a company</option>
+                {orgOptions.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
+              </select>
+            ) : (
+              <input type="text" value={initialCompanyId ?? ''} readOnly className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+            )}
           </div>
           <div>
             <Label>Asset</Label>

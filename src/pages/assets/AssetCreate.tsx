@@ -7,6 +7,7 @@ import Input from '../../components/form/input/InputField';
 import Select from '../../components/form/Select';
 import useOrganization from '@hooks/organization/useOrganization';
 import useUserApi from '@hooks/user/useUser';
+import getAuth from '@hooks/api/useAuthApi';
 
 const AssetCreate: React.FC = () => {
   const { createAsset } = useAssetApi();
@@ -14,6 +15,19 @@ const AssetCreate: React.FC = () => {
   const { useUserList } = useUserApi();
   const { data: organizations } = useOrganizationList();
   const { data: users } = useUserList({});
+  const auth = getAuth();
+  const currentCompanyId = auth.getCompanyId?.() ?? '';
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
   const [form, setForm] = useState<CreateLaptopInput>({
     make: '',
     model: '',
@@ -25,7 +39,7 @@ const AssetCreate: React.FC = () => {
     status: 0,
     purchaseDate: '',
     warrantyExpiryDate: '',
-    companyId: '', 
+    companyId: isSuperAdmin ? '' : currentCompanyId,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,13 +163,17 @@ const AssetCreate: React.FC = () => {
         </div>
         <div>
           <Label htmlFor="companyId">Company</Label>
-          <Select
-            options={organizations?.map((org) => ({ value: org.id, label: org.name })) || []}
-            placeholder="Select a company"
-            onChange={(value) => setForm((prev) => ({ ...prev, companyId: value }))}
-            className="dark:bg-dark-900"
-            required
-          />
+          {isSuperAdmin ? (
+            <Select
+              options={organizations?.map((org) => ({ value: org.id, label: org.name })) || []}
+              placeholder="Select a company"
+              onChange={(value) => setForm((prev) => ({ ...prev, companyId: value }))}
+              className="dark:bg-dark-900"
+              required
+            />
+          ) : (
+            <Input id="companyId" name="companyId" value={currentCompanyId} onChange={() => {}} disabled />
+          )}
         </div>
 
         {error && <div className="text-red-500">{error}</div>}

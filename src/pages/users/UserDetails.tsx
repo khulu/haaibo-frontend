@@ -24,6 +24,17 @@ export default function UserDetails() {
   const { uploadProfilePicture } = useUserApi();
 
   const dropdownRoles = dataRoles?.map((role, index) => ({ value: index, text: role }));
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -123,12 +134,14 @@ export default function UserDetails() {
               {user.department || "-"}
             </p>
           </div>
-          <div>
-            <Label>Company</Label>
-            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-              {user.companyName || "-"}
-            </p>
-          </div>
+          {isSuperAdmin && (
+            <div>
+              <Label>Company</Label>
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                {user.companyName || "-"}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

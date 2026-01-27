@@ -103,6 +103,30 @@ export default function OrganizationDetails() {
               {org.adminUserName || org.adminUserId || "-"}
             </p>
           </div>
+          <div>
+            <Label>Office Reservations Enabled</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {org.enableOfficeReservations ? "Yes" : "No"}
+            </p>
+          </div>
+          <div>
+            <Label>Reservation Menu Label</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {org.reservationMenuLabel || "Reservations"}
+            </p>
+          </div>
+          <div>
+            <Label>Hot Desk Licences</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {typeof org.hotDeskLicences === 'number' ? org.hotDeskLicences : 0}
+            </p>
+          </div>
+          <div>
+            <Label>Asset Tracking Allowed</Label>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+              {org.allowAssetTracking ? "Yes" : "No"}
+            </p>
+          </div>
         </div>
       </div>
     </div>

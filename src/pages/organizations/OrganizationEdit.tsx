@@ -5,16 +5,23 @@ import ComponentCard from "../../components/common/ComponentCard";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import FileInput from "../../components/form/input/FileInput";
+import Switch from "../../components/form/switch/Switch";
 
 export default function OrganizationEdit() {
   const { id } = useParams<{ id: string }>();
-    const { getOrganizationById, uploadLogo, updateBranding } = useOrganizationsApi();
+    const { getOrganizationById, uploadLogo, updateBranding, updateSettings } = useOrganizationsApi();
   const [org, setOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [primaryColor, setPrimaryColor] = useState<string>("");
   const [secondaryColor, setSecondaryColor] = useState<string>("");
+    const [enableOfficeReservations, setEnableOfficeReservations] = useState<boolean>(false);
+    const [reservationMenuLabel, setReservationMenuLabel] = useState<string>("");
+    const [hotDeskLicences, setHotDeskLicences] = useState<number>(0);
+  const [allowAssetTracking, setAllowAssetTracking] = useState<boolean>(false);
+  const [enableEmployeeDashboardMenu, setEnableEmployeeDashboardMenu] = useState<boolean>(false);
+  const [employeeDashboardName, setEmployeeDashboardName] = useState<string>("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const navigate = useNavigate();
 
@@ -31,6 +38,12 @@ export default function OrganizationEdit() {
           setOrg(data);
           setPrimaryColor(data.primaryColor ?? "");
           setSecondaryColor(data.secondaryColor ?? "");
+          setEnableOfficeReservations(!!data.enableOfficeReservations);
+          setReservationMenuLabel(data.reservationMenuLabel ?? "");
+          setHotDeskLicences(typeof data.hotDeskLicences === 'number' ? Math.max(0, data.hotDeskLicences || 0) : 0);
+          setAllowAssetTracking(!!data.allowAssetTracking);
+          setEnableEmployeeDashboardMenu(!!data.enableEmployeeDashboardMenu);
+          setEmployeeDashboardName(data.employeeDashboardName ?? "");
         }
       } catch (err: unknown) {
         if (err && typeof err === "object" && "message" in err) {
@@ -58,6 +71,22 @@ export default function OrganizationEdit() {
     if (!org || !id) return;
     setSaving(true);
     try {
+      // Validation
+      if (reservationMenuLabel && reservationMenuLabel.length > 100) {
+        setError("Reservation Menu Item Label must be at most 100 characters");
+        setSaving(false);
+        return;
+      }
+      if (employeeDashboardName && employeeDashboardName.length > 100) {
+        setError("Employee Dashboard Name must be at most 100 characters");
+        setSaving(false);
+        return;
+      }
+      if (!Number.isInteger(hotDeskLicences) || hotDeskLicences < 0) {
+        setError("Hot Desk Licences must be a non-negative integer");
+        setSaving(false);
+        return;
+      }
       // Update basic org fields (name/adminUserId)
       // Update branding colors if provided
       try {
@@ -67,6 +96,19 @@ export default function OrganizationEdit() {
         });
       } catch (err) {
         console.warn('Branding update failed', err);
+      }
+      // Update settings
+      try {
+        await updateSettings(id, {
+          enableOfficeReservations,
+          reservationMenuLabel: reservationMenuLabel ? reservationMenuLabel : null,
+          hotDeskLicences,
+          allowAssetTracking,
+          enableEmployeeDashboardMenu,
+          employeeDashboardName: employeeDashboardName ? employeeDashboardName : null,
+        });
+      } catch (err) {
+        console.warn('Settings update failed', err);
       }
       // Upload logo if selected
       if (logoFile) {
@@ -103,6 +145,65 @@ export default function OrganizationEdit() {
             value={org.name || ""}
             onChange={handleChange}
             required
+          />
+        </div>
+        <div>
+          <Switch
+            label="Allow Asset Tracking"
+            defaultChecked={allowAssetTracking}
+            onChange={(checked) => setAllowAssetTracking(checked)}
+          />
+        </div>
+        <div>
+          <Switch
+            label="Enable Users to Reserve Office Space"
+            defaultChecked={enableOfficeReservations}
+            onChange={(checked) => setEnableOfficeReservations(checked)}
+          />
+        </div>
+        <div>
+          <Switch
+            label="Enable Employee Dashboard Menu Item"
+            defaultChecked={enableEmployeeDashboardMenu}
+            onChange={(checked) => setEnableEmployeeDashboardMenu(checked)}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="reservationMenuLabel">Reservation Menu Item Label (optional, max 100)</Label>
+            <Input
+              id="reservationMenuLabel"
+              name="reservationMenuLabel"
+              value={reservationMenuLabel}
+              onChange={(e) => setReservationMenuLabel(e.target.value)}
+              hint="Defaults to 'Reservations' if empty"
+            />
+          </div>
+          <div>
+            <Label htmlFor="hotDeskLicences">Hot Desk Licences (min 0)</Label>
+            <Input
+              id="hotDeskLicences"
+              name="hotDeskLicences"
+              type="number"
+              value={hotDeskLicences}
+              onChange={(e) => {
+                const v = e.target.value;
+                const num = v === "" ? 0 : parseInt(v, 10);
+                setHotDeskLicences(Number.isNaN(num) ? 0 : Math.max(0, num));
+              }}
+              min="0"
+              step={1}
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="employeeDashboardName">Employee Dashboard Name (optional, max 100)</Label>
+          <Input
+            id="employeeDashboardName"
+            name="employeeDashboardName"
+            value={employeeDashboardName}
+            onChange={(e) => setEmployeeDashboardName(e.target.value)}
+            hint="Defaults to 'Employee Dashboard' if empty"
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
