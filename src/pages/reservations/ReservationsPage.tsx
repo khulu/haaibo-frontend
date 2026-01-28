@@ -4,7 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { DateSelectArg } from "@fullcalendar/core";
-import useLocationsApi, { LocationDto } from '../../hooks/api/useLocationsApi';
+import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/useLocationsApi';
 import useReservationsApi, { MarkerAvailability, ReservationDto } from '../../hooks/api/useReservationsApi';
 import ComponentCard from '../../components/common/ComponentCard';
 import Label from '../../components/form/Label';
@@ -17,7 +17,7 @@ type BookingModalData = {
 };
 
 export default function ReservationsPage() {
-  const { listTree } = useLocationsApi();
+  const { listTree, getMarkers } = useLocationsApi();
   const { getMarkerAvailability, createReservation, getReservations } = useReservationsApi();
   const calendarRef = useRef<FullCalendar>(null);
   
@@ -79,10 +79,40 @@ export default function ReservationsPage() {
     setSelectedLocation(location || null);
   };
 
+  const getMinimumTime = (dateStr: string): string => {
+    const selectedDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    // If selected date is today, minimum time is current time (rounded up to next hour)
+    if (selectedDate.getTime() === today.getTime()) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      // Round up to next hour if past the hour
+      const nextHour = currentMinute > 0 ? currentHour + 1 : currentHour;
+      return `${nextHour.toString().padStart(2, '0')}:00`;
+    }
+    
+    // For future dates, no minimum restriction
+    return '00:00';
+  };
+
   const handleDateClick = async (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     
     if (!selectedLocation) return;
+
+    // Set minimum start time based on selected date
+    const minTime = getMinimumTime(dateStr);
+    setStartTime(minTime < '09:00' ? '09:00' : minTime);
+    
+    // Ensure end time is at least 1 hour after start time
+    const startHour = parseInt(minTime < '09:00' ? '09:00' : minTime);
+    const endHour = Math.min(startHour + 8, 17);
+    setEndTime(`${endHour.toString().padStart(2, '0')}:00`);
 
     setBookingModalData({
       date: dateStr,
@@ -93,13 +123,35 @@ export default function ReservationsPage() {
     
     setLoading(true);
     try {
+      // Fetch all markers first
+      const markers: FloorplanMarker[] = await getMarkers(selectedLocation.id);
+      
+      // Then fetch availability for the selected time
       const availability = await getMarkerAvailability(
         selectedLocation.id, 
         dateStr,
         startTime,
         endTime
       );
-      setMarkerAvailability(availability);
+      
+      // Merge markers with availability data
+      const mergedData: MarkerAvailability[] = markers.map(marker => {
+        const availData = availability.find(a => a.markerId === marker.id);
+        return {
+          markerId: marker.id,
+          markerName: marker.name,
+          type: marker.type,
+          xPosition: marker.xPosition,
+          yPosition: marker.yPosition,
+          active: marker.active,
+          isAvailable: availData?.isAvailable ?? true,
+          isMyBooking: availData?.isMyBooking ?? false,
+          isOccupied: availData?.isOccupied ?? false,
+          reservations: availData?.reservations ?? [],
+        };
+      });
+      
+      setMarkerAvailability(mergedData);
       setShowBookingModal(true);
     } catch (err) {
       console.error('Failed to load availability:', err);
@@ -114,7 +166,10 @@ export default function ReservationsPage() {
     
     setLoading(true);
     try {
-      // Backend now handles time-based filtering and returns isAvailable, isOccupied, isMyBooking
+      // Fetch all markers
+      const markers: FloorplanMarker[] = await getMarkers(selectedLocation.id);
+      
+      // Fetch availability for the selected time
       const availability = await getMarkerAvailability(
         selectedLocation.id, 
         bookingModalData.date,
@@ -122,7 +177,24 @@ export default function ReservationsPage() {
         endTime
       );
       
-      setMarkerAvailability(availability);
+      // Merge markers with availability data
+      const mergedData: MarkerAvailability[] = markers.map(marker => {
+        const availData = availability.find(a => a.markerId === marker.id);
+        return {
+          markerId: marker.id,
+          markerName: marker.name,
+          type: marker.type,
+          xPosition: marker.xPosition,
+          yPosition: marker.yPosition,
+          active: marker.active,
+          isAvailable: availData?.isAvailable ?? true,
+          isMyBooking: availData?.isMyBooking ?? false,
+          isOccupied: availData?.isOccupied ?? false,
+          reservations: availData?.reservations ?? [],
+        };
+      });
+      
+      setMarkerAvailability(mergedData);
     } catch (err) {
       console.error('Failed to update availability:', err);
     } finally {
@@ -178,6 +250,30 @@ export default function ReservationsPage() {
 
   const handleSubmitBooking = async () => {
     if (!selectedMarkerId || !bookingModalData || !selectedLocation) return;
+
+    // Validate times
+    if (endTime <= startTime) {
+      alert('End time must be after start time');
+      return;
+    }
+
+    // Validate start time is not in the past for today
+    const selectedDate = new Date(bookingModalData.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate.getTime() === today.getTime()) {
+      const now = new Date();
+      const [startHour, startMinute] = startTime.split(':').map(Number);
+      const startDateTime = new Date();
+      startDateTime.setHours(startHour, startMinute, 0, 0);
+      
+      if (startDateTime < now) {
+        alert('Start time cannot be in the past');
+        return;
+      }
+    }
 
     setLoading(true);
     try {
@@ -317,29 +413,70 @@ export default function ReservationsPage() {
                     <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                       Start Time
                     </label>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => {
-                        setStartTime(e.target.value);
-                        updateMarkerAvailabilityByTime();
-                      }}
-                      className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    />
+                    <div className="relative">
+                      <input
+                        type="time"
+                        value={startTime}
+                        min={bookingModalData ? getMinimumTime(bookingModalData.date) : undefined}
+                        onClick={(e) => e.currentTarget.showPicker()}
+                        onChange={(e) => {
+                          const newStartTime = e.target.value;
+                          const minTime = bookingModalData ? getMinimumTime(bookingModalData.date) : '00:00';
+                          
+                          if (newStartTime < minTime) {
+                            alert('Start time cannot be in the past');
+                            return;
+                          }
+                          
+                          setStartTime(newStartTime);
+                          
+                          // Auto-adjust end time if it's before or too close to start time
+                          if (endTime <= newStartTime) {
+                            const [hour, minute] = newStartTime.split(':').map(Number);
+                            const newEndHour = Math.min(hour + 1, 23);
+                            setEndTime(`${newEndHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+                          }
+                          
+                          updateMarkerAvailabilityByTime();
+                        }}
+                        className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                      />
+                      <span className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg className="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M3.04175 9.99984C3.04175 6.15686 6.1571 3.0415 10.0001 3.0415C13.8431 3.0415 16.9584 6.15686 16.9584 9.99984C16.9584 13.8428 13.8431 16.9582 10.0001 16.9582C6.1571 16.9582 3.04175 13.8428 3.04175 9.99984ZM10.0001 1.5415C5.32867 1.5415 1.54175 5.32843 1.54175 9.99984C1.54175 14.6712 5.32867 18.4582 10.0001 18.4582C14.6715 18.4582 18.4584 14.6712 18.4584 9.99984C18.4584 5.32843 14.6715 1.5415 10.0001 1.5415ZM9.99998 10.7498C9.58577 10.7498 9.24998 10.4141 9.24998 9.99984V5.4165C9.24998 5.00229 9.58577 4.6665 9.99998 4.6665C10.4142 4.6665 10.75 5.00229 10.75 5.4165V9.24984H13.3334C13.7476 9.24984 14.0834 9.58562 14.0834 9.99984C14.0834 10.4141 13.7476 10.7498 13.3334 10.7498H10.0001H9.99998Z" fill=""></path>
+                        </svg>
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                       End Time
                     </label>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => {
-                        setEndTime(e.target.value);
-                        updateMarkerAvailabilityByTime();
-                      }}
-                      className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    />
+                    <div className="relative">
+                      <input
+                        type="time"
+                        value={endTime}
+                        min={startTime}
+                        onClick={(e) => e.currentTarget.showPicker()}
+                        onChange={(e) => {
+                          const newEndTime = e.target.value;
+                          
+                          if (newEndTime <= startTime) {
+                            alert('End time must be after start time');
+                            return;
+                          }
+                          
+                          setEndTime(newEndTime);
+                          updateMarkerAvailabilityByTime();
+                        }}
+                        className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                      />
+                      <span className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg className="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M3.04175 9.99984C3.04175 6.15686 6.1571 3.0415 10.0001 3.0415C13.8431 3.0415 16.9584 6.15686 16.9584 9.99984C16.9584 13.8428 13.8431 16.9582 10.0001 16.9582C6.1571 16.9582 3.04175 13.8428 3.04175 9.99984ZM10.0001 1.5415C5.32867 1.5415 1.54175 5.32843 1.54175 9.99984C1.54175 14.6712 5.32867 18.4582 10.0001 18.4582C14.6715 18.4582 18.4584 14.6712 18.4584 9.99984C18.4584 5.32843 14.6715 1.5415 10.0001 1.5415ZM9.99998 10.7498C9.58577 10.7498 9.24998 10.4141 9.24998 9.99984V5.4165C9.24998 5.00229 9.58577 4.6665 9.99998 4.6665C10.4142 4.6665 10.75 5.00229 10.75 5.4165V9.24984H13.3334C13.7476 9.24984 14.0834 9.58562 14.0834 9.99984C14.0834 10.4141 13.7476 10.7498 13.3334 10.7498H10.0001H9.99998Z" fill=""></path>
+                        </svg>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
