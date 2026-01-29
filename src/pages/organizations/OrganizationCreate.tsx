@@ -18,10 +18,9 @@ export default function OrganizationCreate() {
   const [secondaryColor, setSecondaryColor] = useState<string>("");
   const [enableOfficeReservations, setEnableOfficeReservations] = useState<boolean>(false);
   const [reservationMenuLabel, setReservationMenuLabel] = useState<string>("");
+  const [reportingReservationsMenuLabel, setReportingReservationsMenuLabel] = useState<string>("");
   const [hotDeskLicences, setHotDeskLicences] = useState<number>(0);
   const [allowAssetTracking, setAllowAssetTracking] = useState<boolean>(false);
-  const [enableEmployeeDashboardMenu, setEnableEmployeeDashboardMenu] = useState<boolean>(false);
-  const [employeeDashboardName, setEmployeeDashboardName] = useState<string>("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,8 +46,8 @@ export default function OrganizationCreate() {
         setLoading(false);
         return;
       }
-      if (employeeDashboardName && employeeDashboardName.length > 100) {
-        setError("Employee Dashboard Name must be at most 100 characters");
+      if (reportingReservationsMenuLabel && reportingReservationsMenuLabel.length > 100) {
+        setError("Reporting Reservations Menu Label must be at most 100 characters");
         setLoading(false);
         return;
       }
@@ -63,10 +62,9 @@ export default function OrganizationCreate() {
         adminUserId: form.adminUserId && form.adminUserId.trim() !== "" ? form.adminUserId : null,
         enableOfficeReservations,
         reservationMenuLabel: reservationMenuLabel ? reservationMenuLabel : null,
+        reportingReservationsMenuLabel: reportingReservationsMenuLabel ? reportingReservationsMenuLabel : null,
         hotDeskLicences: hotDeskLicences,
         allowAssetTracking,
-        enableEmployeeDashboardMenu,
-        employeeDashboardName: employeeDashboardName ? employeeDashboardName : null,
       };
       const created = await createOrganization(payload);
       // Optional: upload logo
@@ -127,13 +125,6 @@ export default function OrganizationCreate() {
             onChange={(checked) => setEnableOfficeReservations(checked)}
           />
         </div>
-        <div>
-          <Switch
-            label="Enable Employee Dashboard Menu Item"
-            defaultChecked={enableEmployeeDashboardMenu}
-            onChange={(checked) => setEnableEmployeeDashboardMenu(checked)}
-          />
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="reservationMenuLabel">Reservation Menu Item Label (optional, max 100)</Label>
@@ -143,6 +134,7 @@ export default function OrganizationCreate() {
               value={reservationMenuLabel}
               onChange={(e) => setReservationMenuLabel(e.target.value)}
               hint="Defaults to 'Reservations' if empty"
+              disabled={!enableOfficeReservations}
             />
           </div>
           <div>
@@ -159,17 +151,19 @@ export default function OrganizationCreate() {
               }}
               min="0"
               step={1}
+              disabled={!enableOfficeReservations}
             />
           </div>
         </div>
         <div>
-          <Label htmlFor="employeeDashboardName">Employee Dashboard Name (optional, max 100)</Label>
+          <Label htmlFor="reportingReservationsMenuLabel">Reporting Reservations Menu Label (optional, max 100)</Label>
           <Input
-            id="employeeDashboardName"
-            name="employeeDashboardName"
-            value={employeeDashboardName}
-            onChange={(e) => setEmployeeDashboardName(e.target.value)}
-            hint="Defaults to 'Employee Dashboard' if empty"
+            id="reportingReservationsMenuLabel"
+            name="reportingReservationsMenuLabel"
+            value={reportingReservationsMenuLabel}
+            onChange={(e) => setReportingReservationsMenuLabel(e.target.value)}
+            hint="Shown as the label for Reporting → Reservations in the sidebar/top menu. Defaults to 'Reservations Report' if empty"
+            disabled={!enableOfficeReservations}
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

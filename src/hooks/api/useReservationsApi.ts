@@ -26,6 +26,11 @@ export type CreateReservationDto = {
   endTime: string;
 };
 
+export type AvailabilityResponse = {
+  markerId: string;
+  booked: boolean;
+};
+
 export type MarkerAvailability = {
   markerId: string;
   markerName: string;
@@ -64,7 +69,7 @@ const useReservationsApi = () => {
     date: string,
     startTime?: string,
     endTime?: string
-  ): Promise<MarkerAvailability[]> => {
+  ): Promise<AvailabilityResponse[]> => {
     const params: Record<string, string> = { date };
     if (startTime) params.start = startTime;
     if (endTime) params.end = endTime;
@@ -76,7 +81,7 @@ const useReservationsApi = () => {
       params,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    return response.data as MarkerAvailability[];
+    return response.data as AvailabilityResponse[];
   };
 
   const createReservation = async (

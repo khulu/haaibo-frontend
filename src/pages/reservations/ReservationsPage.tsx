@@ -5,7 +5,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { DateSelectArg } from "@fullcalendar/core";
 import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/useLocationsApi';
-import useReservationsApi, { MarkerAvailability, ReservationDto } from '../../hooks/api/useReservationsApi';
+import useReservationsApi, { MarkerAvailability, ReservationDto, AvailabilityResponse } from '../../hooks/api/useReservationsApi';
 import ComponentCard from '../../components/common/ComponentCard';
 import Label from '../../components/form/Label';
 
@@ -109,9 +109,9 @@ export default function ReservationsPage() {
     const minTime = getMinimumTime(dateStr);
     setStartTime(minTime < '09:00' ? '09:00' : minTime);
     
-    // Ensure end time is at least 1 hour after start time
+    // Ensure end time is 1 hour after start time
     const startHour = parseInt(minTime < '09:00' ? '09:00' : minTime);
-    const endHour = Math.min(startHour + 8, 17);
+    const endHour = Math.min(startHour + 1, 23);
     setEndTime(`${endHour.toString().padStart(2, '0')}:00`);
 
     setBookingModalData({
@@ -136,7 +136,8 @@ export default function ReservationsPage() {
       
       // Merge markers with availability data
       const mergedData: MarkerAvailability[] = markers.map(marker => {
-        const availData = availability.find(a => a.markerId === marker.id);
+        const availData = availability.find((a: AvailabilityResponse) => a.markerId === marker.id);
+        const isBooked = availData?.booked ?? false;
         return {
           markerId: marker.id,
           markerName: marker.name,
@@ -144,10 +145,10 @@ export default function ReservationsPage() {
           xPosition: marker.xPosition,
           yPosition: marker.yPosition,
           active: marker.active,
-          isAvailable: availData?.isAvailable ?? true,
-          isMyBooking: availData?.isMyBooking ?? false,
-          isOccupied: availData?.isOccupied ?? false,
-          reservations: availData?.reservations ?? [],
+          isAvailable: !isBooked,
+          isMyBooking: false,
+          isOccupied: isBooked,
+          reservations: [],
         };
       });
       
@@ -179,7 +180,8 @@ export default function ReservationsPage() {
       
       // Merge markers with availability data
       const mergedData: MarkerAvailability[] = markers.map(marker => {
-        const availData = availability.find(a => a.markerId === marker.id);
+        const availData = availability.find((a: AvailabilityResponse) => a.markerId === marker.id);
+        const isBooked = availData?.booked ?? false;
         return {
           markerId: marker.id,
           markerName: marker.name,
@@ -187,10 +189,10 @@ export default function ReservationsPage() {
           xPosition: marker.xPosition,
           yPosition: marker.yPosition,
           active: marker.active,
-          isAvailable: availData?.isAvailable ?? true,
-          isMyBooking: availData?.isMyBooking ?? false,
-          isOccupied: availData?.isOccupied ?? false,
-          reservations: availData?.reservations ?? [],
+          isAvailable: !isBooked,
+          isMyBooking: false,
+          isOccupied: isBooked,
+          reservations: [],
         };
       });
       
@@ -277,6 +279,23 @@ export default function ReservationsPage() {
 
     setLoading(true);
     try {
+      // Refresh availability before submitting to ensure seat is still available
+      const availability = await getMarkerAvailability(
+        selectedLocation.id,
+        bookingModalData.date,
+        startTime,
+        endTime
+      );
+
+      const selectedMarkerData = availability.find((a: AvailabilityResponse) => a.markerId === selectedMarkerId);
+      const isBooked = selectedMarkerData?.booked ?? false;
+      if (isBooked) {
+        alert('This seat is no longer available for the selected time. Please choose another seat.');
+        await updateMarkerAvailabilityByTime();
+        setSelectedMarkerId(null);
+        return;
+      }
+
       await createReservation(selectedLocation.id, {
         markerId: selectedMarkerId,
         date: bookingModalData.date,
@@ -286,9 +305,31 @@ export default function ReservationsPage() {
       alert('Booking created successfully!');
       setShowBookingModal(false);
       setSelectedMarkerId(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to create booking:', err);
-      alert('Failed to create booking');
+      
+      // Extract error message from API response
+      let errorMessage = 'Failed to create booking';
+      const error = err as { response?: { data?: { title?: string; errors?: Record<string, string | string[]> } }; message?: string };
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.title) {
+          errorMessage = errorData.title;
+        }
+        if (errorData.errors) {
+          const errorDetails = Object.entries(errorData.errors)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join('\n');
+          errorMessage += '\n\n' + errorDetails;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
+      
+      // Refresh availability after error
+      await updateMarkerAvailabilityByTime();
     } finally {
       setLoading(false);
     }
@@ -333,6 +374,7 @@ export default function ReservationsPage() {
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
+              initialDate={new Date()}
               headerToolbar={{
                 left: "prev,next today",
                 center: "title",
@@ -347,7 +389,19 @@ export default function ReservationsPage() {
                 return selectedDate >= today;
               }}
               validRange={{
-                start: new Date().toISOString().split('T')[0],
+                start: new Date(),
+              }}
+              showNonCurrentDates={false}
+              dayCellClassNames={(arg) => {
+                const cellDate = new Date(arg.date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                cellDate.setHours(0, 0, 0, 0);
+                
+                if (cellDate < today) {
+                  return ['opacity-30', 'pointer-events-none', 'cursor-not-allowed'];
+                }
+                return [];
               }}
             />
           </div>

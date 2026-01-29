@@ -18,10 +18,9 @@ export default function OrganizationEdit() {
   const [secondaryColor, setSecondaryColor] = useState<string>("");
     const [enableOfficeReservations, setEnableOfficeReservations] = useState<boolean>(false);
     const [reservationMenuLabel, setReservationMenuLabel] = useState<string>("");
+    const [reportingReservationsMenuLabel, setReportingReservationsMenuLabel] = useState<string>("");
     const [hotDeskLicences, setHotDeskLicences] = useState<number>(0);
   const [allowAssetTracking, setAllowAssetTracking] = useState<boolean>(false);
-  const [enableEmployeeDashboardMenu, setEnableEmployeeDashboardMenu] = useState<boolean>(false);
-  const [employeeDashboardName, setEmployeeDashboardName] = useState<string>("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const navigate = useNavigate();
 
@@ -40,10 +39,9 @@ export default function OrganizationEdit() {
           setSecondaryColor(data.secondaryColor ?? "");
           setEnableOfficeReservations(!!data.enableOfficeReservations);
           setReservationMenuLabel(data.reservationMenuLabel ?? "");
+          setReportingReservationsMenuLabel(data.reportingReservationsMenuLabel ?? "");
           setHotDeskLicences(typeof data.hotDeskLicences === 'number' ? Math.max(0, data.hotDeskLicences || 0) : 0);
           setAllowAssetTracking(!!data.allowAssetTracking);
-          setEnableEmployeeDashboardMenu(!!data.enableEmployeeDashboardMenu);
-          setEmployeeDashboardName(data.employeeDashboardName ?? "");
         }
       } catch (err: unknown) {
         if (err && typeof err === "object" && "message" in err) {
@@ -77,8 +75,8 @@ export default function OrganizationEdit() {
         setSaving(false);
         return;
       }
-      if (employeeDashboardName && employeeDashboardName.length > 100) {
-        setError("Employee Dashboard Name must be at most 100 characters");
+      if (reportingReservationsMenuLabel && reportingReservationsMenuLabel.length > 100) {
+        setError("Reporting Reservations Menu Label must be at most 100 characters");
         setSaving(false);
         return;
       }
@@ -102,10 +100,9 @@ export default function OrganizationEdit() {
         await updateSettings(id, {
           enableOfficeReservations,
           reservationMenuLabel: reservationMenuLabel ? reservationMenuLabel : null,
+          reportingReservationsMenuLabel: reportingReservationsMenuLabel ? reportingReservationsMenuLabel : null,
           hotDeskLicences,
           allowAssetTracking,
-          enableEmployeeDashboardMenu,
-          employeeDashboardName: employeeDashboardName ? employeeDashboardName : null,
         });
       } catch (err) {
         console.warn('Settings update failed', err);
@@ -161,13 +158,6 @@ export default function OrganizationEdit() {
             onChange={(checked) => setEnableOfficeReservations(checked)}
           />
         </div>
-        <div>
-          <Switch
-            label="Enable Employee Dashboard Menu Item"
-            defaultChecked={enableEmployeeDashboardMenu}
-            onChange={(checked) => setEnableEmployeeDashboardMenu(checked)}
-          />
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="reservationMenuLabel">Reservation Menu Item Label (optional, max 100)</Label>
@@ -177,6 +167,7 @@ export default function OrganizationEdit() {
               value={reservationMenuLabel}
               onChange={(e) => setReservationMenuLabel(e.target.value)}
               hint="Defaults to 'Reservations' if empty"
+              disabled={!enableOfficeReservations}
             />
           </div>
           <div>
@@ -193,17 +184,19 @@ export default function OrganizationEdit() {
               }}
               min="0"
               step={1}
+              disabled={!enableOfficeReservations}
             />
           </div>
         </div>
         <div>
-          <Label htmlFor="employeeDashboardName">Employee Dashboard Name (optional, max 100)</Label>
+          <Label htmlFor="reportingReservationsMenuLabel">Reporting Reservations Menu Label (optional, max 100)</Label>
           <Input
-            id="employeeDashboardName"
-            name="employeeDashboardName"
-            value={employeeDashboardName}
-            onChange={(e) => setEmployeeDashboardName(e.target.value)}
-            hint="Defaults to 'Employee Dashboard' if empty"
+            id="reportingReservationsMenuLabel"
+            name="reportingReservationsMenuLabel"
+            value={reportingReservationsMenuLabel}
+            onChange={(e) => setReportingReservationsMenuLabel(e.target.value)}
+            hint="Shown as the label for Reporting → Reservations in the sidebar/top menu. Defaults to 'Reservations Report' if empty"
+            disabled={!enableOfficeReservations}
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

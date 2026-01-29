@@ -34,6 +34,7 @@ const ContactCreate = lazy(() => import("./pages/contacts/ContactCreate"));
 const ContactEdit = lazy(() => import("./pages/contacts/ContactEdit"));
 const ContactsBulkUpload = lazy(() => import("./pages/contacts/ContactsBulkUpload"));
 const ReportsPage = lazy(() => import("./pages/reports/ReportsPage"));
+const ReservationReports = lazy(() => import("./pages/reservation_reports/ReservationReports"));
 const OrganizationsPage = lazy(() => import("./pages/organizations/OrganizationsPage"));
 const OrganizationDetails = lazy(() => import("./pages/organizations/OrganizationDetails"));
 const OrganizationCreate = lazy(() => import("./pages/organizations/OrganizationCreate"));
@@ -332,6 +333,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <ReservationsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/reservation-reports"
+              element={
+                <PrivateRoute>
+                  <ReservationReports />
                 </PrivateRoute>
               }
             />

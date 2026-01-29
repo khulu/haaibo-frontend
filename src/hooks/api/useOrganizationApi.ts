@@ -13,6 +13,7 @@ export interface Organization {
   adminUserName?: string | null;
   enableOfficeReservations?: boolean | null;
   reservationMenuLabel?: string | null;
+  reportingReservationsMenuLabel?: string | null;
   hotDeskLicences?: number | null;
   allowAssetTracking?: boolean | null;
   enableEmployeeDashboardMenu?: boolean | null;
@@ -26,6 +27,7 @@ export type CreateOrganizationInput = {
   adminUserId?: string | null;
   enableOfficeReservations?: boolean;
   reservationMenuLabel?: string | null;
+  reportingReservationsMenuLabel?: string | null;
   hotDeskLicences?: number | null;
   allowAssetTracking?: boolean;
   enableEmployeeDashboardMenu?: boolean;
@@ -158,12 +160,13 @@ const useOrganizationsApi = () => {
     }
   };
 
-  // Update settings: enableOfficeReservations, reservationMenuLabel, hotDeskLicences, allowAssetTracking, enableEmployeeDashboardMenu, employeeDashboardName
+  // Update settings: enableOfficeReservations, reservationMenuLabel, reportingReservationsMenuLabel, hotDeskLicences, allowAssetTracking, enableEmployeeDashboardMenu, employeeDashboardName
   const updateSettings = async (
     id: string,
     settings: {
       enableOfficeReservations?: boolean;
       reservationMenuLabel?: string | null;
+      reportingReservationsMenuLabel?: string | null;
       hotDeskLicences?: number | null;
       allowAssetTracking?: boolean;
       enableEmployeeDashboardMenu?: boolean;
@@ -185,6 +188,23 @@ const useOrganizationsApi = () => {
     }
   };
 
+  // Export QR codes as PDF
+  const exportQRCodesPDF = async (id: string): Promise<Blob> => {
+    try {
+      const response = await axios.request({
+        baseURL,
+        url: `/companies/${id}/export-qr-pdf`,
+        method: 'GET',
+        responseType: 'blob',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data as Blob;
+    } catch (error) {
+      console.error('exportQRCodesPDF error:', error);
+      throw error;
+    }
+  };
+
   return {
     getOrganizations,
     createOrganization,
@@ -194,6 +214,7 @@ const useOrganizationsApi = () => {
     uploadLogo,
     updateBranding,
     updateSettings,
+    exportQRCodesPDF,
   };
 };
 

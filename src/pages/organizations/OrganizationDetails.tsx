@@ -6,9 +6,10 @@ import Label from "../../components/form/Label";
 
 export default function OrganizationDetails() {
   const { id } = useParams<{ id: string }>();
-  const { getOrganizationById } = useOrganizationsApi();
+  const { getOrganizationById, exportQRCodesPDF } = useOrganizationsApi();
   const [org, setOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -30,6 +31,41 @@ export default function OrganizationDetails() {
     })();
       // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const handleExportQRCodes = async () => {
+    if (!id || !org) return;
+    
+    setExporting(true);
+    try {
+      const blob = await exportQRCodesPDF(id);
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Use company name for filename, sanitize it
+      const sanitizedName = org.name?.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '') || 'company';
+      a.download = `${sanitizedName}-qrcodes.pdf`;
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      console.error('Failed to export QR codes:', err);
+      let errorMessage = 'Failed to export QR codes';
+      if (err && typeof err === 'object' && 'message' in err) {
+        errorMessage = (err as { message?: string }).message || errorMessage;
+      }
+      setError(errorMessage);
+      
+      // Clear error after 5 seconds
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setExporting(false);
+    }
+  };
 
 
 
@@ -64,6 +100,14 @@ export default function OrganizationDetails() {
         </div>
 
         <div className="flex gap-4">
+          <button
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleExportQRCodes}
+            disabled={exporting}
+          >
+            {exporting ? 'Exporting...' : 'Export QR Codes'}
+          </button>
+          
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded"
             onClick={() => navigate(`/organizations/edit/${org.id}`)}

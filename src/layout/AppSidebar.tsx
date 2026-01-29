@@ -162,6 +162,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   const [companyDetails, setCompanyDetails] = useState<{
     enableOfficeReservations?: boolean | null;
     reservationMenuLabel?: string | null;
+    reportingReservationsMenuLabel?: string | null;
+    allowAssetTracking?: boolean | null;
     enableEmployeeDashboardMenu?: boolean | null;
     employeeDashboardName?: string | null;
   } | null>(null);
@@ -192,6 +194,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
           setCompanyDetails({
             enableOfficeReservations: org.enableOfficeReservations ?? null,
             reservationMenuLabel: org.reservationMenuLabel ?? null,
+            reportingReservationsMenuLabel: org.reportingReservationsMenuLabel ?? null,
+            allowAssetTracking: org.allowAssetTracking ?? null,
             enableEmployeeDashboardMenu: org.enableEmployeeDashboardMenu ?? null,
             employeeDashboardName: org.employeeDashboardName ?? null,
           });
@@ -406,6 +410,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
         path: "/reservations",
       });
     }
+    // Show Reporting Reservations menu item if label is not empty
+    if (companyDetails?.reportingReservationsMenuLabel?.trim()) {
+      items.push({
+        icon: <BoxCubeIcon />,
+        name: companyDetails.reportingReservationsMenuLabel,
+        path: "/reservation-reports",
+      });
+    }
     // Show Employee Dashboard menu item if enabled and user role is 'Employee'
     if (companyDetails?.enableEmployeeDashboardMenu && (role === 'Employee' || role === 2)) {
       items.push({
@@ -424,6 +436,25 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     if (item.name === "Admin") {
       return role === 0 || role === "SuperAdmin" || role === 1 || role === "Admin";
     }
+    
+    // Hide asset tracking related items if allowAssetTracking is false (except for SuperAdmin)
+    const isSuperAdmin = role === 0 || role === "SuperAdmin";
+    if (!isSuperAdmin && companyDetails?.allowAssetTracking === false) {
+      const assetTrackingItems = [
+        "Collections",
+        "Bookings",
+        "Locations",
+        "Issues",
+        "Events",
+        "Devices",
+        "Reminders",
+        "Reports"
+      ];
+      if (assetTrackingItems.includes(item.name)) {
+        return false;
+      }
+    }
+    
     return true;
   });
 
