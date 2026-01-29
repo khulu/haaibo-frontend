@@ -44,8 +44,25 @@ const postLogin = usePostLogin(email, password);
     if (!valid) return;
 
     postLogin.mutate(undefined, {
-      onSuccess: () => {
-        navigate("/");
+      onSuccess: (data: any) => {
+        // Prefer role from response, fallback to stored user
+        const respUser = data?.user;
+        let role = respUser?.role;
+        if (!role) {
+          try {
+            const raw = localStorage.getItem('user');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              role = parsed?.role;
+            }
+          } catch {}
+        }
+
+        if (role === 'Employee' || role === 2) {
+          navigate('/employee-dashboard');
+        } else {
+          navigate('/');
+        }
       },
     });
   };

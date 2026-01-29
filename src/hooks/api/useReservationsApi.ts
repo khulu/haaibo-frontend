@@ -8,12 +8,19 @@ export type ReservationDto = {
   markerId: string;
   userId: string;
   userName?: string;
+  userEmail?: string;
   locationId: string;
   locationName?: string;
   markerName?: string;
+  status?: string;
   date: string; // ISO date (YYYY-MM-DD)
-  startTime: string; // ISO datetime or time string
-  endTime: string; // ISO datetime or time string
+  // API may return start/end in different casings; keep both optional for compatibility
+  startTime?: string; // ISO datetime or time string
+  endTime?: string; // ISO datetime or time string
+  Start?: string;
+  End?: string;
+  start?: string;
+  end?: string;
   companyId: string;
   createdAt: string;
   updatedAt: string;
@@ -44,19 +51,38 @@ export type MarkerAvailability = {
   reservations: ReservationDto[];
 };
 
+export type MostUsedMarker = { markerId: string; markerName: string; count: number };
+export type HourBucket = { day: number; hour: number; count: number };
+export type ReservationSummaryDto = {
+  totalBookings: number;
+  totalHoursBooked: number;
+  totalHoursUsed: number;
+  checkedInCount: number;
+  cancelledCount: number;
+  noShowCount: number;
+  averageBookingDurationMinutes: number;
+  checkinRatePercent: number;
+  mostUsedMarkers: MostUsedMarker[];
+  buckets: HourBucket[];
+  from: string;
+  to: string;
+};
+
 const useReservationsApi = () => {
   const axios = useAxios();
   const auth = getAuth();
   const token = auth.getToken();
 
   const getReservations = async (params?: {
+    companyId?: string;
     locationId?: string;
     date?: string;
     userId?: string;
   }): Promise<ReservationDto[]> => {
     const response = await axios.request({
       baseURL,
-      url: '/reservations',
+      // endpoint provided by the API controller
+      url: '/locations/reservations',
       method: 'GET',
       params,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -117,12 +143,61 @@ const useReservationsApi = () => {
     return response.data as ReservationDto[];
   };
 
+  const exportReservations = async (
+    format: 'csv' | 'pdf',
+    params?: { companyId?: string; locationId?: string; userId?: string; date?: string }
+  ): Promise<Blob> => {
+    const response = await axios.request({
+      baseURL,
+      url: '/reports/reservations/export',
+      method: 'POST',
+      params: { format },
+      data: params || {},
+      responseType: 'blob',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data as Blob;
+  };
+
+  const getReservationSummary = async (params: { userId?: string; companyId?: string; locationId?: string; dateFrom?: string; dateTo?: string }): Promise<ReservationSummaryDto> => {
+    const response = await axios.request({
+      baseURL,
+      url: '/reports/reservations/summary',
+      method: 'GET',
+      params: {
+        ...(params.userId ? { userId: params.userId } : {}),
+        ...(params.companyId ? { companyId: params.companyId } : {}),
+        ...(params.locationId ? { locationId: params.locationId } : {}),
+        ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}),
+        ...(params.dateTo ? { dateTo: params.dateTo } : {}),
+      },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (response.status === 401) throw new Error('Unauthorized');
+    return response.data as ReservationSummaryDto;
+  };
+
+  const getUserUpcomingReservations = async (userId: string, take?: number): Promise<ReservationDto[]> => {
+    const response = await axios.request({
+      baseURL,
+      url: `/Users/${userId}/reservations/upcoming`,
+      method: 'GET',
+      params: typeof take === 'number' ? { take } : {},
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (response.status === 401) throw new Error('Unauthorized');
+    return response.data as ReservationDto[];
+  };
+
   return {
     getReservations,
     getMarkerAvailability,
     createReservation,
     deleteReservation,
     getMyReservations,
+    exportReservations,
+    getReservationSummary,
+    getUserUpcomingReservations,
   };
 };
 

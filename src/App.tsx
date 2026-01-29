@@ -35,6 +35,7 @@ const ContactEdit = lazy(() => import("./pages/contacts/ContactEdit"));
 const ContactsBulkUpload = lazy(() => import("./pages/contacts/ContactsBulkUpload"));
 const ReportsPage = lazy(() => import("./pages/reports/ReportsPage"));
 const ReservationReports = lazy(() => import("./pages/reservation_reports/ReservationReports"));
+const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
 const OrganizationsPage = lazy(() => import("./pages/organizations/OrganizationsPage"));
 const OrganizationDetails = lazy(() => import("./pages/organizations/OrganizationDetails"));
 const OrganizationCreate = lazy(() => import("./pages/organizations/OrganizationCreate"));
@@ -341,6 +342,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <ReservationReports />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/employee-dashboard"
+              element={
+                <PrivateRoute>
+                  <EmployeeDashboard />
                 </PrivateRoute>
               }
             />

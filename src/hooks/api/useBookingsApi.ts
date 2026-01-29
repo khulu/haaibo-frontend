@@ -37,6 +37,7 @@ export type CreateBookingsPayload = {
   companyId?: string | null;
 };
 
+
 const useBookingsApi = () => {
   const axios = useAxios();
   const tokenApi = getToken();

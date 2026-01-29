@@ -429,7 +429,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     return items;
   })();
 
-  const filteredNavItems = dynamicNavItems.filter(item => {
+  const isEmployee = role === 'Employee' || role === 2;
+
+  let filteredNavItems = dynamicNavItems.filter(item => {
     if (item.name === "Organizations") {
       return role === 0 || role === "SuperAdmin";
     }
@@ -443,7 +445,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       const assetTrackingItems = [
         "Collections",
         "Bookings",
-        "Locations",
+        // Keep `Locations` visible to company Admins even when asset tracking is disabled
+        // so admins can manage locations independently of asset tracking settings.
+        // "Locations",
         "Issues",
         "Events",
         "Devices",
@@ -453,10 +457,34 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       if (assetTrackingItems.includes(item.name)) {
         return false;
       }
+      // allow Locations for company admins (role === 1 or 'Admin') and super admins
+      if (item.name === 'Locations' && (role === 1 || role === 'Admin' || isSuperAdmin)) {
+        return true;
+      }
+      // otherwise, if item is Locations and not allowed above, hide it
+      if (item.name === 'Locations') return false;
     }
     
     return true;
   });
+
+  // If user is an employee, restrict the sidebar to only Employee Dashboard and Reservations
+  if (isEmployee) {
+    const employeeItems: NavItem[] = [];
+    // Employee Dashboard (show even if companyDetails flag is false — employees expect this route)
+    employeeItems.push({
+      icon: <GridIcon />,
+      name: companyDetails?.employeeDashboardName || 'Employee Dashboard',
+      path: '/employee-dashboard',
+    });
+    // Reservations (use company label when available)
+    employeeItems.push({
+      icon: <BoxCubeIcon />,
+      name: companyDetails?.reservationMenuLabel || 'Reservations',
+      path: '/reservations',
+    });
+    filteredNavItems = employeeItems;
+  }
 
   return (
     <aside

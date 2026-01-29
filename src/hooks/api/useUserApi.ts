@@ -2,6 +2,7 @@ import useAxios from './useAxios';
 import getToken from './useAuthApi';
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 import getCompanyId from "@hooks/api/useAuthApi";
+import type { ReservationDto } from '@hooks/api/useReservationsApi';
 
 export interface User {
   id: string;
@@ -88,6 +89,23 @@ const useUserApi = () => {
       return response.data;
     } catch (error) {
       console.error('getUsersByCompany error:', error);
+      throw error;
+    }
+  };
+
+  // Get upcoming reservations for a specific user (convenience wrapper)
+  const getUserUpcomingReservations = async (userId: string, take?: number): Promise<ReservationDto[]> => {
+    try {
+      const response = await axios.request({
+        baseURL,
+        url: `/Users/${userId}/reservations/upcoming`,
+        method: 'GET',
+        params: typeof take === 'number' ? { take } : undefined,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data as ReservationDto[];
+    } catch (error) {
+      console.error('getUserUpcomingReservations error:', error);
       throw error;
     }
   };
@@ -218,6 +236,7 @@ const useUserApi = () => {
     getRoles,
     bulkUploadUsers,
     getTotalUsers,
+    getUserUpcomingReservations,
   };
 };
 

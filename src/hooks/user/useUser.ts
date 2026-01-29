@@ -1,5 +1,6 @@
 import useUsersApi from '@hooks/api/useUserApi';
 import type { CreateUserInput, User } from '@hooks/api/useUserApi'; 
+import type { ReservationDto } from '@hooks/api/useReservationsApi';
 import {
   useQuery,
   useMutation,
@@ -72,6 +73,16 @@ const useUser = () => {
       queryFn: () => api.getTotalUsers(companyId),
     });
 
+  const useUserUpcomingReservations = (userId?: string, take?: number) =>
+    useQuery({
+      queryKey: ['users', 'upcomingReservations', userId, take],
+      queryFn: () => {
+        if (!userId) return Promise.resolve([] as ReservationDto[]);
+        return api.getUserUpcomingReservations(userId, take);
+      },
+      enabled: Boolean(userId),
+    });
+
 
   return {
     useUserList,
@@ -79,6 +90,7 @@ const useUser = () => {
     deleteSingleUser,
     bulkUploadUsers,
     useTotalUsers,
+    useUserUpcomingReservations,
   };
 };
 
