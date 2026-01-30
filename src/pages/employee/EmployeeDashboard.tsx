@@ -183,9 +183,9 @@ export default function EmployeeDashboard() {
                   ) : (
                     (upcomingReservations ?? []).filter(b => new Date(b.startDate) <= new Date(Date.now() + 7*24*60*60*1000)).map((b) => (
                       <TableRow key={b.id}>
-                        <TableCell className="px-5 py-4">{b.markerName || b.assigneeUserName || '-'}</TableCell>
-                        <TableCell className="px-5 py-4">{new Date(b.startDate).toLocaleString()}</TableCell>
-                        <TableCell className="px-5 py-4">{new Date(b.endDate).toLocaleString()}</TableCell>
+                        <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.markerName || b.assigneeUserName || '-'}</TableCell>
+                        <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(b.startDate).toLocaleString()}</TableCell>
+                        <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(b.endDate).toLocaleString()}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -202,8 +202,8 @@ export default function EmployeeDashboard() {
                 <ul className="space-y-2">
                   {reservationSummary.mostUsedMarkers.slice(0,3).map((m) => (
                     <li key={m.markerId} className="flex items-center justify-between">
-                      <div className="text-gray-800">{m.markerName}</div>
-                      <div className="text-sm text-gray-500">{m.count} reservations</div>
+                      <div className="text-gray-800 dark:text-white/90">{m.markerName}</div>
+                      <div className="text-gray-800 dark:text-white/90">{m.count} reservations</div>
                     </li>
                   ))}
                 </ul>

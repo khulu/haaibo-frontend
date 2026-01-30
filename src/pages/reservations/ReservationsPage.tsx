@@ -3,11 +3,13 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { DateSelectArg } from "@fullcalendar/core";
+import { DateSelectArg, EventContentArg } from "@fullcalendar/core";
 import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/useLocationsApi';
 import useReservationsApi, { MarkerAvailability, ReservationDto, AvailabilityResponse } from '../../hooks/api/useReservationsApi';
 import ComponentCard from '../../components/common/ComponentCard';
 import Label from '../../components/form/Label';
+
+import { EventInput } from "@fullcalendar/core";
 
 type BookingModalData = {
   date: string;
@@ -28,12 +30,17 @@ export default function ReservationsPage() {
   const [bookingModalData, setBookingModalData] = useState<BookingModalData | null>(null);
   const [markerAvailability, setMarkerAvailability] = useState<MarkerAvailability[]>([]);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+  const [showMarkerConfirmModal, setShowMarkerConfirmModal] = useState(false);
+  const [markerToConfirm, setMarkerToConfirm] = useState<MarkerAvailability | null>(null);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [searchQuery, setSearchQuery] = useState('');
   const [colleagueReservations, setColleagueReservations] = useState<ReservationDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Calendar events state
+  const [events, setEvents] = useState<EventInput[]>([]);
 
   // Get user's company ID from localStorage
   const getUserCompanyId = () => {
@@ -46,6 +53,19 @@ export default function ReservationsPage() {
       return undefined;
     }
   };
+
+  // Get current user id from localStorage
+  const getCurrentUserId = () => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return undefined;
+      const user = JSON.parse(raw);
+      return user.id as string | undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const currentUserId = getCurrentUserId();
 
   // Fetch locations on mount
   useEffect(() => {
@@ -72,6 +92,64 @@ export default function ReservationsPage() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch reservations for selected location and map to calendar events
+  // Note: `getReservations` can be unstable across renders (not memoized by the hook),
+  // so omit it from deps to avoid an effect loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!selectedLocationId) {
+      setEvents([]);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const reservations = await getReservations({ locationId: selectedLocationId });
+        if (cancelled) return;
+        // map to FullCalendar events (with color level)
+        const mapped = (reservations || []).map((r) => {
+          const date = r.date;
+          const normalizeTime = (t?: string) => {
+            if (!t) return undefined;
+            // if already an ISO datetime, return as-is
+            if (t.includes('T')) return t;
+            // if time-only, combine with date
+            if (/^\d{2}:\d{2}(:\d{2})?$/.test(t)) return `${date}T${t}`;
+            return `${date}T${t}`;
+          };
+
+          const start = normalizeTime(r.startTime ?? r.start ?? r.Start) ?? date;
+          const end = normalizeTime(r.endTime ?? r.end ?? r.End);
+
+          // choose calendar color level
+          let level = 'Success';
+          if (r.userId && currentUserId && r.userId === currentUserId) level = 'Primary';
+          else if (r.status && String(r.status).toLowerCase() === 'cancelled') level = 'Danger';
+          else if (r.markerName && /room|meeting/i.test(r.markerName)) level = 'Warning';
+
+          return {
+            id: r.id,
+            title: r.markerName || r.locationName || 'Reservation',
+            start,
+            end,
+            allDay: !r.startTime && !r.start && !r.Start,
+            extendedProps: { userName: r.userName, markerId: r.markerId, calendar: level },
+          } as EventInput;
+        });
+        setEvents(mapped);
+      } catch (err) {
+        console.error('Failed to load reservations for calendar:', err);
+        setError('Failed to load reservations');
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [selectedLocationId, currentUserId]);
 
   const handleLocationChange = (locationId: string) => {
     setSelectedLocationId(locationId);
@@ -248,6 +326,8 @@ export default function ReservationsPage() {
       return;
     }
     setSelectedMarkerId(marker.markerId);
+    setMarkerToConfirm(marker);
+    setShowMarkerConfirmModal(true);
   };
 
   const handleSubmitBooking = async () => {
@@ -380,8 +460,10 @@ export default function ReservationsPage() {
                 center: "title",
                 right: "dayGridMonth,timeGridWeek,timeGridDay",
               }}
+              events={events}
               selectable={true}
               select={handleDateSelect}
+              eventContent={renderEventContent}
               selectAllow={(selectInfo) => {
                 const selectedDate = new Date(selectInfo.startStr);
                 const today = new Date();
@@ -550,6 +632,28 @@ export default function ReservationsPage() {
                   <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
                     Select a Seat (Click on available markers)
                   </label>
+        <div className="mt-3 mb-1 flex gap-4 items-center text-sm text-gray-600 dark:text-gray-400 flex-wrap">
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">🪑</span>
+            Available Desk
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs">👥</span>
+            Available Meeting Room
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">✕</span>
+            Booked
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs">⊘</span>
+            Occupied
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">✓</span>
+            My Booking
+          </span>
+        </div>
                   <div className="relative border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900/50">
                     <img
                       src={getStaticFileUrl(bookingModalData.floorplanPath)}
@@ -598,44 +702,46 @@ export default function ReservationsPage() {
                       );
                     })}
                   </div>
-                  <div className="mt-3 flex gap-4 items-center text-sm text-gray-600 dark:text-gray-400 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">🪑</span>
-                      Available Desk
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs">👥</span>
-                      Available Meeting Room
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">✕</span>
-                      Booked
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs">⊘</span>
-                      Occupied
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">✓</span>
-                      My Booking
-                    </span>
-                  </div>
+                  
                 </div>
               )}
 
-              <div className="flex justify-end gap-3">
+              
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMarkerConfirmModal && markerToConfirm && (
+        <div className="modal fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto p-5">
+          <div className="modal-close-btn fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px] dark:bg-gray-900/70" onClick={() => setShowMarkerConfirmModal(false)}></div>
+          <div className="relative w-full max-w-[420px] rounded-2xl bg-white p-6 lg:p-8 dark:bg-gray-900">
+            <button
+              onClick={() => setShowMarkerConfirmModal(false)}
+              className="absolute top-3 right-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 sm:top-6 sm:right-6 sm:h-11 sm:w-11 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+            >
+              ✕
+            </button>
+
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">Confirm Booking</h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Seat: {markerToConfirm.markerName}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Date: {bookingModalData ? new Date(bookingModalData.date).toLocaleDateString() : '-'}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Time: {startTime} - {endTime}</p>
+
+              <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
-                  onClick={() => setShowBookingModal(false)}
-                  className="shadow-theme-xs flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                  onClick={() => { setShowMarkerConfirmModal(false); setSelectedMarkerId(null); }}
+                  className="shadow-theme-xs flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={handleSubmitBooking}
+                  onClick={async () => { setShowMarkerConfirmModal(false); await handleSubmitBooking(); }}
                   disabled={!selectedMarkerId || loading}
-                  className="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex justify-center rounded-lg px-4 py-3 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex justify-center rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Booking...' : 'Confirm Booking'}
                 </button>
@@ -647,3 +753,15 @@ export default function ReservationsPage() {
     </div>
   );
 }
+
+const renderEventContent = (eventInfo: EventContentArg) => {
+  const level = eventInfo.event.extendedProps?.calendar || 'Primary';
+  const colorClass = `fc-bg-${String(level).toLowerCase()}`;
+  return (
+    <div className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}>
+      <div className="fc-daygrid-event-dot"></div>
+      <div className="fc-event-time">{eventInfo.timeText}</div>
+      <div className="fc-event-title">{eventInfo.event.title}</div>
+    </div>
+  );
+};
