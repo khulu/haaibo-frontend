@@ -111,7 +111,7 @@ export default function EmployeeDashboard() {
   const { data: reservationSummary } = useReservationSummary({ companyId: effectiveCompanyId, dateFrom, dateTo });
 
   // KPIs - prefer server summary when available
-  const upcoming7 = reservationSummary ? reservationSummary.totalBookings : (upcomingReservations ?? []).filter(b => new Date(b.startDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length;
+  const upcoming7 = (upcomingReservations ?? []).filter(b => new Date(b.startDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length;
   const nowCheckedIn = reservationSummary ? (reservationSummary.checkedInCount > 0 ? 1 : 0) : ((sourceMyBookings ?? []).some(b => new Date(b.startDate).getTime() <= Date.now() && new Date(b.endDate).getTime() >= Date.now() && !!(b as LocalBooking).checkedInAt) ? 1 : 0);
   const total30d = reservationSummary ? reservationSummary.totalBookings : (sourceMyBookings ?? []).filter(b => new Date(b.startDate).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000).length;
   const hours30d = reservationSummary ? Math.round(reservationSummary.totalHoursUsed) : Math.round(((sourceMyBookings ?? []).reduce((sum, b) => {

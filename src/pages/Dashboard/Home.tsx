@@ -35,6 +35,58 @@ export default function Home() {
   const { data: organizations } = useOrganizationList();
   const organizationOptions = useMemo(() => (organizations ?? []).map(o => ({ value: o.id, label: o.name })), [organizations]);
 
+  const allowAssetTracking = useMemo(() => {
+    if (!effectiveCompanyId) return false;
+    const org = (organizations ?? []).find((o: any) => o.id === effectiveCompanyId);
+    return !!org?.allowAssetTracking;
+  }, [effectiveCompanyId, organizations]);
+
+  // --- Mocked admin metrics (example aggregated payload) ---
+  const mockOrgStats = useMemo(() => {
+    // sample payload (single-org aggregate) — adapt or replace with real API later
+    return {
+      totalBookings: 42,
+      totalHoursBooked: 84,
+      totalHoursUsed: 60,
+      checkedInCount: 30,
+      cancelledCount: 4,
+      noShowCount: 8,
+      averageBookingDurationMinutes: 120,
+      checkinRatePercent: 71,
+      activeUsers: 18,
+      mostUsedMarkers: [
+        { markerId: 'm1', markerName: 'Conference room 1', count: 18 },
+        { markerId: 'm2', markerName: 'Desk 1', count: 12 },
+        { markerId: 'm3', markerName: 'Projector A', count: 8 },
+      ],
+      buckets: [
+        { day: 1, hour: 9, count: 4 },
+        { day: 1, hour: 10, count: 6 },
+        { day: 2, hour: 14, count: 8 },
+        { day: 3, hour: 11, count: 5 },
+        { day: 4, hour: 16, count: 7 },
+      ],
+      from: '2025-12-31T06:18:58.686Z',
+      to: '2026-01-30T06:18:58.686Z',
+      openIssues: [
+        { id: 'i1', desc: 'Projector not working', priority: 'High', ageHours: 12 },
+        { id: 'i2', desc: 'Broken chair', priority: 'Low', ageHours: 48 },
+      ],
+      slaBreaches: 1,
+    } as const;
+  }, []);
+
+  const topMarkers = mockOrgStats.mostUsedMarkers;
+  const heatmapMatrix = useMemo(() => {
+    const days = 7; const hours = 24;
+    const m: number[][] = Array.from({ length: days }, () => Array(hours).fill(0));
+    mockOrgStats.buckets.forEach((b: any) => {
+      const d = ((b.day % 7) + 7) % 7; // normalize
+      if (d >= 0 && d < days && b.hour >= 0 && b.hour < hours) m[d][b.hour] += b.count;
+    });
+    return m;
+  }, [mockOrgStats]);
+
   // Totals
   const { useContactsTotal } = useContacts();
   const { data: contactsTotalData } = useContactsTotal(effectiveCompanyId);
@@ -125,9 +177,11 @@ export default function Home() {
               </button>
             </>
         
-          <button className="px-3 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => navigate('/assets/issues')}>
-            Raise Issue
-          </button>
+          {allowAssetTracking && (
+            <button className="px-3 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => navigate('/assets/issues')}>
+              Raise Issue
+            </button>
+          )}
         </div>
       </div>
 
@@ -135,14 +189,84 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
           <KpiCard label="Users" value={usersTotal ?? 0} onClick={() => navigate('/users')} />
           <KpiCard label="Contacts" value={contactsTotal ?? 0} onClick={() => navigate('/admin/contacts')} />
-          <KpiCard label="Open Issues" value={openIssuesCount} onClick={() => navigate('/assets/issues')} />
-          <KpiCard label="My Upcoming Bookings" value={upcomingBookingsCount} onClick={() => navigate('/bookings')} />
+             <KpiCard label="Total Bookings" value={mockOrgStats.totalBookings} />
+              <KpiCard label="Hours Booked" value={mockOrgStats.totalHoursBooked} />
+              <KpiCard label="Hours Used" value={mockOrgStats.totalHoursUsed} />
+              <KpiCard label="Active Users" value={mockOrgStats.activeUsers} />
+          {allowAssetTracking && ( <KpiCard label="Open Issues" value={openIssuesCount} onClick={() => navigate('/assets/issues')} />
+          )}
+         {allowAssetTracking && (
+            <KpiCard label="My Upcoming Bookings" value={upcomingBookingsCount} onClick={() => navigate('/bookings')} />
+          )}
       </div>
 
       <div className="grid grid-cols-12 gap-4 md:gap-6">
+        <div className="col-span-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Section title="Most-used Desks">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+             
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                 <div className="space-y-2">
+                    {topMarkers.map((m) => {
+                      const max = topMarkers[0].count || 1;
+                      const pct = Math.round((m.count / max) * 100);
+                      return (
+                        <div key={m.markerId} className="flex items-center gap-3">
+                          <div className="w-40 text-sm text-gray-600">{m.markerName}</div>
+                          <div className="flex-1 bg-gray-100 h-3 rounded overflow-hidden">
+                            <div className="h-3 bg-indigo-600" style={{ width: `${pct}%` }} />
+                          </div>
+                          <div className="w-10 text-right text-sm">{m.count}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="md:col-span-1">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Rates</h3>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div>Check-in rate: {mockOrgStats.checkinRatePercent}%</div>
+                    <div>No-shows: {mockOrgStats.noShowCount}</div>
+                    <div>Cancelled: {mockOrgStats.cancelledCount}</div>
+                    <div>Avg duration: {mockOrgStats.averageBookingDurationMinutes} mins</div>
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <Section title="Peak Usage Heatmap">
+              <div className="mt-6">
+                <div className="overflow-x-auto">
+                  <div className="grid grid-cols-24 gap-1 text-xs">
+                    {/* Simple heatmap: days rows, hours columns */}
+                    {heatmapMatrix.map((row, dayIdx) => (
+                      <div key={dayIdx} className="flex items-center gap-1 mb-1">
+                        <div className="w-16 text-xs text-gray-600">Day {dayIdx}</div>
+                        <div className="flex-1 flex gap-1">
+                          {row.map((val, h) => {
+                            const max = Math.max(...row, 1);
+                            const intensity = Math.min(1, val / max);
+                            const bg = `rgba(79,70,229,${0.15 + intensity * 0.7})`;
+                            return <div key={h} style={{ width: 10, height: 12, background: bg }} title={`H${h}: ${val}`} />;
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Section>
+          </div>
+        </div>
         {/* Recent Open Issues */}
-        <div className="col-span-12 xl:col-span-6">
-          <Section title="Recent Open Issues">
+        {allowAssetTracking && (
+          <div className="col-span-12 xl:col-span-6">
+            <Section title="Recent Open Issues">
             <div className="max-w-full overflow-x-auto">
               <Table>
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
@@ -172,11 +296,13 @@ export default function Home() {
               </Table>
             </div>
           </Section>
-        </div>
+          </div>
+        )}
 
         {/* Asset Scans and My Bookings */}
-        <div className="col-span-12 xl:col-span-6 space-y-6">
-          <Section title="Asset Check-ins & Check-outs">
+        {allowAssetTracking && (
+          <div className="col-span-12 xl:col-span-6 space-y-6">
+            <Section title="Asset Check-ins & Check-outs">
             <div className="max-w-full overflow-x-auto">
               <Table>
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
@@ -205,9 +331,9 @@ export default function Home() {
                 </TableBody>
               </Table>
             </div>
-          </Section>
+            </Section>
 
-          <Section title="My Next Bookings">
+            <Section title="My Next Bookings">
             <div className="max-w-full overflow-x-auto">
               <Table>
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
@@ -236,8 +362,9 @@ export default function Home() {
                 </TableBody>
               </Table>
             </div>
-          </Section>
-        </div>
+            </Section>
+          </div>
+        )}
       </div>
     </>
   );
