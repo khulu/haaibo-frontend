@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { DateSelectArg, EventContentArg } from "@fullcalendar/core";
+import { DateSelectArg, EventContentArg, EventClickArg } from "@fullcalendar/core";
 import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/useLocationsApi';
 import useReservationsApi, { MarkerAvailability, ReservationDto, AvailabilityResponse } from '../../hooks/api/useReservationsApi';
 import ComponentCard from '../../components/common/ComponentCard';
@@ -20,7 +20,7 @@ type BookingModalData = {
 
 export default function ReservationsPage() {
   const { listTree, getMarkers } = useLocationsApi();
-  const { getMarkerAvailability, createReservation, getReservations } = useReservationsApi();
+  const { getMarkerAvailability, createReservation, getReservations, deleteReservation } = useReservationsApi();
   const calendarRef = useRef<FullCalendar>(null);
   
   const [locations, setLocations] = useState<LocationDto[]>([]);
@@ -41,6 +41,9 @@ export default function ReservationsPage() {
 
   // Calendar events state
   const [events, setEvents] = useState<EventInput[]>([]);
+  // reservation selected from calendar for actions
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<ReservationDto | null>(null);
 
   // Get user's company ID from localStorage
   const getUserCompanyId = () => {
@@ -66,6 +69,10 @@ export default function ReservationsPage() {
     }
   };
   const currentUserId = getCurrentUserId();
+
+  // stable ref for getReservations to avoid effect loops
+  const getReservationsRef = useRef(getReservations);
+  useEffect(() => { getReservationsRef.current = getReservations; }, [getReservations]);
 
   // Fetch locations on mount
   useEffect(() => {
@@ -94,23 +101,16 @@ export default function ReservationsPage() {
   }, []);
 
   // Fetch reservations for selected location and map to calendar events
-  // Note: `getReservations` can be unstable across renders (not memoized by the hook),
-  // so omit it from deps to avoid an effect loop.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
+  const fetchAndMapReservations = useCallback(async () => {
     if (!selectedLocationId) {
       setEvents([]);
       return;
     }
-
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const reservations = await getReservations({ locationId: selectedLocationId });
-        if (cancelled) return;
-        // map to FullCalendar events (with color level)
-        const mapped = (reservations || []).map((r) => {
+    setLoading(true);
+    try {
+      const reservations = await getReservationsRef.current({ locationId: selectedLocationId });
+      // map to FullCalendar events (with color level)
+      const mapped = (reservations || []).map((r) => {
           const date = r.date;
           const normalizeTime = (t?: string) => {
             if (!t) return undefined;
@@ -136,20 +136,22 @@ export default function ReservationsPage() {
             start,
             end,
             allDay: !r.startTime && !r.start && !r.Start,
-            extendedProps: { userName: r.userName, markerId: r.markerId, calendar: level },
+            extendedProps: { userName: r.userName, markerId: r.markerId, calendar: level, reservation: r },
           } as EventInput;
         });
-        setEvents(mapped);
-      } catch (err) {
-        console.error('Failed to load reservations for calendar:', err);
-        setError('Failed to load reservations');
-      } finally {
-        setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
+      setEvents(mapped);
+    } catch (err: unknown) {
+      console.error('Failed to load reservations for calendar:', err);
+      setError('Failed to load reservations');
+    } finally {
+      setLoading(false);
+    }
   }, [selectedLocationId, currentUserId]);
+
+  useEffect(() => {
+    // load when location changes
+    fetchAndMapReservations();
+  }, [fetchAndMapReservations]);
 
   const handleLocationChange = (locationId: string) => {
     setSelectedLocationId(locationId);
@@ -294,6 +296,56 @@ export default function ReservationsPage() {
     }
     
     handleDateClick(selectedDate);
+  };
+
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    const ev = clickInfo.event;
+    const res = ev.extendedProps?.reservation as ReservationDto | undefined;
+    if (!res) return;
+    setSelectedReservation(res);
+    setShowEventModal(true);
+  };
+
+  const canCancelReservation = (r: ReservationDto) => {
+    if (!r) return false;
+    if (r.status && r.status !== 'Confirmed') return false;
+    const checkedInAt = (r as unknown as Record<string, unknown>).checkedInAt as string | undefined;
+    if (checkedInAt) return false;
+    // compute start
+    const time = r.startTime ?? r.start ?? r.Start ?? '00:00:00';
+    let start: Date;
+    if (/^\d{2}:\d{2}$/.test(time)) {
+      start = new Date(`${r.date}T${time}:00Z`);
+    } else if (/^\d{2}:\d{2}:\d{2}$/.test(time)) {
+      start = new Date(`${r.date}T${time}Z`);
+    } else if (time.includes('T')) {
+      start = new Date(time);
+    } else {
+      start = new Date(`${r.date}T00:00:00Z`);
+    }
+    return Date.now() < start.getTime();
+  };
+
+  const handleCancelReservation = async () => {
+    if (!selectedReservation) return;
+    setLoading(true);
+    try {
+      await deleteReservation(selectedReservation.id);
+      alert('Reservation cancelled');
+      setShowEventModal(false);
+      setSelectedReservation(null);
+      await fetchAndMapReservations();
+    } catch (err: unknown) {
+      let msg = 'Failed to cancel reservation';
+      if (typeof err === 'object' && err !== null) {
+        const maybe = err as { response?: { data?: { title?: string } }; message?: unknown };
+        if (maybe.response && maybe.response.data && typeof maybe.response.data.title === 'string') msg = maybe.response.data.title;
+        else if (typeof maybe.message === 'string') msg = maybe.message;
+      }
+      alert(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearchColleague = async () => {
@@ -461,6 +513,7 @@ export default function ReservationsPage() {
                 right: "dayGridMonth,timeGridWeek,timeGridDay",
               }}
               events={events}
+              eventClick={handleEventClick}
               selectable={true}
               select={handleDateSelect}
               eventContent={renderEventContent}
@@ -707,6 +760,53 @@ export default function ReservationsPage() {
               )}
 
               
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEventModal && selectedReservation && (
+        <div className="modal fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto p-5">
+          <div className="modal-close-btn fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px] dark:bg-gray-900/70" onClick={() => setShowEventModal(false)}></div>
+          <div className="relative w-full max-w-[520px] rounded-2xl bg-white p-6 lg:p-8 dark:bg-gray-900">
+            <button
+              onClick={() => setShowEventModal(false)}
+              className="absolute top-3 right-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 sm:top-6 sm:right-6 sm:h-11 sm:w-11 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+            >
+              ✕
+            </button>
+
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">Cancel Reservation</h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Seat: {selectedReservation.markerName || selectedReservation.markerId}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Date: {new Date(selectedReservation.date).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Time: {selectedReservation.startTime ?? selectedReservation.start ?? selectedReservation.Start ?? '-'} - {selectedReservation.endTime ?? selectedReservation.end ?? selectedReservation.End ?? '-'}</p>
+
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {canCancelReservation(selectedReservation) ? (
+                  <span>Are you sure you want to cancel this reservation?</span>
+                ) : (
+                  <span className="text-red-600 dark:text-red-400">This reservation cannot be cancelled (status, checked-in, or already started).</span>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => { setShowEventModal(false); setSelectedReservation(null); }}
+                  className="shadow-theme-xs flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelReservation}
+                  disabled={!canCancelReservation(selectedReservation) || loading}
+                  className="bg-red-500 shadow-theme-xs hover:bg-red-600 flex justify-center rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Cancelling...' : 'Confirm Cancel'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
