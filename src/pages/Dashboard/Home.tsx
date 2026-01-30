@@ -6,10 +6,35 @@ import useIssues from "@hooks/issues/useIssues";
 import useBookings from "@hooks/bookings/useBookings";
 import useEvents from "@hooks/event/useEvent";
 import useOrganization from "@hooks/organization/useOrganization";
+import useAdminMetrics from '@hooks/admin/useAdminMetrics';
 import getAuth from "@hooks/api/useAuthApi";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Label from "../../components/form/Label";
+
+   interface TopMarker {
+                      markerId: string | number;
+                      markerName: string;
+                      count: number;
+                    }
+
+                      interface OrgStats {
+    totalBookings: number;
+    totalHoursBooked: number;
+    totalHoursUsed: number;
+    checkedInCount: number;
+    cancelledCount: number;
+    noShowCount: number;
+    averageBookingDurationMinutes: number;
+    checkinRatePercent: number;
+    activeUsers: number;
+    mostUsedMarkers: TopMarker[];
+    buckets: { day: number; hour: number; count: number }[];
+    from?: string;
+    to?: string;
+    openIssues: any[];
+    slaBreaches: number;
+  }
 
 export default function Home() {
   const auth = getAuth();
@@ -36,56 +61,51 @@ export default function Home() {
   const organizationOptions = useMemo(() => (organizations ?? []).map(o => ({ value: o.id, label: o.name })), [organizations]);
 
   const allowAssetTracking = useMemo(() => {
+    // SuperAdmin viewing 'All companies' should see asset UI if any org allows asset tracking
+    if (isSuperAdmin && !selectedCompanyId) {
+      return (organizations ?? []).some((o: any) => !!o.allowAssetTracking);
+    }
     if (!effectiveCompanyId) return false;
     const org = (organizations ?? []).find((o: any) => o.id === effectiveCompanyId);
     return !!org?.allowAssetTracking;
-  }, [effectiveCompanyId, organizations]);
+  }, [isSuperAdmin, selectedCompanyId, effectiveCompanyId, organizations]);
 
-  // --- Mocked admin metrics (example aggregated payload) ---
-  const mockOrgStats = useMemo(() => {
-    // sample payload (single-org aggregate) — adapt or replace with real API later
-    return {
-      totalBookings: 42,
-      totalHoursBooked: 84,
-      totalHoursUsed: 60,
-      checkedInCount: 30,
-      cancelledCount: 4,
-      noShowCount: 8,
-      averageBookingDurationMinutes: 120,
-      checkinRatePercent: 71,
-      activeUsers: 18,
-      mostUsedMarkers: [
-        { markerId: 'm1', markerName: 'Conference room 1', count: 18 },
-        { markerId: 'm2', markerName: 'Desk 1', count: 12 },
-        { markerId: 'm3', markerName: 'Projector A', count: 8 },
-      ],
-      buckets: [
-        { day: 1, hour: 9, count: 4 },
-        { day: 1, hour: 10, count: 6 },
-        { day: 2, hour: 14, count: 8 },
-        { day: 3, hour: 11, count: 5 },
-        { day: 4, hour: 16, count: 7 },
-      ],
-      from: '2025-12-31T06:18:58.686Z',
-      to: '2026-01-30T06:18:58.686Z',
-      openIssues: [
-        { id: 'i1', desc: 'Projector not working', priority: 'High', ageHours: 12 },
-        { id: 'i2', desc: 'Broken chair', priority: 'Low', ageHours: 48 },
-      ],
-      slaBreaches: 1,
-    } as const;
-  }, []);
+  const { useMetricsOverview } = useAdminMetrics();
+  const { data: metricsData } = useMetricsOverview({ companyId: effectiveCompanyId });
 
-  const topMarkers = mockOrgStats.mostUsedMarkers;
+  // prefer live metrics; while loading show zeros/empty arrays
+
+
+  const orgStats = useMemo<OrgStats>(() => {
+    return (metricsData as OrgStats) ?? {
+      totalBookings: 0,
+      totalHoursBooked: 0,
+      totalHoursUsed: 0,
+      checkedInCount: 0,
+      cancelledCount: 0,
+      noShowCount: 0,
+      averageBookingDurationMinutes: 0,
+      checkinRatePercent: 0,
+      activeUsers: 0,
+      mostUsedMarkers: [],
+      buckets: [],
+      from: undefined,
+      to: undefined,
+      openIssues: [],
+      slaBreaches: 0,
+    };
+  }, [metricsData]);
+
+  const topMarkers = orgStats.mostUsedMarkers;
   const heatmapMatrix = useMemo(() => {
     const days = 7; const hours = 24;
     const m: number[][] = Array.from({ length: days }, () => Array(hours).fill(0));
-    mockOrgStats.buckets.forEach((b: any) => {
+    (orgStats.buckets ?? []).forEach((b: any) => {
       const d = ((b.day % 7) + 7) % 7; // normalize
       if (d >= 0 && d < days && b.hour >= 0 && b.hour < hours) m[d][b.hour] += b.count;
     });
     return m;
-  }, [mockOrgStats]);
+  }, [orgStats]);
 
   // Totals
   const { useContactsTotal } = useContacts();
@@ -189,10 +209,10 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
           <KpiCard label="Users" value={usersTotal ?? 0} onClick={() => navigate('/users')} />
           <KpiCard label="Contacts" value={contactsTotal ?? 0} onClick={() => navigate('/admin/contacts')} />
-             <KpiCard label="Total Bookings" value={mockOrgStats.totalBookings} />
-              <KpiCard label="Hours Booked" value={mockOrgStats.totalHoursBooked} />
-              <KpiCard label="Hours Used" value={mockOrgStats.totalHoursUsed} />
-              <KpiCard label="Active Users" value={mockOrgStats.activeUsers} />
+              <KpiCard label="Total Bookings" value={orgStats.totalBookings} />
+                <KpiCard label="Hours Booked" value={orgStats.totalHoursBooked} />
+                <KpiCard label="Hours Used" value={orgStats.totalHoursUsed} />
+                <KpiCard label="Active Users" value={orgStats.activeUsers} />
           {allowAssetTracking && ( <KpiCard label="Open Issues" value={openIssuesCount} onClick={() => navigate('/assets/issues')} />
           )}
          {allowAssetTracking && (
@@ -211,8 +231,10 @@ export default function Home() {
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
                  <div className="space-y-2">
-                    {topMarkers.map((m) => {
-                      const max = topMarkers[0].count || 1;
+                 
+
+                    {topMarkers.map((m: TopMarker) => {
+                      const max = (topMarkers[0] as TopMarker).count || 1;
                       const pct = Math.round((m.count / max) * 100);
                       return (
                         <div key={m.markerId} className="flex items-center gap-3">
@@ -230,10 +252,10 @@ export default function Home() {
                 <div className="md:col-span-1">
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">Rates</h3>
                   <div className="space-y-2 text-sm text-gray-700">
-                    <div>Check-in rate: {mockOrgStats.checkinRatePercent}%</div>
-                    <div>No-shows: {mockOrgStats.noShowCount}</div>
-                    <div>Cancelled: {mockOrgStats.cancelledCount}</div>
-                    <div>Avg duration: {mockOrgStats.averageBookingDurationMinutes} mins</div>
+                    <div>Check-in rate: {orgStats.checkinRatePercent}%</div>
+                    <div>No-shows: {orgStats.noShowCount}</div>
+                    <div>Cancelled: {orgStats.cancelledCount}</div>
+                    <div>Avg duration: {orgStats.averageBookingDurationMinutes} mins</div>
                   </div>
                 </div>
               </div>
