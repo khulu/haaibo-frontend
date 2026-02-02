@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router';
 import getAuth from '@hooks/api/useAuthApi';
 import useAsset from '@hooks/asset/useAsset';
 import useUser from '@hooks/user/useUser';
 import useBookings from '@hooks/bookings/useBookings';
 import type { CreateBookingsPayload } from '@hooks/api/useBookingsApi';
 import Label from '../../components/form/Label';
+import useContacts from '@hooks/contacts/useContacts';
 
 type Mode = 'myself' | 'existing' | 'external';
 
@@ -32,6 +34,8 @@ export default function AssetBookingsCreate() {
   const { useUserList } = useUser();
   const { data: users } = useUserList({ companyId });
   const { createBookings } = useBookings();
+  const { useContactsList } = useContacts();
+  const { data: contacts } = useContactsList(companyId);
 
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [start, setStart] = useState<string>('');
@@ -41,12 +45,14 @@ export default function AssetBookingsCreate() {
   const [extName, setExtName] = useState<string>('');
   const [extEmail, setExtEmail] = useState<string>('');
   const [extPhone, setExtPhone] = useState<string>('');
+  const [selectedContactId, setSelectedContactId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [serverErrors, setServerErrors] = useState<string[]>([]);
 
   const assetOptions = useMemo(() => (assets ?? []).map((a) => ({ value: a.id, label: `${a.make ?? ''} ${a.model ?? ''} ${a.serialNumber ?? a.assetId ?? a.laptopTagNumber ?? ''}`.trim() })), [assets]);
   const userOptions = useMemo(() => (users ?? []).map((u) => ({ value: u.id, label: u.fullName || u.email })), [users]);
+  const contactOptions = useMemo(() => (contacts ?? []).map((c) => ({ value: c.id, label: c.fullName + (c.phone ? ` (${c.phone})` : '') })), [contacts]);
 
   const validate = (): string | null => {
     if (selectedAssetIds.length === 0) return 'Please select at least one asset';
@@ -121,7 +127,15 @@ export default function AssetBookingsCreate() {
               </label>
             ))}
             {assetOptions.length === 0 && (
-              <div className="text-gray-500 text-sm dark:text-gray-400">No assets available</div>
+              <div className="text-gray-500 text-sm dark:text-gray-400 flex items-center justify-between">
+                <span>No assets available.</span>
+                <Link
+                  to="/assets/create"
+                  className="inline-flex items-center px-3 py-1.5 rounded bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600"
+                >
+                  Add Asset
+                </Link>
+              </div>
             )}
           </div>
         </div>
@@ -187,6 +201,27 @@ export default function AssetBookingsCreate() {
 
         {mode === 'external' && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-3">
+              <Label>Select from company contacts (optional)</Label>
+              <select
+                value={selectedContactId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedContactId(id);
+                  const found = (contacts ?? []).find((c) => c.id === id);
+                  if (found) {
+                    setExtName(found.fullName || '');
+                    setExtPhone(found.phone || '');
+                  }
+                }}
+                className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="">Select a contact</option>
+                {contactOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <Label>External name</Label>
               <input

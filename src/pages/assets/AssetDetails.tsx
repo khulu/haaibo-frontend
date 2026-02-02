@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAssetApi, { Asset } from '@hooks/api/useAssetApi';
 import Button from '../../components/ui/button/Button';
 import Label from '../../components/form/Label';
 import PhotoModal from '../users/PhotoModal';
+import Select from '../../components/form/Select';
+import useCollections from '@hooks/collections/useCollections';
+import getAuth from '@hooks/api/useAuthApi';
+import { useToast } from '../../context/useToast';
 
 const AssetDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { getAssetById, uploadAssetFile } = useAssetApi();
+  const { useCollectionsList } = useCollections();
+  const auth = getAuth();
+  const toast = useToast();
   const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [assignError, setAssignError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +38,24 @@ const AssetDetails: React.FC = () => {
     };
     fetchAsset();
   }, [id, getAssetById]);
+
+  const role = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed?.role ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const isAdminOrSuperAdmin = role === 1 || role === 'Admin' || role === 0 || role === 'SuperAdmin';
+
+  const companyIdForCollections = asset?.companyId || (auth.getCompanyId?.() as string | undefined);
+  const { data: collections } = useCollectionsList(companyIdForCollections);
+  const collectionOptions = useMemo(() => (collections ?? []).map((c) => ({ value: c.id, label: c.name })), [collections]);
+  const currentCollectionName = (asset && (asset as unknown as { collectionName?: string }).collectionName) || null;
+  const currentCollectionId = (asset && (asset as unknown as { collectionId?: string }).collectionId) || null;
 
   const handlePhotoSelected = async (fileOrBlob: File | Blob) => {
     if (!asset || !id) return;
@@ -122,6 +149,54 @@ const AssetDetails: React.FC = () => {
             <Label>Company</Label>
             <p className="text-sm font-medium text-gray-800 dark:text-white/90">{asset.companyName}</p>
           </div>
+          {isAdminOrSuperAdmin && (
+            <div className="lg:col-span-2">
+              <Label>Assign to Collection</Label>
+              {currentCollectionName ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Current: {currentCollectionName}</p>
+              ) : currentCollectionId ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Current: {currentCollectionId}</p>
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">No collection linked</p>
+              )}
+              <div className="max-w-sm">
+                <Select
+                  options={collectionOptions}
+                  placeholder="Select a collection"
+                  onChange={async (value) => {
+                    if (!id) return;
+                    setAssignError(null);
+                    setAssigning(true);
+                    try {
+                      // Use direct API since hook doesn't expose assign
+                      const base = import.meta.env.VITE_API_BASE_URL as string | undefined;
+                      await fetch(`${base || ''}/Collections/${value}/assign/${id}`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          ...(auth.getToken() ? { Authorization: `Bearer ${auth.getToken()}` } : {}),
+                        },
+                      });
+                      const updated = await getAssetById(id);
+                      setAsset(updated);
+                      toast.success('Asset assigned to collection');
+                    } catch {
+                      setAssignError('Failed to assign collection. Please try again.');
+                    } finally {
+                      setAssigning(false);
+                    }
+                  }}
+                  className="dark:bg-dark-900"
+                />
+              </div>
+              {assignError && (
+                <div className="text-error-500 text-sm mt-2">{assignError}</div>
+              )}
+              {assigning && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Assigning…</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <PhotoModal isOpen={photoModalOpen} onClose={() => setPhotoModalOpen(false)} onPhotoSelected={handlePhotoSelected} />

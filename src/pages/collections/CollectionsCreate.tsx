@@ -70,9 +70,8 @@ export default function CollectionsCreate() {
           </div>
         ) : (
           <div>
-            <Label>Company</Label>
             <input
-              type="text"
+              type="hidden"
               value={companyId ?? ''}
               readOnly
               className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"

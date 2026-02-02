@@ -69,7 +69,17 @@ const useCollectionsApi = () => {
     });
   };
 
-  return { getCollections, getCollectionById, createCollection, updateCollection, deleteCollection };
+  const assignAssetToCollection = async (collectionId: string, assetId: string): Promise<{ success: boolean } | unknown> => {
+    const response = await axios.request({
+      baseURL,
+      url: `/Collections/${collectionId}/assign/${assetId}`,
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  };
+
+  return { getCollections, getCollectionById, createCollection, updateCollection, deleteCollection, assignAssetToCollection };
 };
 
 export default useCollectionsApi;

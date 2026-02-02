@@ -14,7 +14,6 @@ const AssetCreate: React.FC = () => {
   const { useOrganizationList } = useOrganization();
   const { useUserList } = useUserApi();
   const { data: organizations } = useOrganizationList();
-  const { data: users } = useUserList({});
   const auth = getAuth();
   const currentCompanyId = auth.getCompanyId?.() ?? '';
   const [isSuperAdmin] = useState(() => {
@@ -41,6 +40,8 @@ const AssetCreate: React.FC = () => {
     warrantyExpiryDate: '',
     companyId: isSuperAdmin ? '' : currentCompanyId,
   });
+  const companyForUsers = isSuperAdmin ? (form.companyId || undefined) : currentCompanyId;
+  const { data: users } = useUserList({ companyId: companyForUsers });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -110,7 +111,7 @@ const AssetCreate: React.FC = () => {
         <div>
           <Label htmlFor="assignedUserId">Assigned User</Label>
           <Select
-            options={users?.map((user) => ({ value: user.id, label: user.fullName })) || []}
+            options={users?.map((user) => ({ value: user.id, label: user.fullName || user.email })) || []}
             placeholder="Select a user"
             onChange={(value) => setForm((prev) => ({ ...prev, assignedUserId: value }))}
             className="dark:bg-dark-900"
@@ -120,22 +121,31 @@ const AssetCreate: React.FC = () => {
      
         <div>
           <Label htmlFor="condition">Condition</Label>
-          <Input
-            id="condition"
-            name="condition"
-            value={form.condition || ''}
-            onChange={handleChange}
+          <Select
+            options={[
+              { value: 'New', label: 'New' },
+              { value: 'Good', label: 'Good' },
+              { value: 'Fair', label: 'Fair' },
+              { value: 'Damaged', label: 'Damaged' },
+            ]}
+            placeholder="Select a condition"
+            onChange={(value) => setForm((prev) => ({ ...prev, condition: value }))}
+            className="dark:bg-dark-900"
             required
           />
         </div>
         <div>
           <Label htmlFor="status">Status</Label>
-          <Input
-            id="status"
-            name="status"
-            type="number"
-            value={form.status || ''}
-            onChange={handleChange}
+          <Select
+            options={[
+              { value: '1', label: 'Available' },
+              { value: '2', label: 'Assigned' },
+              { value: '3', label: 'In Repair' },
+              { value: '4', label: 'Retired' },
+            ]}
+            placeholder="Select a status"
+            onChange={(value) => setForm((prev) => ({ ...prev, status: parseInt(value, 10) }))}
+            className="dark:bg-dark-900"
             required
           />
         </div>
@@ -162,8 +172,10 @@ const AssetCreate: React.FC = () => {
           />
         </div>
         <div>
-          <Label htmlFor="companyId">Company</Label>
+       
           {isSuperAdmin ? (
+            <>
+               <Label htmlFor="companyId">Company</Label>
             <Select
               options={organizations?.map((org) => ({ value: org.id, label: org.name })) || []}
               placeholder="Select a company"
@@ -171,8 +183,9 @@ const AssetCreate: React.FC = () => {
               className="dark:bg-dark-900"
               required
             />
+            </>
           ) : (
-            <Input id="companyId" name="companyId" value={currentCompanyId} onChange={() => {}} disabled />
+            <Input id="companyId" name="companyId" value={currentCompanyId} onChange={() => {}} disabled  type='hidden'/>
           )}
         </div>
 

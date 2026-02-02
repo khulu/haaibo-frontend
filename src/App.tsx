@@ -54,6 +54,8 @@ const LineChart = lazy(() => import("./pages/Charts/LineChart"));
 const BarChart = lazy(() => import("./pages/Charts/BarChart"));
 const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
 const SignUp = lazy(() => import("./pages/AuthPages/SignUp"));
+const ResetPassword = lazy(() => import("./pages/AuthPages/ResetPassword"));
+const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
 
 export default function App() {
   return (
@@ -455,6 +457,8 @@ export default function App() {
           {/* Auth Layout */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
