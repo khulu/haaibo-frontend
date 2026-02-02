@@ -8,15 +8,22 @@ import useEvents from "@hooks/event/useEvent";
 import useOrganization from "@hooks/organization/useOrganization";
 import useAdminMetrics from '@hooks/admin/useAdminMetrics';
 import getAuth from "@hooks/api/useAuthApi";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Label from "../../components/form/Label";
+import useOrganizationsApi from "@hooks/api/useOrganizationApi";
 
    interface TopMarker {
                       markerId: string | number;
                       markerName: string;
                       count: number;
                     }
+   interface Issue {
+    id: string | number;
+    description: string;
+    priorityName?: string;
+    createdAt: string | Date;
+  }
 
                       interface OrgStats {
     totalBookings: number;
@@ -32,7 +39,7 @@ import Label from "../../components/form/Label";
     buckets: { day: number; hour: number; count: number }[];
     from?: string;
     to?: string;
-    openIssues: any[];
+    openIssues: Issue[];
     slaBreaches: number;
   }
 
@@ -56,19 +63,53 @@ export default function Home() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(currentCompanyId);
   const effectiveCompanyId = isSuperAdmin ? selectedCompanyId : currentCompanyId;
 
+
   const { useOrganizationList } = useOrganization();
   const { data: organizations } = useOrganizationList();
-  const organizationOptions = useMemo(() => (organizations ?? []).map(o => ({ value: o.id, label: o.name })), [organizations]);
+  type OrgBasic = { id: string; name: string; allowAssetTracking?: boolean; enableOfficeReservations?: boolean };
+  const organizationOptions = useMemo(() => ((organizations ?? []) as OrgBasic[]).map(o => ({ value: o.id, label: o.name })), [organizations]);
+  const { getOrganizationById: fetchOrganizationById } = useOrganizationsApi();
+  const [orgSettings, setOrgSettings] = useState<Partial<OrgBasic> | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!effectiveCompanyId) {
+        setOrgSettings(undefined);
+        return;
+      }
+      try {
+        const detail = await fetchOrganizationById(effectiveCompanyId);
+        if (!cancelled) setOrgSettings(detail as Partial<OrgBasic>);
+      } catch {
+        if (!cancelled) setOrgSettings(undefined);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveCompanyId]);
 
   const allowAssetTracking = useMemo(() => {
-    // SuperAdmin viewing 'All companies' should see asset UI if any org allows asset tracking
+    if (effectiveCompanyId) return !!orgSettings?.allowAssetTracking;
     if (isSuperAdmin && !selectedCompanyId) {
-      return (organizations ?? []).some((o: any) => !!o.allowAssetTracking);
+      return ((organizations ?? []) as OrgBasic[]).some((o) => !!o.allowAssetTracking);
     }
-    if (!effectiveCompanyId) return false;
-    const org = (organizations ?? []).find((o: any) => o.id === effectiveCompanyId);
-    return !!org?.allowAssetTracking;
-  }, [isSuperAdmin, selectedCompanyId, effectiveCompanyId, organizations]);
+    return false;
+  }, [effectiveCompanyId, orgSettings, isSuperAdmin, selectedCompanyId, organizations]);
+
+  const enableOfficeReservations = useMemo(() => {
+    if (effectiveCompanyId) return !!orgSettings?.enableOfficeReservations;
+    if (isSuperAdmin && !selectedCompanyId) {
+      return ((organizations ?? []) as OrgBasic[]).some((o) => !!o.enableOfficeReservations);
+    }
+    return false;
+  }, [effectiveCompanyId, orgSettings, isSuperAdmin, selectedCompanyId, organizations]);
+
+  const activeOrgName = useMemo(() => {
+    if (!effectiveCompanyId) return undefined;
+    const org = ((organizations ?? []) as OrgBasic[]).find((o) => o.id === effectiveCompanyId);
+    return org?.name as string | undefined;
+  }, [effectiveCompanyId, organizations]);
 
   const { useMetricsOverview } = useAdminMetrics();
   const { data: metricsData } = useMetricsOverview({ companyId: effectiveCompanyId });
@@ -100,7 +141,7 @@ export default function Home() {
   const heatmapMatrix = useMemo(() => {
     const days = 7; const hours = 24;
     const m: number[][] = Array.from({ length: days }, () => Array(hours).fill(0));
-    (orgStats.buckets ?? []).forEach((b: any) => {
+    (orgStats.buckets ?? []).forEach((b: { day: number; hour: number; count: number }) => {
       const d = ((b.day % 7) + 7) % 7; // normalize
       if (d >= 0 && d < days && b.hour >= 0 && b.hour < hours) m[d][b.hour] += b.count;
     });
@@ -163,9 +204,11 @@ export default function Home() {
   return (
     <>
       <PageMeta
-        title="Haaibo Dashboard"
-        description="Overview of users, contacts, issues, bookings, and events."
+        title={activeOrgName ? `Haaibo Dashboard — ${activeOrgName}` : "Haaibo Dashboard"}
+        description={activeOrgName ? `Overview for ${activeOrgName}: users, contacts, issues, bookings, and events.` : "Overview of users, contacts, issues, bookings, and events."}
       />
+
+      <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
 
       {/* Toolbar: company selector (SuperAdmin) + quick actions */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -198,7 +241,7 @@ export default function Home() {
             </>
         
           {allowAssetTracking && (
-            <button className="px-3 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => navigate('/assets/issues')}>
+            <button className="px-3 py-2 bg-gray-200 text-gray-800 rounded dark:bg-white/[0.06] dark:text-white/90" onClick={() => navigate('/assets/issues')}>
               Raise Issue
             </button>
           )}
@@ -209,13 +252,18 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
           <KpiCard label="Users" value={usersTotal ?? 0} onClick={() => navigate('/users')} />
           <KpiCard label="Contacts" value={contactsTotal ?? 0} onClick={() => navigate('/admin/contacts')} />
+          {enableOfficeReservations && (
+            <>
               <KpiCard label="Total Bookings" value={orgStats.totalBookings} />
-                <KpiCard label="Hours Booked" value={orgStats.totalHoursBooked} />
-                <KpiCard label="Hours Used" value={orgStats.totalHoursUsed} />
-                <KpiCard label="Active Users" value={orgStats.activeUsers} />
-          {allowAssetTracking && ( <KpiCard label="Open Issues" value={openIssuesCount} onClick={() => navigate('/assets/issues')} />
+              <KpiCard label="Hours Booked" value={orgStats.totalHoursBooked} />
+              <KpiCard label="Hours Used" value={orgStats.totalHoursUsed} />
+              <KpiCard label="Active Users" value={orgStats.activeUsers} />
+            </>
           )}
-         {allowAssetTracking && (
+          {allowAssetTracking && (
+            <KpiCard label="Open Issues" value={openIssuesCount} onClick={() => navigate('/assets/issues')} />
+          )}
+          {enableOfficeReservations && (
             <KpiCard label="My Upcoming Bookings" value={upcomingBookingsCount} onClick={() => navigate('/bookings')} />
           )}
       </div>
@@ -223,6 +271,7 @@ export default function Home() {
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {enableOfficeReservations && (
             <Section title="Most-used Desks">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              
@@ -238,11 +287,11 @@ export default function Home() {
                       const pct = Math.round((m.count / max) * 100);
                       return (
                         <div key={m.markerId} className="flex items-center gap-3">
-                          <div className="w-40 text-sm text-gray-600">{m.markerName}</div>
-                          <div className="flex-1 bg-gray-100 h-3 rounded overflow-hidden">
+                          <div className="w-40 text-sm text-gray-600 dark:text-gray-400">{m.markerName}</div>
+                          <div className="flex-1 bg-gray-100 dark:bg-white/[0.06] h-3 rounded overflow-hidden">
                             <div className="h-3 bg-indigo-600" style={{ width: `${pct}%` }} />
                           </div>
-                          <div className="w-10 text-right text-sm">{m.count}</div>
+                          <div className="w-10 text-right text-sm text-gray-700 dark:text-gray-300">{m.count}</div>
                         </div>
                       );
                     })}
@@ -250,8 +299,8 @@ export default function Home() {
                 </div>
 
                 <div className="md:col-span-1">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Rates</h3>
-                  <div className="space-y-2 text-sm text-gray-700">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-white/90 mb-2">Rates</h3>
+                  <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                     <div>Check-in rate: {orgStats.checkinRatePercent}%</div>
                     <div>No-shows: {orgStats.noShowCount}</div>
                     <div>Cancelled: {orgStats.cancelledCount}</div>
@@ -260,7 +309,9 @@ export default function Home() {
                 </div>
               </div>
             </Section>
+            )}
 
+            {enableOfficeReservations && (
             <Section title="Peak Usage Heatmap">
               <div className="mt-6">
                 <div className="overflow-x-auto">
@@ -268,7 +319,7 @@ export default function Home() {
                     {/* Simple heatmap: days rows, hours columns */}
                     {heatmapMatrix.map((row, dayIdx) => (
                       <div key={dayIdx} className="flex items-center gap-1 mb-1">
-                        <div className="w-16 text-xs text-gray-600">Day {dayIdx}</div>
+                        <div className="w-16 text-xs text-gray-600 dark:text-gray-400">Day {dayIdx}</div>
                         <div className="flex-1 flex gap-1">
                           {row.map((val, h) => {
                             const max = Math.max(...row, 1);
@@ -283,6 +334,7 @@ export default function Home() {
                 </div>
               </div>
             </Section>
+            )}
           </div>
         </div>
         {/* Recent Open Issues */}
@@ -301,7 +353,7 @@ export default function Home() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {(recentOpenIssues ?? []).length === 0 ? (
                     <TableRow>
-                      <TableCell className="px-5 py-4 text-gray-500">No open issues</TableCell>
+                      <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">No open issues</TableCell>
                       <TableCell><span /></TableCell>
                       <TableCell><span /></TableCell>
                     </TableRow>
@@ -337,7 +389,7 @@ export default function Home() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {(upcomingEvents ?? []).length === 0 ? (
                     <TableRow>
-                      <TableCell className="px-5 py-4 text-gray-500">No events</TableCell>
+                      <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">No events</TableCell>
                       <TableCell><span /></TableCell>
                       <TableCell><span /></TableCell>
                     </TableRow>
@@ -355,6 +407,7 @@ export default function Home() {
             </div>
             </Section>
 
+            {enableOfficeReservations && (
             <Section title="My Next Bookings">
             <div className="max-w-full overflow-x-auto">
               <Table>
@@ -368,7 +421,7 @@ export default function Home() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {(nextBookings ?? []).length === 0 ? (
                     <TableRow>
-                      <TableCell className="px-5 py-4 text-gray-500">No upcoming bookings</TableCell>
+                      <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">No upcoming bookings</TableCell>
                       <TableCell><span /></TableCell>
                       <TableCell><span /></TableCell>
                     </TableRow>
@@ -385,8 +438,10 @@ export default function Home() {
               </Table>
             </div>
             </Section>
+            )}
           </div>
         )}
+      </div>
       </div>
     </>
   );

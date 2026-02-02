@@ -45,47 +45,4 @@ const useReservations = () => {
   return { useReservationSummary, useUpcomingReservations };
 };
 
-export const useMyUpcomingReservations = (userId?: string, take = 20) => {
-  const api = useReservationsApi();
-  const [items, setItems] = useState<Array<{ id: string; markerName?: string | null; startDate: Date; endDate: Date; raw?: ReservationDto }>>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Prefer server-provided dedicated endpoint when userId is supplied
-      const res: ReservationDto[] = userId ? await api.getUserUpcomingReservations(userId, take) : await api.getMyReservations();
-      const todayCutoff = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00.000Z').getTime();
-      // If endpoint returns upcoming only, this filter is harmless; otherwise it ensures future-only results
-      const future = (res || []).filter(r => {
-        try {
-          const d = new Date(r.date + 'T00:00:00.000Z');
-          return d.getTime() >= todayCutoff;
-        } catch {
-          return false;
-        }
-      }).sort((a,b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0)).slice(0, take);
-
-      const mapped = future.map(r => {
-        const startRaw = r.startTime ?? r.start ?? r.Start ?? '';
-        const endRaw = r.endTime ?? r.end ?? r.End ?? '';
-        const startIso = startRaw ? (startRaw.includes('T') ? startRaw : `${r.date}T${startRaw}`) : `${r.date}T00:00:00.000Z`;
-        const endIso = endRaw ? (endRaw.includes('T') ? endRaw : `${r.date}T${endRaw}`) : startIso;
-        return { id: r.id, markerName: r.markerName ?? null, startDate: new Date(startIso), endDate: new Date(endIso), raw: r };
-      });
-
-      setItems(mapped);
-      return mapped;
-    } finally {
-      setLoading(false);
-    }
-  }, [api, userId, take]);
-
-  useEffect(() => {
-    void fetch();
-  }, [fetch]);
-
-  return { items, loading, refresh: fetch };
-};
-
 export default useReservations;

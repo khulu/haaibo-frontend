@@ -10,6 +10,12 @@ import {
   HorizontaLDots,
   UserCircleIcon,
   GroupIcon,
+  FolderIcon,
+  AlertHexaIcon,
+  PlugInIcon,
+  TimeIcon,
+  PieChartIcon,
+  DocsIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
@@ -45,12 +51,12 @@ const navItems: NavItem[] = [
     path: "/organizations",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <FolderIcon />,
     name: "Collections",
     path: "/collections",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <CalenderIcon />,
     name: "Bookings",
     path: "/bookings",
   },
@@ -60,7 +66,7 @@ const navItems: NavItem[] = [
     path: "/locations",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <AlertHexaIcon />,
     name: "Issues",
     path: "/assets/issues",
   },
@@ -70,17 +76,17 @@ const navItems: NavItem[] = [
     path: "/events",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <PlugInIcon />,
     name: "Devices",
     path: "/assets",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <TimeIcon />,
     name: "Reminders",
     path: "/assets/reminders",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <PieChartIcon />,
     name: "Reports",
     path: "/assets/reports",
   },
@@ -405,15 +411,15 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     const items = [...navItems];
     if (companyDetails?.enableOfficeReservations) {
       items.push({
-        icon: <BoxCubeIcon />,
+        icon: <CalenderIcon />,
         name: companyDetails.reservationMenuLabel || "Reservations",
         path: "/reservations",
       });
     }
     // Show Reporting Reservations menu item if label is not empty
-    if (companyDetails?.reportingReservationsMenuLabel?.trim()) {
+    if (companyDetails?.reportingReservationsMenuLabel?.trim() && companyDetails?.enableOfficeReservations) {
       items.push({
-        icon: <BoxCubeIcon />,
+        icon: <DocsIcon />,
         name: companyDetails.reportingReservationsMenuLabel,
         path: "/reservation-reports",
       });
@@ -479,7 +485,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     });
     // Reservations (use company label when available)
     employeeItems.push({
-      icon: <BoxCubeIcon />,
+      icon: <CalenderIcon />,
       name: companyDetails?.reservationMenuLabel || 'Reservations',
       path: '/reservations',
     });

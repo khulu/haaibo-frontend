@@ -5,6 +5,7 @@ import useOrganization from '@hooks/organization/useOrganization';
 import useAsset from '@hooks/asset/useAsset';
 import getAuth from '@hooks/api/useAuthApi';
 import Label from '../../components/form/Label';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../components/ui/table';
 
 const statusName = (s: number) => ({ 0: 'Open', 1: 'In Progress', 2: 'Resolved', 3: 'Closed' }[s] || String(s));
 const priorityName = (p: number) => ({ 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Critical' }[p] || String(p));
@@ -86,32 +87,37 @@ export default function IssuesPage() {
       ) : isError ? (
         <div className="text-red-500 text-sm">Failed to load issues</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500 dark:text-gray-400">
-                <th className="px-4 py-2">Description</th>
-                <th className="px-4 py-2">Priority</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Created</th>
-                <th className="px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((i) => (
-                <tr key={i.id} className="border-t border-gray-100 dark:border-gray-800">
-                  <td className="px-4 py-2">{i.description}</td>
-                  <td className="px-4 py-2">{priorityName(i.priority)}</td>
-                  <td className="px-4 py-2">{statusName(i.status)}</td>
-                  <td className="px-4 py-2">{new Date(i.createdAt).toLocaleString()}</td>
-                  <td className="px-4 py-2"><button className="text-blue-600" onClick={() => navigate(`/assets/issues/${i.id}`)}>View</button></td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td className="px-4 py-3 text-gray-400" colSpan={5}>No issues</td></tr>
+        <div className="max-w-full overflow-x-auto">
+          <Table>
+            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+              <TableRow>
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Description</TableCell>
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Priority</TableCell>
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Status</TableCell>
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Created</TableCell>
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400" colSpan={5}>No issues</TableCell>
+                </TableRow>
+              ) : (
+                filtered.map((i) => (
+                  <TableRow key={i.id}>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{i.description}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{priorityName(i.priority)}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{statusName(i.status)}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(i.createdAt).toLocaleString()}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
+                      <button className="text-blue-600" onClick={() => navigate(`/assets/issues/${i.id}`)}>View</button>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
