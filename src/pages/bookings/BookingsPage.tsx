@@ -70,7 +70,7 @@ export default function BookingsPage() {
                 <TableRow key={b.id}>
                   <TableCell className="px-5 py-4 sm:px-6 text-start font-medium text-gray-800 text-theme-sm dark:text-white/90">{assetMap.get(b.assetId) ?? b.assetId}</TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{b.assigneeUserName || b.externalContactName || '-'}</TableCell>
-                  <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{new Date(b.startDate).toLocaleString()} → {new Date(b.endDate).toLocaleString()}</TableCell>
+                  <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{new Date(b.startDate).toLocaleDateString()} → {new Date(b.endDate).toLocaleDateString()}</TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{b.notes || '-'}</TableCell>
                 </TableRow>
               ))

@@ -15,7 +15,6 @@ const AssetEdit: React.FC = () => {
   const { useOrganizationList } = useOrganization();
   const { useUserList } = useUserApi();
   const { data: organizations } = useOrganizationList();
-  const { data: users } = useUserList({});
   const auth = getAuth();
   const currentCompanyId = auth.getCompanyId?.() ?? '';
   const [isSuperAdmin] = useState(() => {
@@ -33,6 +32,10 @@ const AssetEdit: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Limit users to those in the selected company (or current company for non-superadmin)
+  const companyIdForUsers = isSuperAdmin ? (form?.companyId || undefined) : (currentCompanyId || undefined);
+  const { data: users } = useUserList({ companyId: companyIdForUsers });
 
   useEffect(() => {
     const fetchAsset = async () => {
@@ -107,22 +110,27 @@ const AssetEdit: React.FC = () => {
               />
             </div>
             <div>
-              <Label htmlFor="companyId">Company</Label>
+             
               {isSuperAdmin ? (
+                <>
+                 <Label htmlFor="companyId">Company</Label>
                 <Select
                   options={organizations?.map((org) => ({ value: org.id, label: org.name })) || []}
                   placeholder="Select a company"
                   onChange={(value) => setForm((prev) => (prev ? { ...prev, companyId: value } : null))}
                   className="dark:bg-dark-900"
                 />
+                </>
               ) : (
-                <Input id="companyId" name="companyId" value={currentCompanyId} onChange={() => {}} disabled />
+                <Input id="companyId" name="companyId" value={currentCompanyId} onChange={() => {}} disabled  type='hidden'/>
               )}
             </div>
             <div>
               <Label htmlFor="assignedUserId">Assigned User</Label>
               <Select
-                options={users?.map((user) => ({ value: user.id, label: user.fullName })) || []}
+                options={(users || [])
+                  .filter((user) => user.role === 'Employee' || user.role === 2 || user.role === 'Admin' || user.role === 1)
+                  .map((user) => ({ value: user.id, label: user.fullName }))}
                 placeholder="Select a user"
                 onChange={(value) => setForm((prev) => (prev ? { ...prev, assignedUserId: value } : null))}
                 className="dark:bg-dark-900"

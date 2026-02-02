@@ -22,6 +22,27 @@ export default function IssuesPage() {
   const [tab, setTab] = useState<'open' | 'resolved' | 'all'>('open');
   const [companyId, setCompanyId] = useState<string | undefined>(initialCompanyId);
   const [assetId, setAssetId] = useState<string | undefined>(undefined);
+  const [isEmployee] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 'Employee' || role === 2;
+    } catch {
+      return false;
+    }
+  });
+  const [currentUserId] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return null;
+      const user = JSON.parse(raw);
+      return user?.id ?? null;
+    } catch {
+      return null;
+    }
+  });
 
   // Only SuperAdmin can change company filter
   const [isSuperAdmin] = useState(() => {
@@ -40,7 +61,14 @@ export default function IssuesPage() {
   const orgOptions = useMemo(() => (organizations ?? []).map(o => ({ value: o.id, label: o.name })), [organizations]);
 
   const { data: assets } = useAssetList({ companyId });
-  const assetOptions = useMemo(() => (assets ?? []).map(a => ({ value: a.id, label: `${a.make || ''} ${a.model || ''}`.trim() || a.assetId })), [assets]);
+  const employeeScopedAssets = useMemo(() => {
+    const list = assets ?? [];
+    if (isEmployee && currentUserId) {
+      return list.filter(a => a.assignedUserId === currentUserId);
+    }
+    return list;
+  }, [assets, isEmployee, currentUserId]);
+  const assetOptions = useMemo(() => (employeeScopedAssets ?? []).map(a => ({ value: a.id, label: `${a.make || ''} ${a.model || ''}`.trim() || a.assetId })), [employeeScopedAssets]);
 
   const openOnly = tab === 'open' ? true : undefined;
   const { data: issues, isLoading, isError } = useIssuesList({ companyId, assetId, openOnly });
@@ -72,6 +100,14 @@ export default function IssuesPage() {
               {assetOptions.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
             </select>
           </div>
+          {/* Allow employees to raise an issue for their assigned asset */}
+          <button
+            className="px-4 py-2 bg-emerald-600 text-white rounded disabled:opacity-50"
+            disabled={!assetId}
+            onClick={() => assetId && navigate(`/assets/${assetId}/issues/new`)}
+          >
+            Raise Issue
+          </button>
           <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => navigate('/assets')}>Go to Assets</button>
         </div>
       </div>

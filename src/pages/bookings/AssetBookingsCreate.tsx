@@ -8,6 +8,7 @@ import useBookings from '@hooks/bookings/useBookings';
 import type { CreateBookingsPayload } from '@hooks/api/useBookingsApi';
 import Label from '../../components/form/Label';
 import useContacts from '@hooks/contacts/useContacts';
+import DatePicker from '../../components/form/date-picker';
 
 type Mode = 'myself' | 'existing' | 'external';
 
@@ -98,7 +99,7 @@ export default function AssetBookingsCreate() {
       return;
     }
     // success: show simple message then navigate back
-    alert(`Created ${result.success.length} booking(s).`);
+
     navigate('/assets');
   };
 
@@ -143,23 +144,25 @@ export default function AssetBookingsCreate() {
         {/* Date range */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label>Start</Label>
-            <input
-              type="datetime-local"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-              className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-              required
+            <DatePicker
+              id="start-date"
+              label="Start"
+              placeholder="Select a date"
+              defaultDate={start || undefined}
+              onChange={(_dates, dateStr) => {
+                setStart(dateStr);
+              }}
             />
           </div>
           <div>
-            <Label>End</Label>
-            <input
-              type="datetime-local"
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-              className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-              required
+            <DatePicker
+              id="end-date"
+              label="End"
+              placeholder="Select a date"
+              defaultDate={end || undefined}
+              onChange={(_dates, dateStr) => {
+                setEnd(dateStr);
+              }}
             />
           </div>
         </div>

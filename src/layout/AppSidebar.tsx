@@ -13,7 +13,7 @@ import {
   FolderIcon,
   AlertHexaIcon,
   PlugInIcon,
-  TimeIcon,
+  // TimeIcon,
   PieChartIcon,
   DocsIcon,
 } from "../icons";
@@ -80,11 +80,11 @@ const navItems: NavItem[] = [
     name: "Devices",
     path: "/assets",
   },
-  {
-    icon: <TimeIcon />,
-    name: "Reminders",
-    path: "/assets/reminders",
-  },
+  // {
+  //   icon: <TimeIcon />,
+  //   name: "Reminders",
+  //   path: "/assets/reminders",
+  // },
   {
     icon: <PieChartIcon />,
     name: "Reports",
@@ -480,15 +480,37 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     // Employee Dashboard (show even if companyDetails flag is false — employees expect this route)
     employeeItems.push({
       icon: <GridIcon />,
-      name: companyDetails?.employeeDashboardName || 'Employee Dashboard',
+      name: companyDetails?.employeeDashboardName || 'Dashboard',
       path: '/employee-dashboard',
     });
-    // Reservations (use company label when available)
-    employeeItems.push({
-      icon: <CalenderIcon />,
-      name: companyDetails?.reservationMenuLabel || 'Reservations',
-      path: '/reservations',
-    });
+    // Reservations (use company label when available) only if enabled
+    if (companyDetails?.enableOfficeReservations) {
+      employeeItems.push({
+        icon: <CalenderIcon />,
+        name: companyDetails?.reservationMenuLabel || 'Reservations',
+        path: '/reservations',
+      });
+    }
+    // Allow employees to raise issues when asset tracking is enabled
+    if (companyDetails?.allowAssetTracking !== false) {
+      // Asset bookings menu
+      employeeItems.push({
+        icon: <CalenderIcon />,
+        name: 'Bookings',
+        path: '/bookings',
+      });
+      // Devices menu
+      employeeItems.push({
+        icon: <PlugInIcon />,
+        name: 'Devices',
+        path: '/assets',
+      });
+      employeeItems.push({
+        icon: <AlertHexaIcon />,
+        name: 'Issues',
+        path: '/assets/issues',
+      });
+    }
     filteredNavItems = employeeItems;
   }
 

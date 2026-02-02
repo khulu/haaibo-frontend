@@ -81,14 +81,17 @@ export default function IssueCreate() {
       <form className="space-y-5" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label>Company</Label>
+        
             {isSuperAdmin ? (
+              <>
+                  <Label>Company</Label>
               <select value={companyId ?? ''} onChange={e=>setCompanyId(e.target.value || undefined)} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                 <option value="">Select a company</option>
                 {orgOptions.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
               </select>
+              </>
             ) : (
-              <input type="text" value={initialCompanyId ?? ''} readOnly className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+              <input type="hidden" value={initialCompanyId ?? ''} readOnly className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
             )}
           </div>
           <div>

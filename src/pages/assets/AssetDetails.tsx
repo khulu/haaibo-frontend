@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAssetApi, { Asset } from '@hooks/api/useAssetApi';
 import Button from '../../components/ui/button/Button';
@@ -11,10 +12,11 @@ import { useToast } from '../../context/useToast';
 
 const AssetDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAssetById, uploadAssetFile } = useAssetApi();
+  const { getAssetById } = useAssetApi();
   const { useCollectionsList } = useCollections();
   const auth = getAuth();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,21 +25,34 @@ const AssetDetails: React.FC = () => {
   const [assignError, setAssignError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  const apiOrigin = useMemo(() => {
+    const base = (apiBase || '').replace(/\/+$/, '');
+    // Strip trailing /api for origin-only usage (e.g., serving /uploads)
+    return base.replace(/\/?api$/, '');
+  }, [apiBase]);
+
   useEffect(() => {
+    let active = true;
     const fetchAsset = async () => {
       try {
         if (id) {
           const data = await getAssetById(id);
-          setAsset(data);
+          if (active) setAsset(data);
         }
       } catch {
-        setError('Failed to fetch asset details');
+        if (active) setError('Failed to fetch asset details');
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     fetchAsset();
-  }, [id, getAssetById]);
+    return () => {
+      active = false;
+    };
+    // Intentionally exclude getAssetById to avoid effect re-triggering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const role = useMemo(() => {
     try {
@@ -57,13 +72,51 @@ const AssetDetails: React.FC = () => {
   const currentCollectionName = (asset && (asset as unknown as { collectionName?: string }).collectionName) || null;
   const currentCollectionId = (asset && (asset as unknown as { collectionId?: string }).collectionId) || null;
 
+  const normalizeImageUrl = (url: string) => {
+    if (!url) return url;
+    // Use origin (without /api) for static uploads
+    return url.startsWith('/uploads') && apiOrigin ? `${apiOrigin}${url}` : url;
+  };
+
   const handlePhotoSelected = async (fileOrBlob: File | Blob) => {
     if (!asset || !id) return;
     try {
-      await uploadAssetFile(id, fileOrBlob as File); // Use asset upload endpoint
-      const updated = await getAssetById(id);
-      setAsset(updated);
+      const form = new FormData();
+      // Backend expects each file under the key 'files'
+      // Ensure a filename is present even if we received a Blob
+      const file = fileOrBlob instanceof File
+        ? fileOrBlob
+        : new File([fileOrBlob], 'asset-photo.jpg', { type: (fileOrBlob as Blob).type || 'application/octet-stream' });
+      form.append('files', file);
+
+      const token = auth.getToken?.();
+      // Build URL avoiding double /api if apiBase already includes it
+      const trimmed = (apiBase || '').replace(/\/+$/, '');
+      const uploadUrl = trimmed.endsWith('/api')
+        ? `${trimmed}/assets/${id}/upload`
+        : `${trimmed}/api/assets/${id}/upload`;
+
+      if (!(role === 1 || role === 'Admin' || role === 0 || role === 'SuperAdmin')) {
+        toast.error('Only Admin or SuperAdmin can upload photos');
+        return;
+      }
+
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          // Do not set Content-Type for multipart; browser will set the boundary
+        } as HeadersInit,
+        body: form,
+      });
+
+      if (!res.ok) throw new Error('Upload failed');
+      const uploadedUrls: string[] = await res.json();
+      const normalized = uploadedUrls.map(normalizeImageUrl);
+
+      setAsset((prev) => (prev ? { ...prev, imageUrls: normalized } : prev));
       setPhotoModalOpen(false);
+      toast.success('Photo uploaded');
     } catch {
       alert('Failed to upload photo');
     }
@@ -82,7 +135,7 @@ const AssetDetails: React.FC = () => {
               <img
                 width={64}
                 height={64}
-                src={asset.imageUrls[0]}
+                src={normalizeImageUrl(asset.imageUrls[0])}
                 alt={asset.make || 'Device'}
               />
             )  : (
@@ -177,6 +230,8 @@ const AssetDetails: React.FC = () => {
                           ...(auth.getToken() ? { Authorization: `Bearer ${auth.getToken()}` } : {}),
                         },
                       });
+                      // Invalidate cached asset lists so other views reflect collection changes
+                      queryClient.invalidateQueries({ queryKey: ['assets'] });
                       const updated = await getAssetById(id);
                       setAsset(updated);
                       toast.success('Asset assigned to collection');

@@ -52,6 +52,9 @@ export default function EmployeeDashboard() {
   const { useOrganizationList } = useOrganization();
   const { data: organizations } = useOrganizationList();
   const organizationOptions = useMemo(() => (organizations ?? []).map(o => ({ value: o.id, label: o.name })), [organizations]);
+  const orgDetails = useMemo(() => (organizations ?? []).find(o => o.id === effectiveCompanyId), [organizations, effectiveCompanyId]);
+  const reservationsEnabled = orgDetails?.enableOfficeReservations === true;
+  const assetTrackingEnabled = orgDetails?.allowAssetTracking === true;
 
   // (omitted: contacts, users and issues for this MVP view)
 
@@ -110,16 +113,16 @@ export default function EmployeeDashboard() {
 
   const { data: reservationSummary } = useReservationSummary({ companyId: effectiveCompanyId, dateFrom, dateTo });
 
-  // KPIs - prefer server summary when available
-  const upcoming7 = (upcomingReservations ?? []).filter(b => new Date(b.startDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length;
-  const nowCheckedIn = reservationSummary ? (reservationSummary.checkedInCount > 0 ? 1 : 0) : ((sourceMyBookings ?? []).some(b => new Date(b.startDate).getTime() <= Date.now() && new Date(b.endDate).getTime() >= Date.now() && !!(b as LocalBooking).checkedInAt) ? 1 : 0);
-  const total30d = reservationSummary ? reservationSummary.totalBookings : (sourceMyBookings ?? []).filter(b => new Date(b.startDate).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000).length;
-  const hours30d = reservationSummary ? Math.round(reservationSummary.totalHoursUsed) : Math.round(((sourceMyBookings ?? []).reduce((sum, b) => {
+  // KPIs - prefer server summary when available (reservations only when enabled)
+  const upcoming7 = reservationsEnabled ? (upcomingReservations ?? []).filter(b => new Date(b.startDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length : 0;
+  const nowCheckedIn = reservationsEnabled ? (reservationSummary ? (reservationSummary.checkedInCount > 0 ? 1 : 0) : ((sourceMyBookings ?? []).some(b => new Date(b.startDate).getTime() <= Date.now() && new Date(b.endDate).getTime() >= Date.now() && !!(b as LocalBooking).checkedInAt) ? 1 : 0)) : 0;
+  const total30d = reservationsEnabled ? (reservationSummary ? reservationSummary.totalBookings : (sourceMyBookings ?? []).filter(b => new Date(b.startDate).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000).length) : 0;
+  const hours30d = reservationsEnabled ? (reservationSummary ? Math.round(reservationSummary.totalHoursUsed) : Math.round(((sourceMyBookings ?? []).reduce((sum, b) => {
     const start = new Date(b.startDate).getTime();
     const end = new Date(b.endDate).getTime();
     const used = (b as LocalBooking).checkedOutAt ? (new Date((b as LocalBooking).checkedOutAt!).getTime() - ((b as LocalBooking).checkedInAt ? new Date((b as LocalBooking).checkedInAt!).getTime() : start)) : (end - start);
     return sum + (used || 0);
-  }, 0)) / (1000 * 60 * 60));
+  }, 0)) / (1000 * 60 * 60))) : 0;
   
 
   // Events omitted from MVP
@@ -153,14 +156,18 @@ export default function EmployeeDashboard() {
           {/* toolbar actions removed per request */}
       </div>
 
-      {/* MVP Employee stats (mock-data-driven) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
-        <KpiCard label="Upcoming (7d)" value={upcoming7} onClick={() => navigate('/bookings')} />
-        <KpiCard label="Currently Checked-In" value={nowCheckedIn} onClick={() => navigate('/bookings')} />
-        <KpiCard label="Total (30d)" value={total30d} onClick={() => navigate('/bookings')} />
-        <KpiCard label="Hours Used (30d)" value={hours30d} onClick={() => navigate('/bookings')} />
-      </div>
+      {/* MVP Employee stats: show reservation KPIs only when reservations feature is enabled */}
+      {reservationsEnabled && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
+          <KpiCard label="Upcoming (7d)" value={upcoming7} onClick={() => navigate('/bookings')} />
+          <KpiCard label="Currently Checked-In" value={nowCheckedIn} onClick={() => navigate('/bookings')} />
+          <KpiCard label="Total (30d)" value={total30d} onClick={() => navigate('/bookings')} />
+          <KpiCard label="Hours Used (30d)" value={hours30d} onClick={() => navigate('/bookings')} />
+        </div>
+      )}
 
+      {/* Reservations content gated by feature flag */}
+      {reservationsEnabled && (
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-12 xl:col-span-6">
           <Section title="Upcoming Reservations (7 days)">
@@ -231,6 +238,20 @@ export default function EmployeeDashboard() {
           </Section>
         </div>
       </div>
+      )}
+
+      {/* Asset tracking quick links for employees when enabled */}
+      {assetTrackingEnabled && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
+          <Section title="Assets & Issues">
+            <div className="flex flex-wrap gap-3">
+              <button className="px-4 py-2 bg-emerald-600 text-white rounded" onClick={() => navigate('/assets/bookings')}>Book Assets</button>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => navigate('/assets')}>View Devices</button>
+              <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={() => navigate('/assets/issues')}>Raise Issue</button>
+            </div>
+          </Section>
+        </div>
+      )}
     </>
   );
 }

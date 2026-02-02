@@ -56,7 +56,10 @@ const AssetCreate: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await createAsset(form);
+      await createAsset({
+        ...form,
+        assignedUserId: form.assignedUserId ? form.assignedUserId : null,
+      });
       navigate('/assets');
     } catch {
       setError('Failed to create asset');
@@ -181,7 +184,6 @@ const AssetCreate: React.FC = () => {
               placeholder="Select a company"
               onChange={(value) => setForm((prev) => ({ ...prev, companyId: value }))}
               className="dark:bg-dark-900"
-              required
             />
             </>
           ) : (
