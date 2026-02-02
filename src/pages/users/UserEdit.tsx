@@ -37,23 +37,26 @@ export default function UserEdit() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         if (id) {
           const data = await getUserById(id);
-          setUser(data);
+          if (isMounted) setUser(data);
         }
       } catch (err: unknown) {
         if (err && typeof err === "object" && "message" in err) {
-          setError((err as { message?: string }).message || "Failed to fetch user");
+          if (isMounted) setError((err as { message?: string }).message || "Failed to fetch user");
         } else {
-          setError("Failed to fetch user");
+          if (isMounted) setError("Failed to fetch user");
         }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     })();
-  }, [id, getUserById]);
+    return () => { isMounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user) return;

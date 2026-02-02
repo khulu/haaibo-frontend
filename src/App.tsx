@@ -4,6 +4,7 @@ import PrivateRoute from "./components/auth/PrivateRoute";
 import NotFound from "./pages/OtherPage/NotFound";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+import { GlobalSpinner } from "./components/ui/spinner";
 import Home from "./pages/Dashboard/Home";
 // Lazy-loaded routes for performance
 const UsersPage = lazy(() => import("./pages/users/UsersPage"));
@@ -62,7 +63,14 @@ export default function App() {
     <>
       <Router>
         <ScrollToTop />
-        <Suspense fallback={<div className="p-6 text-sm text-gray-600 dark:text-gray-300">Loading…</div>}>
+        <Suspense
+          fallback={
+            <GlobalSpinner
+              show
+              spinnerProps={{ size: 64, variant: "ring", colorClassName: "text-brand-500", ariaLabel: "Loading content" }}
+            />
+          }
+        >
           <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>

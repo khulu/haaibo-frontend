@@ -69,7 +69,7 @@ export type ReservationSummaryDto = {
 };
 
 const useReservationsApi = () => {
-  const axios = useAxios();
+  const { request } = useAxios();
   const auth = getAuth();
   const token = auth.getToken();
 
@@ -79,7 +79,7 @@ const useReservationsApi = () => {
     date?: string;
     userId?: string;
   }): Promise<ReservationDto[]> => {
-    const response = await axios.request({
+    const response = await request({
       baseURL,
       // endpoint provided by the API controller
       url: '/locations/reservations',
@@ -100,7 +100,7 @@ const useReservationsApi = () => {
     if (startTime) params.start = startTime;
     if (endTime) params.end = endTime;
     
-    const response = await axios.request({
+    const response = await request({
       baseURL,
       url: `/locations/${locationId}/availability`,
       method: 'GET',
@@ -114,7 +114,7 @@ const useReservationsApi = () => {
     locationId: string,
     payload: CreateReservationDto
   ): Promise<ReservationDto> => {
-    const response = await axios.request({
+    const response = await request({
       baseURL,
       url: `/locations/${locationId}/reservations`,
       method: 'POST',
@@ -125,7 +125,7 @@ const useReservationsApi = () => {
   };
 
   const deleteReservation = async (id: string): Promise<void> => {
-    await axios.request({
+    await request({
       baseURL,
       url: `/reservations/${id}`,
       method: 'DELETE',
@@ -134,7 +134,7 @@ const useReservationsApi = () => {
   };
 
   const getMyReservations = async (): Promise<ReservationDto[]> => {
-    const response = await axios.request({
+    const response = await request({
       baseURL,
       url: '/reservations/me',
       method: 'GET',
@@ -147,7 +147,7 @@ const useReservationsApi = () => {
     format: 'csv' | 'pdf',
     params?: { companyId?: string; locationId?: string; userId?: string; date?: string }
   ): Promise<Blob> => {
-    const response = await axios.request({
+    const response = await request({
       baseURL,
       url: '/reports/reservations/export',
       method: 'POST',
@@ -160,7 +160,7 @@ const useReservationsApi = () => {
   };
 
   const getReservationSummary = async (params: { userId?: string; companyId?: string; locationId?: string; dateFrom?: string; dateTo?: string }): Promise<ReservationSummaryDto> => {
-    const response = await axios.request({
+    const response = await request({
       baseURL,
       url: '/reports/reservations/summary',
       method: 'GET',
@@ -178,7 +178,7 @@ const useReservationsApi = () => {
   };
 
   const getUserUpcomingReservations = async (userId: string, take?: number): Promise<ReservationDto[]> => {
-    const response = await axios.request({
+    const response = await request({
       baseURL,
       url: `/Users/${userId}/reservations/upcoming`,
       method: 'GET',

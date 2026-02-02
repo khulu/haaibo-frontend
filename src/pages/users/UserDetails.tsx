@@ -38,26 +38,52 @@ export default function UserDetails() {
 
   useEffect(() => {
     if (!id) return;
+    let mounted = true;
     (async () => {
       try {
         const data = await getUserById(id);
-        setUser(data);
+        if (mounted) setUser(data);
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message || "Failed to fetch user");
-        } else {
-          setError("Failed to fetch user");
+        if (mounted) {
+          if (err instanceof Error) {
+            setError(err.message || "Failed to fetch user");
+          } else {
+            setError("Failed to fetch user");
+          }
         }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [id, getUserById]);
 
   const handlePhotoSelected = async (fileOrBlob: File | Blob) => {
     if (!user || !id) return;
     try {
-      await uploadProfilePicture(id, fileOrBlob as File); // You may want to handle Blob conversion if needed
+      let file: File;
+      if (fileOrBlob instanceof File) {
+        file = fileOrBlob;
+      } else {
+        // Convert Blob from webcam to a File with a valid name and type
+        file = new File([fileOrBlob], "webcam.jpg", { type: "image/jpeg" });
+      }
+
+      const maxBytes = 5 * 1024 * 1024;
+      const allowedMime = ["image/jpeg", "image/png", "image/svg+xml"];
+      const allowedExt = [".jpg", ".jpeg", ".png", ".svg"];
+      const hasValidSize = file.size <= maxBytes;
+      const nameLower = file.name.toLowerCase();
+      const hasValidExt = allowedExt.some((ext) => nameLower.endsWith(ext));
+      const hasValidType = allowedMime.includes(file.type);
+      if (!hasValidSize || !hasValidExt || !hasValidType) {
+        alert("Invalid file. Allowed: .jpg, .jpeg, .png, .svg. Max 5MB.");
+        return;
+      }
+
+      await uploadProfilePicture(id, file);
       const updated = await getUserById(id);
       setUser(updated);
       setPhotoModalOpen(false);

@@ -88,18 +88,17 @@ const useAsset = () => {
     // Use BulkAsset typing for bulk upload
     mutationFn: (payload: Omit<BulkAsset, 'id' | 'createdAt' | 'updatedAt' | 'statusName' | 'companyName' | 'assignedUserName'>[]) => {
       const mappedPayload = payload.map((item) => ({
-        ...item,
         make: item.make ?? null,
         model: item.model ?? null,
-        serialNumber: item.serialNumber ?? "",
-        assetId: item.assetId ?? "",
-        purchaseDate: item.purchaseDate ?? "",
-        status: String(item.status ?? ''),
-        laptopTagNumber: item.laptopTagNumber ?? "",
-        assignedUserId: item.assignedUserId ?? "",
-        condition: item.condition ?? "",
-        warrantyExpiryDate: item.warrantyExpiryDate ?? "",
-        companyId: item.companyId ?? "",
+        serialNumber: item.serialNumber && String(item.serialNumber).trim() !== '' ? String(item.serialNumber).trim() : null,
+        assetId: item.assetId && String(item.assetId).trim() !== '' ? String(item.assetId).trim() : null,
+        purchaseDate: item.purchaseDate ?? null,
+        status: item.status !== null && item.status !== undefined && String(item.status).trim() !== '' ? String(item.status).trim() : null,
+        laptopTagNumber: item.laptopTagNumber && String(item.laptopTagNumber).trim() !== '' ? String(item.laptopTagNumber).trim() : null,
+        assignedUserId: item.assignedUserId && String(item.assignedUserId).trim() !== '' ? String(item.assignedUserId).trim() : null,
+        condition: item.condition && String(item.condition).trim() !== '' ? String(item.condition).trim() : null,
+        warrantyExpiryDate: item.warrantyExpiryDate ?? null,
+        companyId: item.companyId && String(item.companyId).trim() !== '' ? String(item.companyId).trim() : undefined,
       }));
       return bulkUploadAssets(mappedPayload);
     },

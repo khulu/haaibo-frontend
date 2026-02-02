@@ -253,7 +253,7 @@ export default function EmployeeDashboard() {
             </div>
           </Section>
 
-          <Section title="Reservation Time Heatmap (placeholder)">
+          {/* <Section title="Reservation Time Heatmap (placeholder)">
             <div className="p-4">
               {reservationSummary && reservationSummary.buckets && reservationSummary.buckets.length > 0 ? (
                 <div className="text-sm text-gray-700">
@@ -268,7 +268,7 @@ export default function EmployeeDashboard() {
                 <div className="p-4 text-gray-500">Heatmap preview will be added here — requires chart/heatmap component.</div>
               )}
             </div>
-          </Section>
+          </Section> */}
         </div>
       </div>
       )}

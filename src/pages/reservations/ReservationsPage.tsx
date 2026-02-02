@@ -73,6 +73,11 @@ export default function ReservationsPage() {
   // stable ref for getReservations to avoid effect loops
   const getReservationsRef = useRef(getReservations);
   useEffect(() => { getReservationsRef.current = getReservations; }, [getReservations]);
+  // Stable refs for marker APIs to avoid effect/callback identity loops
+  const getMarkersRef = useRef(getMarkers);
+  useEffect(() => { getMarkersRef.current = getMarkers; }, [getMarkers]);
+  const getMarkerAvailabilityRef = useRef(getMarkerAvailability);
+  useEffect(() => { getMarkerAvailabilityRef.current = getMarkerAvailability; }, [getMarkerAvailability]);
 
   // Fetch locations on mount
   useEffect(() => {
@@ -189,10 +194,14 @@ export default function ReservationsPage() {
     const minTime = getMinimumTime(dateStr);
     setStartTime(minTime < '09:00' ? '09:00' : minTime);
     
-    // Ensure end time is 1 hour after start time
-    const startHour = parseInt(minTime < '09:00' ? '09:00' : minTime);
-    const endHour = Math.min(startHour + 1, 23);
-    setEndTime(`${endHour.toString().padStart(2, '0')}:00`);
+    // Ensure end time is exactly 1 hour after start time
+    const [sHour, sMinute] = (minTime < '09:00' ? '09:00' : minTime).split(':').map(Number);
+    const endDate = new Date();
+    endDate.setHours(sHour, sMinute, 0, 0);
+    endDate.setHours(endDate.getHours() + 1);
+    const endHH = endDate.getHours().toString().padStart(2, '0');
+    const endMM = endDate.getMinutes().toString().padStart(2, '0');
+    setEndTime(`${endHH}:${endMM}`);
 
     setBookingModalData({
       date: dateStr,
@@ -242,18 +251,22 @@ export default function ReservationsPage() {
     }
   };
 
-  const updateMarkerAvailabilityByTime = async () => {
-    if (!bookingModalData || !selectedLocation) return;
+  // Derived scalar deps to avoid object identity in hooks
+  const bookingDate = bookingModalData?.date;
+  const selectedLocId = selectedLocation?.id;
+
+  const updateMarkerAvailabilityByTime = useCallback(async () => {
+    if (!bookingDate || !selectedLocId) return;
     
     setLoading(true);
     try {
       // Fetch all markers
-      const markers: FloorplanMarker[] = await getMarkers(selectedLocation.id);
+      const markers: FloorplanMarker[] = await getMarkersRef.current(selectedLocId);
       
       // Fetch availability for the selected time
-      const availability = await getMarkerAvailability(
-        selectedLocation.id, 
-        bookingModalData.date,
+      const availability = await getMarkerAvailabilityRef.current(
+        selectedLocId,
+        bookingDate,
         startTime,
         endTime
       );
@@ -282,7 +295,7 @@ export default function ReservationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingDate, selectedLocId, startTime, endTime]);
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const selectedDate = new Date(selectInfo.startStr);
@@ -297,6 +310,12 @@ export default function ReservationsPage() {
     
     handleDateClick(selectedDate);
   };
+
+  // Recompute marker availability whenever start or end time changes
+  useEffect(() => {
+    if (!bookingDate || !selectedLocId) return;
+    updateMarkerAvailabilityByTime();
+  }, [startTime, endTime, bookingDate, selectedLocId, updateMarkerAvailabilityByTime]);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const ev = clickInfo.event;
@@ -434,7 +453,8 @@ export default function ReservationsPage() {
         startTime,
         endTime,
       });
-      alert('Booking created successfully!');
+      // Refresh calendar events after successful booking
+      await fetchAndMapReservations();
       setShowBookingModal(false);
       setSelectedMarkerId(null);
     } catch (err: unknown) {
@@ -618,13 +638,14 @@ export default function ReservationsPage() {
                           }
                           
                           setStartTime(newStartTime);
-                          
-                          // Auto-adjust end time if it's before or too close to start time
-                          if (endTime <= newStartTime) {
-                            const [hour, minute] = newStartTime.split(':').map(Number);
-                            const newEndHour = Math.min(hour + 1, 23);
-                            setEndTime(`${newEndHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
-                          }
+                          // Always set end time to exactly 1 hour after start time
+                          const [hour, minute] = newStartTime.split(':').map(Number);
+                          const end = new Date();
+                          end.setHours(hour, minute, 0, 0);
+                          end.setHours(end.getHours() + 1);
+                          const hh = end.getHours().toString().padStart(2, '0');
+                          const mm = end.getMinutes().toString().padStart(2, '0');
+                          setEndTime(`${hh}:${mm}`);
                           
                           updateMarkerAvailabilityByTime();
                         }}
@@ -645,19 +666,7 @@ export default function ReservationsPage() {
                       <input
                         type="time"
                         value={endTime}
-                        min={startTime}
-                        onClick={(e) => e.currentTarget.showPicker()}
-                        onChange={(e) => {
-                          const newEndTime = e.target.value;
-                          
-                          if (newEndTime <= startTime) {
-                            alert('End time must be after start time');
-                            return;
-                          }
-                          
-                          setEndTime(newEndTime);
-                          updateMarkerAvailabilityByTime();
-                        }}
+                        readOnly
                         className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                       />
                       <span className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
@@ -670,15 +679,7 @@ export default function ReservationsPage() {
                 </div>
               </div>
 
-              <div className="mb-4">
-                <button
-                  onClick={updateMarkerAvailabilityByTime}
-                  disabled={loading}
-                  className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50"
-                >
-                  {loading ? 'Updating...' : 'Update Availability'}
-                </button>
-              </div>
+      
 
               {bookingModalData.floorplanPath && (
                 <div className="mb-6">
@@ -840,10 +841,10 @@ export default function ReservationsPage() {
                 <button
                   type="button"
                   onClick={async () => { setShowMarkerConfirmModal(false); await handleSubmitBooking(); }}
-                  disabled={!selectedMarkerId || loading}
+                  disabled={!selectedMarkerId}
                   className="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex justify-center rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Booking...' : 'Confirm Booking'}
+                  {'Confirm Booking'}
                 </button>
               </div>
             </div>

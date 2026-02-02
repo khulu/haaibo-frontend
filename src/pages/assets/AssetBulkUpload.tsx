@@ -61,7 +61,10 @@ export default function AssetBulkUpload() {
             model: String(row.model ?? ""),
             serialNumber: String(row.serialNumber ?? ""),
             laptopTagNumber: String(row.laptopTagNumber ?? ""),
-            assignedUserId: '',
+            assignedUserId:
+              typeof row.assignedUserId === "string" && row.assignedUserId.trim() !== ""
+                ? row.assignedUserId.trim()
+                : null,
             condition: String(row.condition ?? ""),
             status: String(row.status ?? ""),
             purchaseDate: formatExcelDate(row.purchaseDate),
@@ -83,13 +86,18 @@ export default function AssetBulkUpload() {
     setUploading(true);
     setError(null);
     const payload = previewRows.map(row => ({
-      assetId: "", // Provide a default value for assetId
-      ...row,
-      companyId,
+      make: row.make || null,
+      model: row.model || null,
+      serialNumber: row.serialNumber ? String(row.serialNumber).trim() : null,
+      assetId: null,
+      // assetId intentionally omitted for create
+      laptopTagNumber: row.laptopTagNumber ? String(row.laptopTagNumber).trim() : null,
+      condition: row.condition ? String(row.condition).trim() : null,
+      status: row.status && String(row.status).trim() !== '' ? String(row.status).trim() : null,
       purchaseDate: row.purchaseDate ? row.purchaseDate : null,
       warrantyExpiryDate: row.warrantyExpiryDate ? row.warrantyExpiryDate : null,
-      assignedUserId: null,
-      status: String(row.status ?? ''),
+      companyId: companyId && String(companyId).trim() !== '' ? companyId : null,
+      assignedUserId: row.assignedUserId && String(row.assignedUserId).trim() !== '' ? String(row.assignedUserId).trim() : null,
     }));
     await uploadAsset.mutate(payload);
     setUploading(false);

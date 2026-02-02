@@ -1,4 +1,5 @@
 import useAxios from './useAxios';
+import { useCallback } from 'react';
 import getToken from './useAuthApi';
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 import getCompanyId from "@hooks/api/useAuthApi";
@@ -20,7 +21,7 @@ export interface User {
 export type CreateUserInput = Omit<User, 'id' | 'profilePicture' | 'companyName'> & { password: string };
 
 const useUserApi = () => {
-  const axios = useAxios();
+  const { request } = useAxios();
   const tokenApi = getToken();
   const token = tokenApi.getToken();
 
@@ -28,7 +29,7 @@ const useUserApi = () => {
   const getUsers = async (companyId?: string): Promise<User[]> => {
     try {
  
-      const response = await axios.request({
+    const response = await request({
         baseURL,
         url: '/Users',
         method: 'GET',
@@ -45,7 +46,7 @@ const useUserApi = () => {
   const createUser = async (user: CreateUserInput): Promise<User> => {
     try {
  
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Users',
         method: 'POST',
@@ -60,10 +61,9 @@ const useUserApi = () => {
   };
 
     // Get a single user by id
-  const getUserById = async (id: string): Promise<User> => {
+  const getUserById = useCallback(async (id: string): Promise<User> => {
     try {
-    
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Users/single/${id}`,
         method: 'GET',
@@ -74,13 +74,13 @@ const useUserApi = () => {
       console.error('getUserById error:', error);
       throw error;
     }
-  };
+  }, [request, token]);
 
   // Get users by companyId (path param)
   const getUsersByCompany = async (companyId: string): Promise<User[]> => {
     try {
    
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Users/${companyId}`,
         method: 'GET',
@@ -96,7 +96,7 @@ const useUserApi = () => {
   // Get upcoming reservations for a specific user (convenience wrapper)
   const getUserUpcomingReservations = async (userId: string, take?: number): Promise<ReservationDto[]> => {
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Users/${userId}/reservations/upcoming`,
         method: 'GET',
@@ -114,7 +114,7 @@ const useUserApi = () => {
   const deleteUser = async (id: string): Promise<void> => {
     try {
 
-      await axios.request({
+      await request({
         baseURL,
         url: `/Users/${id}`,
         method: 'DELETE',
@@ -132,14 +132,13 @@ const useUserApi = () => {
  
       const formData = new FormData();
       formData.append('file', file);
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Users/${id}/profile-picture`,
         method: 'POST',
         data: formData,
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'Content-Type': 'multipart/form-data',
         },
       });
       return response.data;
@@ -152,7 +151,7 @@ const useUserApi = () => {
   const updateUser = async (id: string, user: CreateUserInput): Promise<User> => {
     try {
     
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Users/${id}`,
         method: 'PUT',
@@ -170,7 +169,7 @@ const useUserApi = () => {
   const getRoles = async (): Promise<{ value: string; label: string }[]> => {
     try {
   
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Users/roles',
         method: 'GET',
@@ -190,7 +189,7 @@ const useUserApi = () => {
       const paramCompanyId = (users && users.length > 0 && typeof users[0].companyId === 'string') ? users[0].companyId : undefined;
     try {
 
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Users/bulk-upload',
         method: 'POST',
@@ -211,7 +210,7 @@ const useUserApi = () => {
   // Get total users (optionally by companyId)
   const getTotalUsers = async (companyId?: string): Promise<number> => {
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Users/total',
         method: 'GET',

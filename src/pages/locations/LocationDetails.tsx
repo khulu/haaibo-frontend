@@ -22,6 +22,7 @@ export default function LocationDetails() {
   const [markers, setMarkers] = useState<FloorplanMarker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showMarkerModal, setShowMarkerModal] = useState(false);
   const [editingMarker, setEditingMarker] = useState<FloorplanMarker | null>(null);
   const [markerFormData, setMarkerFormData] = useState<MarkerFormData>({
@@ -33,6 +34,23 @@ export default function LocationDetails() {
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [draggedMarker, setDraggedMarker] = useState<FloorplanMarker | null>(null);
   const floorplanRef = useRef<HTMLDivElement>(null);
+
+  const extractErrorMessage = (err: unknown, fallback: string) => {
+    let message = fallback;
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object') {
+      const e = err as { message?: string; response?: { data?: unknown } };
+      if (e.message) message = e.message;
+      const data = e.response?.data;
+      if (typeof data === 'string') {
+        message = data;
+      } else if (data && typeof data === 'object') {
+        const d = data as { title?: string; detail?: string; message?: string };
+        message = d.title || d.detail || d.message || message;
+      }
+    }
+    return message;
+  };
 
   // Helper to construct static file URL (removes /api from base URL)
   const getStaticFileUrl = (path: string) => {
@@ -131,9 +149,10 @@ export default function LocationDetails() {
         setMarkers(prev => [...prev, created]);
       }
       setShowMarkerModal(false);
+      setSaveError(null);
     } catch (err) {
       console.error('Failed to save marker:', err);
-      alert('Failed to save marker');
+      setSaveError(extractErrorMessage(err, 'Failed to save marker'));
     }
   };
 
@@ -144,9 +163,10 @@ export default function LocationDetails() {
       await deleteMarker(editingMarker.id);
       setMarkers(prev => prev.filter(m => m.id !== editingMarker.id));
       setShowMarkerModal(false);
+      setSaveError(null);
     } catch (err) {
       console.error('Failed to delete marker:', err);
-      alert('Failed to delete marker');
+      setSaveError(extractErrorMessage(err, 'Failed to delete marker'));
     }
   };
 
@@ -234,6 +254,16 @@ export default function LocationDetails() {
                 {markers.length} marker{markers.length !== 1 ? 's' : ''}
               </span>
             </div>
+            <div className="mt-2 mb-2 flex gap-4 items-center text-sm text-gray-600 dark:text-gray-400">
+              <span className="flex items-center gap-1">
+                <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">🪑</span>
+                Desk
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs">👥</span>
+                Meeting Room
+              </span>
+            </div>
             <div 
               ref={floorplanRef}
               className="relative border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900/50 cursor-crosshair"
@@ -272,16 +302,6 @@ export default function LocationDetails() {
                   </div>
                 </div>
               ))}
-            </div>
-            <div className="mt-2 flex gap-4 items-center text-sm text-gray-600 dark:text-gray-400">
-              <span className="flex items-center gap-1">
-                <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">🪑</span>
-                Desk
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs">👥</span>
-                Meeting Room
-              </span>
             </div>
           </div>
         )}
@@ -340,6 +360,11 @@ export default function LocationDetails() {
                   ? 'Update marker details or drag the marker on the floorplan to reposition it.'
                   : 'Add a new marker to the floorplan. Click on the floorplan to place it at the desired location.'}
               </p>
+              {saveError && (
+                <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/10 dark:text-red-300">
+                  {saveError}
+                </div>
+              )}
               
               <form onSubmit={(e) => { e.preventDefault(); handleSaveMarker(); }} className="space-y-5">
                 <div>

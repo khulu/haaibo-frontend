@@ -18,10 +18,24 @@ const videoConstraints = {
 export default function PhotoModal({ isOpen, onClose, onPhotoSelected }: PhotoModalProps) {
   const [mode, setMode] = useState<"options" | "upload" | "webcam">("options");
   const webcamRef = useRef<Webcam>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) onPhotoSelected(file);
+    setUploadError(null);
+    if (!file) return;
+    const maxBytes = 5 * 1024 * 1024;
+    const allowedMime = ["image/jpeg", "image/png", "image/svg+xml"];
+    const allowedExt = [".jpg", ".jpeg", ".png", ".svg"];
+    const hasValidSize = file.size <= maxBytes;
+    const nameLower = file.name.toLowerCase();
+    const hasValidExt = allowedExt.some((ext) => nameLower.endsWith(ext));
+    const hasValidType = allowedMime.includes(file.type);
+    if (!hasValidSize || !hasValidExt || !hasValidType) {
+      setUploadError("Invalid file. Allowed: .jpg, .jpeg, .png, .svg. Max 5MB.");
+      return;
+    }
+    onPhotoSelected(file);
   };
 
   const capture = () => {
@@ -53,7 +67,8 @@ export default function PhotoModal({ isOpen, onClose, onPhotoSelected }: PhotoMo
           )}
           {mode === "upload" && (
             <div className="flex flex-col gap-4 w-full items-center">
-              <input type="file" accept="image/*" onChange={handleFileChange} />
+              <input type="file" accept=".jpg,.jpeg,.png,.svg" onChange={handleFileChange} />
+              {uploadError && <div className="text-red-500 text-sm">{uploadError}</div>}
               <Button onClick={() => setMode("options")}>Back</Button>
             </div>
           )}

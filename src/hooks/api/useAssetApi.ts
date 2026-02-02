@@ -39,7 +39,7 @@ export interface BulkAsset {
   statusName: string | null;
   purchaseDate: string | null;
   warrantyExpiryDate: string | null;
-  companyId: string;
+  companyId?: string;
   companyName: string | null;
   createdAt: string;
   updatedAt: string;
@@ -56,7 +56,7 @@ export interface AssetHistory {
 }
 
 const useAssetApi = () => {
-  const axios = useAxios();
+  const { request } = useAxios();
   const tokenApi = getToken();
   const token = tokenApi.getToken();
 
@@ -64,7 +64,7 @@ const useAssetApi = () => {
   const getAssetsByCompany = async (companyId?: string): Promise<Asset[]> => {
     try {
 
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Assets',
         method: 'GET',
@@ -81,7 +81,7 @@ const useAssetApi = () => {
   // Fetch a single laptop by ID
   const getAssetById = async (id: string): Promise<Asset> => {
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Assets/single/${id}`,
         method: 'GET',
@@ -100,7 +100,7 @@ const useAssetApi = () => {
     // Ensure status is a number for single asset creation
     const payload = { ...laptop, status: Number(laptop.status) };
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Assets',
         method: 'POST',
@@ -117,7 +117,7 @@ const useAssetApi = () => {
   // Update an existing laptop
   const updateAsset = async (id: string, laptop: Partial<CreateLaptopInput>): Promise<Asset> => {
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Assets/${id}`,
         method: 'PUT',
@@ -134,7 +134,7 @@ const useAssetApi = () => {
   // Delete a laptop by ID
   const deleteAsset = async (id: string): Promise<void> => {
     try {
-      await axios.request({
+      await request({
         baseURL,
         url: `/Assets/${id}`,
         method: 'DELETE',
@@ -151,14 +151,13 @@ const useAssetApi = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      await axios.request({
+      await request({
         baseURL,
         url: `/Assets/${id}/upload`,
         method: 'POST',
         data: formData,
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'Content-Type': 'multipart/form-data',
         },
       });
     } catch (error) {
@@ -171,7 +170,7 @@ const useAssetApi = () => {
   // Fetch the history of an asset
   const getAssetHistory = async (id: string): Promise<AssetHistory[]> => {
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: `/Assets/${id}/history`,
         method: 'GET',
@@ -190,7 +189,7 @@ const useAssetApi = () => {
     // Ensure status is a string for bulk upload
     const mappedAssets = assets.map(asset => ({ ...asset, status: asset.status !== null && asset.status !== undefined ? String(asset.status) : null }));
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Assets/bulk-upload',
         method: 'POST',
@@ -209,14 +208,13 @@ const useAssetApi = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      await axios.request({
+      await request({
         baseURL,
         url: `/Assets/${id}/pictures`,
         method: 'POST',
         data: formData,
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'Content-Type': 'multipart/form-data',
         },
       });
     } catch (error) {
@@ -228,7 +226,7 @@ const useAssetApi = () => {
   // Get total assets (optionally by companyId)
   const getTotalAssets = async (companyId?: string): Promise<number> => {
     try {
-      const response = await axios.request({
+      const response = await request({
         baseURL,
         url: '/Assets/total',
         method: 'GET',
