@@ -1,5 +1,6 @@
 import useEvent from "@hooks/event/useEvent";
 import getCompanyId from "@hooks/api/useAuthApi";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -13,6 +14,18 @@ const EventsPage: React.FC = () => {
 const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
   const { data: events, isLoading } = useEventList({companyId: companyId});
+
+  const [isSuperAdmin] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return false;
+      const user = JSON.parse(raw);
+      const role = user?.role;
+      return role === 0 || role === 'SuperAdmin';
+    } catch {
+      return false;
+    }
+  });
 
   if (isLoading) return <div className="p-6">Loading events...</div>;
 
@@ -63,12 +76,14 @@ const authApi = getCompanyId();
               >
                 User Name
               </TableCell>
-              <TableCell
-                isHeader
-                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-              >
-                Company Name
-              </TableCell>
+              {isSuperAdmin && (
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                >
+                  Company Name
+                </TableCell>
+              )}
             </TableRow>
           </TableHeader>
 
@@ -95,11 +110,13 @@ const authApi = getCompanyId();
                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                   {event.userName}
                 </TableCell>
-                <TableCell className="px-5 py-4 sm:px-6 text-start">
-                  <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                    {event.companyName}
-                  </span>
-                </TableCell>
+                {isSuperAdmin && (
+                  <TableCell className="px-5 py-4 sm:px-6 text-start">
+                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                      {event.companyName}
+                    </span>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

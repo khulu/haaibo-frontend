@@ -7,7 +7,7 @@ const useIssues = () => {
   const api = useIssuesApi();
   const qc = useQueryClient();
 
-  const useIssuesList = (params?: { companyId?: string; assetId?: string; openOnly?: boolean }) =>
+  const useIssuesList = (params?: { companyId?: string; assetId?: string; openOnly?: boolean; reportedByUserId?: string }) =>
     useQuery({
       queryKey: [...QueryKeyIssues, params],
       queryFn: () => api.listIssues(params),

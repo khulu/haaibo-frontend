@@ -163,7 +163,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   const location = useLocation();
   const auth = getAuth();
   const companyId = auth.getCompanyId();
-  const { getOrganizationById } = useOrganizationsApi();
+  const { getOrganizationById, getMyCompany } = useOrganizationsApi();
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<{
     enableOfficeReservations?: boolean | null;
@@ -190,11 +190,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   );
 
   useEffect(() => {
-    // Load company logo for company admins
     const isCompanyAdmin = role === 1 || role === "Admin";
-    if (isCompanyAdmin && companyId) {
-      (async () => {
-        try {
+    const isEmployee = role === 2 || role === "Employee";
+
+    (async () => {
+      try {
+        if (isCompanyAdmin && companyId) {
           const org = await getOrganizationById(companyId as string);
           if (org?.logo) setCompanyLogoUrl(org.logo);
           setCompanyDetails({
@@ -205,13 +206,35 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
             enableEmployeeDashboardMenu: org.enableEmployeeDashboardMenu ?? null,
             employeeDashboardName: org.employeeDashboardName ?? null,
           });
-        } catch {
-          // silently ignore; fall back to default logo
+          return;
         }
-      })();
-    } else {
-      setCompanyLogoUrl(null);
-    }
+        if (isEmployee) {
+          const org = await getMyCompany();
+          if (org) {
+            if (org.logo) setCompanyLogoUrl(org.logo);
+            setCompanyDetails({
+              enableOfficeReservations: org.enableOfficeReservations ?? null,
+              reservationMenuLabel: org.reservationMenuLabel ?? null,
+              reportingReservationsMenuLabel: org.reportingReservationsMenuLabel ?? null,
+              allowAssetTracking: org.allowAssetTracking ?? null,
+              enableEmployeeDashboardMenu: org.enableEmployeeDashboardMenu ?? null,
+              employeeDashboardName: org.employeeDashboardName ?? null,
+            });
+          } else {
+            // 404: Employee has no linked company — clear details
+            setCompanyLogoUrl(null);
+            setCompanyDetails(null);
+          }
+          return;
+        }
+        // SuperAdmin or other roles without a specific company: clear details
+        setCompanyLogoUrl(null);
+        setCompanyDetails(null);
+      } catch {
+        // silently ignore; fall back to defaults
+        setCompanyLogoUrl(null);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, companyId]);
 

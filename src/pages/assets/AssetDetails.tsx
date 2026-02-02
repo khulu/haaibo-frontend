@@ -216,6 +216,7 @@ const AssetDetails: React.FC = () => {
                 <Select
                   options={collectionOptions}
                   placeholder="Select a collection"
+                  defaultValue={currentCollectionId || ''}
                   onChange={async (value) => {
                     if (!id) return;
                     setAssignError(null);

@@ -24,14 +24,14 @@ const useEventApi = () => {
   const token = tokenApi.getToken();
 
 
-  const getEvents = async (companyId?: string): Promise<Event[]> => {
+  const getEvents = async (params?: { companyId?: string; userId?: string }): Promise<Event[]> => {
     try {
 
       const response = await axios.request({
         baseURL,
         url: '/Events',
         method: 'GET',
-        params: companyId ? { companyId } : undefined,
+        params: params ? { ...(params.companyId ? { companyId: params.companyId } : {}), ...(params.userId ? { userId: params.userId } : {}) } : undefined,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       return response.data;

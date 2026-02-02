@@ -16,16 +16,19 @@ const useEvents = () => {
 
   const useEventList = (payload: {
     companyId?: string;
+    userId?: string;
   }) =>
     useQuery<Event[], Error>({
       queryKey: [
         ...QueryKeyEventList,
         payload.companyId,
+        payload.userId,
       ],
       queryFn: () =>
-        getEvents(
-          payload.companyId,
-        ),
+        getEvents({
+          companyId: payload.companyId,
+          userId: payload.userId,
+        }),
     });
 
   return {

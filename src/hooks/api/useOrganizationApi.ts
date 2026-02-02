@@ -56,6 +56,27 @@ const useOrganizationsApi = () => {
     }
   };
 
+  // Get the company linked to the current authenticated user
+  const getMyCompany = async (): Promise<Organization | null> => {
+    try {
+      const response = await axios.request({
+        baseURL,
+        url: '/companies/me',
+        method: 'GET',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data as Organization;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      if (status === 404) {
+        // No company linked to the current user
+        return null;
+      }
+      console.error('getMyCompany error:', error);
+      throw error;
+    }
+  };
+
   // Create a new organization
   const createOrganization = async (org: CreateOrganizationInput): Promise<Organization> => {
     try {
@@ -209,6 +230,7 @@ const useOrganizationsApi = () => {
     getOrganizations,
     createOrganization,
     getOrganizationById,
+    getMyCompany,
     updateOrganization,
     deleteOrganization,
     uploadLogo,

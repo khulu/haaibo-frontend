@@ -3,7 +3,10 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../compon
 import useReservations from "@hooks/reservations/useReservations";
 import useUser from "@hooks/user/useUser";
 import useOrganization from "@hooks/organization/useOrganization";
-import getAuth from "@hooks/api/useAuthApi";
+import useAsset from "@hooks/asset/useAsset";
+import useBookings from "@hooks/bookings/useBookings";
+import useEvents from "@hooks/event/useEvent";
+import useIssues from "@hooks/issues/useIssues";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Label from "../../components/form/Label";
@@ -19,9 +22,7 @@ type LocalBooking = {
 };
 
 export default function EmployeeDashboard() {
-  const auth = getAuth();
   const navigate = useNavigate();
-  const currentCompanyId = (auth.getCompanyId() as string | null) ?? undefined;
 
   const [isSuperAdmin] = useState(() => {
     try {
@@ -34,27 +35,37 @@ export default function EmployeeDashboard() {
       return false;
     }
   });
-    const [userId] = useState(() => {
+  const [userId] = useState(() => {
     try {
       const raw = localStorage.getItem('user');
-      if (!raw) return false;
+      if (!raw) return undefined;
       const user = JSON.parse(raw);
-      return user.id;
+      return user.id as string | undefined;
     } catch {
-      return false;
+      return undefined;
     }
   });
-  // (mock data removed) rely on server-provided bookings
-  // company selector for SuperAdmin
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(currentCompanyId);
-  const effectiveCompanyId = isSuperAdmin ? selectedCompanyId : currentCompanyId;
 
-  const { useOrganizationList } = useOrganization();
+  const { useOrganizationList, useMyCompany } = useOrganization();
   const { data: organizations } = useOrganizationList();
+  const { data: myCompany } = useMyCompany();
   const organizationOptions = useMemo(() => (organizations ?? []).map(o => ({ value: o.id, label: o.name })), [organizations]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(undefined);
+  const effectiveCompanyId = isSuperAdmin ? selectedCompanyId : (myCompany?.id ?? undefined);
   const orgDetails = useMemo(() => (organizations ?? []).find(o => o.id === effectiveCompanyId), [organizations, effectiveCompanyId]);
-  const reservationsEnabled = orgDetails?.enableOfficeReservations === true;
-  const assetTrackingEnabled = orgDetails?.allowAssetTracking === true;
+  // Feature flags: prefer myCompany flags for employees, orgDetails for SuperAdmin selection, else any org when "All companies"
+  const reservationsEnabled = useMemo(() => {
+    if (effectiveCompanyId) {
+      return !!(isSuperAdmin ? orgDetails?.enableOfficeReservations : myCompany?.enableOfficeReservations);
+    }
+    return ((organizations ?? []) as Array<{ enableOfficeReservations?: boolean }>).some(o => !!o.enableOfficeReservations);
+  }, [organizations, orgDetails, effectiveCompanyId, isSuperAdmin, myCompany]);
+  const assetTrackingEnabled = useMemo(() => {
+    if (effectiveCompanyId) {
+      return !!(isSuperAdmin ? orgDetails?.allowAssetTracking : myCompany?.allowAssetTracking);
+    }
+    return ((organizations ?? []) as Array<{ allowAssetTracking?: boolean }>).some(o => !!o.allowAssetTracking);
+  }, [organizations, orgDetails, effectiveCompanyId, isSuperAdmin, myCompany]);
 
   // (omitted: contacts, users and issues for this MVP view)
 
@@ -62,6 +73,10 @@ export default function EmployeeDashboard() {
   // removed useMyBookings usage — upcoming reservations used instead
   const { useReservationSummary } = useReservations();
   const { useUserUpcomingReservations } = useUser();
+  const { useAssetList } = useAsset();
+  const { useMyBookings } = useBookings();
+  const { useEventList } = useEvents();
+  const { useIssuesList } = useIssues();
 
   // Upcoming reservations (from reservations API) for current user — use simplified hook
   const { data: upcomingItems } = useUserUpcomingReservations(userId, 5);
@@ -112,6 +127,10 @@ export default function EmployeeDashboard() {
   }, []);
 
   const { data: reservationSummary } = useReservationSummary({ companyId: effectiveCompanyId, dateFrom, dateTo });
+  const { data: assets } = useAssetList({ companyId: effectiveCompanyId });
+  const { data: myBookings } = useMyBookings({ companyId: effectiveCompanyId, includeAssigned: true, includeCreated: false });
+  const { data: myEvents } = useEventList({ companyId: effectiveCompanyId, userId });
+  const { data: myReportedIssues } = useIssuesList({ reportedByUserId: userId });
 
   // KPIs - prefer server summary when available (reservations only when enabled)
   const upcoming7 = reservationsEnabled ? (upcomingReservations ?? []).filter(b => new Date(b.startDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length : 0;
@@ -155,6 +174,19 @@ export default function EmployeeDashboard() {
         </div>
           {/* toolbar actions removed per request */}
       </div>
+
+
+      {!isSuperAdmin && myCompany === null && (
+        <div className="grid grid-cols-12 gap-4 md:gap-6">
+          <div className="col-span-12">
+            <Section title="No Company Linked">
+              <div className="text-gray-700 dark:text-gray-300">
+                Your account is not linked to a company. Please contact your administrator to be added to a company.
+              </div>
+            </Section>
+          </div>
+        </div>
+      )}
 
       {/* MVP Employee stats: show reservation KPIs only when reservations feature is enabled */}
       {reservationsEnabled && (
@@ -240,16 +272,203 @@ export default function EmployeeDashboard() {
       </div>
       )}
 
-      {/* Asset tracking quick links for employees when enabled */}
-      {assetTrackingEnabled && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
-          <Section title="Assets & Issues">
-            <div className="flex flex-wrap gap-3">
-              <button className="px-4 py-2 bg-emerald-600 text-white rounded" onClick={() => navigate('/assets/bookings')}>Book Assets</button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => navigate('/assets')}>View Devices</button>
-              <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={() => navigate('/assets/issues')}>Raise Issue</button>
-            </div>
-          </Section>
+      {/* Asset tracking dashboard (mock data) */}
+      {assetTrackingEnabled && (!(!isSuperAdmin && myCompany === null)) && (
+        <div className="grid grid-cols-12 gap-4 md:gap-6 mt-6">
+          {/* Quick links */}
+          <div className="col-span-12">
+            <Section title="Assets & Issues">
+              <div className="flex flex-wrap gap-3">
+                <button className="px-4 py-2 bg-emerald-600 text-white rounded" onClick={() => navigate('/assets/bookings')}>Book Assets</button>
+                <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => navigate('/assets')}>View Devices</button>
+                <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={() => navigate('/assets/issues')}>Raise Issue</button>
+              </div>
+            </Section>
+          </div>
+
+          {/* Data generation from APIs */}
+          {(() => {
+            const now = new Date();
+            const myAssets = (assets ?? []).filter(a => a.assignedUserId === userId);
+            const healthDistribution = myAssets.reduce<Record<string, number>>((acc, a) => {
+              const key = (a.condition ?? 'Unknown');
+              acc[key] = (acc[key] || 0) + 1;
+              return acc;
+            }, {});
+            const upcomingWarranty = myAssets.filter(a => {
+              const exp = a.warrantyExpiryDate ? new Date(a.warrantyExpiryDate).getTime() : NaN;
+              return !isNaN(exp) && (exp - now.getTime() <= 60 * 24 * 60 * 60 * 1000);
+            });
+            const recentEvents = (myEvents ?? []).slice(0, 8).map(e => ({ assetId: e.assetId, event: String(e.eventType), at: e.entryTime }));
+            const upcomingBookings = (myBookings ?? [])
+              .filter(b => new Date(b.startDate).getTime() >= now.getTime() || (new Date(b.startDate).getTime() <= now.getTime() && new Date(b.endDate).getTime() >= now.getTime()))
+              .slice(0, 8)
+              .map(b => ({ id: b.id, assetId: b.assetId, start: b.startDate, end: b.endDate }));
+            const openIssues = (myReportedIssues ?? []).filter(i => i.statusName?.toLowerCase() !== 'closed')
+              .slice(0, 8)
+              .map(i => ({ id: i.id, assetId: i.assetId, description: i.description, priority: i.priorityName, status: i.statusName, sla: i.resolvedAt ? 'Closed' : 'Open' }));
+
+            return (
+              <>
+                {/* My assigned assets */}
+                <div className="col-span-12 xl:col-span-6">
+                  <Section title={`My Assigned Assets (${myAssets.length})`}>
+                    <div className="max-w-full overflow-x-auto">
+                      <Table>
+                        <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                          <TableRow>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Tag / Serial</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Make / Model</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Status</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Condition</TableCell>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                          {myAssets.map((a) => (
+                            <TableRow key={a.id}>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{a.laptopTagNumber || a.assetId || '-'} / {a.serialNumber || '-'}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{a.make} {a.model}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{a.statusName || a.status}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{a.condition || '-'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </Section>
+                </div>
+
+                {/* Asset health */}
+                <div className="col-span-12 xl:col-span-6">
+                  <Section title="Asset Health">
+                    <ul className="space-y-2 text-gray-800 dark:text-white/90">
+                      {Object.entries(healthDistribution).map(([cond, count]) => (
+                        <li key={cond} className="flex justify-between"><span>{cond}</span><span>{count}</span></li>
+                      ))}
+                    </ul>
+                  </Section>
+                </div>
+
+                {/* Warranty expiries */}
+                <div className="col-span-12 xl:col-span-6">
+                  <Section title="Upcoming Warranty Expiries">
+                    <div className="max-w-full overflow-x-auto">
+                      <Table>
+                        <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                          <TableRow>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Asset</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Expiry Date</TableCell>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                          {upcomingWarranty.length === 0 ? (
+                            <TableRow>
+                              <TableCell className="px-5 py-4 text-gray-500" colSpan={2}>No upcoming expiries</TableCell>
+                            </TableRow>
+                          ) : (
+                            upcomingWarranty.map((a) => (
+                              <TableRow key={a.id}>
+                                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{a.make} {a.model}</TableCell>
+                                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{a.warrantyExpiryDate ? new Date(a.warrantyExpiryDate).toLocaleDateString() : '-'}</TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </Section>
+                </div>
+
+                {/* Recent events */}
+                <div className="col-span-12 xl:col-span-6">
+                  <Section title="Recent Events">
+                    <div className="max-w-full overflow-x-auto">
+                      <Table>
+                        <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                          <TableRow>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Asset</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Event</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Timestamp</TableCell>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                          {recentEvents.map((e, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{e.assetId}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{e.event}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(e.at).toLocaleString()}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </Section>
+                </div>
+
+                {/* Bookings for my assets */}
+                <div className="col-span-12 xl:col-span-6">
+                  <Section title="Bookings (Upcoming/Active)">
+                    <div className="max-w-full overflow-x-auto">
+                      <Table>
+                        <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                          <TableRow>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Asset</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Start</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">End</TableCell>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                          {upcomingBookings.length === 0 ? (
+                            <TableRow>
+                              <TableCell className="px-5 py-4 text-gray-500" colSpan={3}>No upcoming bookings</TableCell>
+                            </TableRow>
+                          ) : (
+                            upcomingBookings.map((b) => (
+                              <TableRow key={b.id}>
+                                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.assetId}</TableCell>
+                                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(b.start).toLocaleDateString()}</TableCell>
+                                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(b.end).toLocaleDateString()}</TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </Section>
+                </div>
+
+                {/* Issues on my assets */}
+                <div className="col-span-12 xl:col-span-6">
+                  <Section title="Issues (Open)">
+                    <div className="max-w-full overflow-x-auto">
+                      <Table>
+                        <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                          <TableRow>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Asset</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Description</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Priority</TableCell>
+                            <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">SLA</TableCell>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                          {openIssues.map((it) => (
+                            <TableRow key={it.id}>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{it.assetId}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{it.description}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{it.priority}</TableCell>
+                              <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{it.sla}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </Section>
+                </div>
+
+                
+              </>
+            );
+          })()}
         </div>
       )}
     </>

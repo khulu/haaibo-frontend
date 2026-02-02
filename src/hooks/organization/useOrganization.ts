@@ -14,6 +14,7 @@ const useOrganization = () => {
     getOrganizations,
     createOrganization,
     getOrganizationById,
+    getMyCompany,
     updateOrganization,
     deleteOrganization,
     uploadLogo,
@@ -26,6 +27,13 @@ const useOrganization = () => {
     useQuery({
       queryKey: QueryKeyOrganizationList,
       queryFn: () => getOrganizations().then((data: Organization[]) => data),
+    });
+
+  // Current user's linked company. Returns Organization or null when not linked (404)
+  const useMyCompany = () =>
+    useQuery({
+      queryKey: [...QueryKeyBaseOrganizations, 'me'],
+      queryFn: () => getMyCompany(),
     });
 
   const createNewOrganization = useMutation({
@@ -75,6 +83,7 @@ const useOrganization = () => {
 
   return {
     useOrganizationList,
+    useMyCompany,
     createNewOrganization,
     useFetchOrganizationById,
     updateExistingOrganization,

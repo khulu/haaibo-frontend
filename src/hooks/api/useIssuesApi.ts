@@ -39,7 +39,7 @@ const useIssuesApi = () => {
   const auth = getAuth();
   const token = auth.getToken();
 
-  const listIssues = async (params?: { companyId?: string; assetId?: string; openOnly?: boolean }): Promise<IssueDto[]> => {
+  const listIssues = async (params?: { companyId?: string; assetId?: string; openOnly?: boolean; reportedByUserId?: string }): Promise<IssueDto[]> => {
     const response = await axios.request({
       baseURL,
       url: '/issues',
