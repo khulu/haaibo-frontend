@@ -115,7 +115,7 @@ const AssetCreate: React.FC = () => {
             placeholder="Select a user"
             onChange={(value) => setForm((prev) => ({ ...prev, assignedUserId: value }))}
             className="dark:bg-dark-900"
-            required
+            
           />
         </div>
      
