@@ -4,6 +4,8 @@ import useUser from "@hooks/user/useUser";
 import getCompanyId from "@hooks/api/useAuthApi";
 import useOrganization from "@hooks/organization/useOrganization";
 import Label from "../../components/form/Label";
+import { Modal } from "../../components/ui/modal/Modal";
+import { useModal } from "../../hooks/useModal";
 
 import {
   Table,
@@ -19,6 +21,7 @@ export default function UsersPage() {
   const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(companyId ?? undefined);
+  const [search, setSearch] = useState('');
 
   // Load organizations for company selection (for SuperAdmin filter)
   const { useOrganizationList } = useOrganization();
@@ -57,9 +60,21 @@ export default function UsersPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { isOpen: isConfirmOpen, openModal: openConfirm, closeModal: closeConfirm } = useModal();
+  const [confirmUser, setConfirmUser] = useState<{ id: string; name: string } | null>(null);
   const navigate = useNavigate();
 
   const { data: dataUsers, isLoading } = useUserList({ companyId: selectedCompanyId });
+  const filteredUsers = useMemo(() => {
+    const list = dataUsers ?? [];
+    if (!search) return list;
+    const term = search.toLowerCase();
+    return list.filter((u) =>
+      [u.fullName, u.email, u.companyName, u.department]
+        .some((f) => (f || '').toLowerCase().includes(term))
+    );
+  }, [dataUsers, search]);
+  const columnCount = isSuperAdmin ? 5 : 4;
   if (isLoading) return <div className="p-6">Loading users...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
@@ -68,6 +83,13 @@ export default function UsersPage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Users</h1>
         <div className="flex gap-4 items-center">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search..."
+            className="rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          />
           {isSuperAdmin && (
             <div className="flex items-center gap-2 mr-2">
               <Label>Company</Label>
@@ -91,7 +113,7 @@ export default function UsersPage() {
           </button>
           <button
             className="px-4 py-2 bg-gray-200 text-gray-800 rounded"
-            onClick={() => navigate("/users/create-bulk")}
+            onClick={() => navigate(`/users/create-bulk${selectedCompanyId ? `?companyId=${selectedCompanyId}` : ''}`)}
           >
             Upload CSV/Excel
           </button>
@@ -111,7 +133,14 @@ export default function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-            {dataUsers?.map((user) => {
+            {filteredUsers.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={columnCount} className="px-5 py-4 text-center text-gray-500 text-theme-sm dark:text-gray-400">
+                  No users found{search ? ` for "${search}"` : ''}.
+                </TableCell>
+              </TableRow>
+            )}
+            {filteredUsers.map((user) => {
               const role = dropdownRoles?.find((r) => r.value === user.role);
        
               return (
@@ -172,23 +201,12 @@ export default function UsersPage() {
                       <button
                         className="px-2 py-1 bg-red-500 text-white rounded"
                         disabled={deletingId === user.id}
-                        onClick={async () => {
-                          if (!window.confirm("Are you sure you want to delete this user?")) return;
-                          setDeletingId(user.id);
-                          try {
-                            await deleteSingleUser.mutateAsync({ userId: user.id });
-                          } catch (err: unknown) {
-                            if (err && typeof err === "object" && "message" in err) {
-                              setError((err as { message?: string }).message || "Failed to delete user");
-                            } else {
-                              setError("Failed to delete user");
-                            }
-                          } finally {
-                            setDeletingId(null);
-                          }
+                        onClick={() => {
+                          setConfirmUser({ id: user.id, name: user.fullName });
+                          openConfirm();
                         }}
                       >
-                        {deletingId === user.id ? "Deleting..." : "Delete"}
+                        Delete
                       </button>
                     </div>
                   </TableCell>
@@ -198,6 +216,52 @@ export default function UsersPage() {
           </TableBody>
         </Table>
       </div>
+      {/* Confirm Delete Modal */}
+      <Modal isOpen={isConfirmOpen} onClose={closeConfirm} className="max-w-[700px] p-6 lg:p-10">
+        <div className="flex flex-col px-2 overflow-y-auto custom-scrollbar">
+          <div>
+            <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl">
+              Confirm Deletion
+            </h5>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Are you sure you want to delete this user{confirmUser && confirmUser.name ? `: ${confirmUser.name}` : ''}?
+            </p>
+          </div>
+          <div className="flex items-center gap-3 mt-6 modal-footer sm:justify-end">
+            <button
+              onClick={closeConfirm}
+              type="button"
+              className="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              className="flex w-full justify-center rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 sm:w-auto"
+              disabled={!confirmUser || deletingId === confirmUser?.id}
+              onClick={async () => {
+                if (!confirmUser) return;
+                setDeletingId(confirmUser.id);
+                try {
+                  await deleteSingleUser.mutateAsync({ userId: confirmUser.id });
+                  closeConfirm();
+                  setConfirmUser(null);
+                } catch (err: unknown) {
+                  if (err && typeof err === 'object' && 'message' in err) {
+                    setError((err as { message?: string }).message || 'Failed to delete user');
+                  } else {
+                    setError('Failed to delete user');
+                  }
+                } finally {
+                  setDeletingId(null);
+                }
+              }}
+            >
+              {confirmUser && deletingId === confirmUser?.id ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

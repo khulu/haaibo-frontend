@@ -10,6 +10,7 @@ import useIssues from "@hooks/issues/useIssues";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Label from "../../components/form/Label";
+import { CalenderIcon, CheckCircleIcon, ListIcon, TimeIcon } from "../../icons";
 
 type LocalBooking = {
   id: string;
@@ -191,10 +192,10 @@ export default function EmployeeDashboard() {
       {/* MVP Employee stats: show reservation KPIs only when reservations feature is enabled */}
       {reservationsEnabled && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
-          <KpiCard label="Upcoming (7d)" value={upcoming7} onClick={() => navigate('/bookings')} />
-          <KpiCard label="Currently Checked-In" value={nowCheckedIn} onClick={() => navigate('/bookings')} />
-          <KpiCard label="Total (30d)" value={total30d} onClick={() => navigate('/bookings')} />
-          <KpiCard label="Hours Used (30d)" value={hours30d} onClick={() => navigate('/bookings')} />
+          <KpiCard label="Upcoming (7d)" value={upcoming7} icon={<CalenderIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} onClick={() => navigate('/bookings')} />
+          <KpiCard label="Currently Checked-In" value={nowCheckedIn} icon={<CheckCircleIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} onClick={() => navigate('/bookings')} />
+          <KpiCard label="Total (30d)" value={total30d} icon={<ListIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} onClick={() => navigate('/bookings')} />
+          <KpiCard label="Hours Used (30d)" value={hours30d} icon={<TimeIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} onClick={() => navigate('/bookings')} />
         </div>
       )}
 
@@ -475,11 +476,11 @@ export default function EmployeeDashboard() {
   );
 }
 
-function KpiCard({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
+function KpiCard({ label, value, icon, onClick }: { label: string; value: number; icon?: React.ReactNode; onClick?: () => void }) {
   const clickable = typeof onClick === 'function';
   return (
     <div
-      className={`rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 ${clickable ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors' : ''}`}
+      className={`rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 md:p-6 ${clickable ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors' : ''}`}
       onClick={onClick}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
@@ -491,8 +492,17 @@ function KpiCard({ label, value, onClick }: { label: string; value: number; onCl
         }
       }}
     >
-      <div className="text-sm text-gray-500 dark:text-gray-400">{label}</div>
-      <div className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{value}</div>
+      {icon && (
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+          {icon}
+        </div>
+      )}
+      <div className="mt-5 flex items-end justify-between">
+        <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+          <h4 className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">{value}</h4>
+        </div>
+      </div>
     </div>
   );
 }

@@ -58,7 +58,6 @@ export default function ContactsBulkUpload() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!(isSuperAdmin || currentCompanyId)) {
-      alert('Company scope missing');
       return;
     }
     const rows = parseRows();
@@ -69,7 +68,6 @@ export default function ContactsBulkUpload() {
     try {
       const res = await bulkUpload.mutateAsync({ companyId: (isSuperAdmin ? (companyId as string) : (currentCompanyId as string)), data: rows });
       setResult(res);
-      alert('Bulk upload completed');
     } catch {
       alert('Bulk upload failed');
     }
@@ -95,9 +93,8 @@ export default function ContactsBulkUpload() {
           </div>
         ) : (
           <div className="max-w-xl">
-            <Label>Company</Label>
             <input
-              type="text"
+              type="hidden"
               value={currentCompanyId ?? ''}
               readOnly
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
@@ -122,19 +119,19 @@ export default function ContactsBulkUpload() {
 
       {result && (
         <div className="mt-6">
-          <h2 className="font-semibold mb-2">Results</h2>
+          <h2 className="font-semibold mb-2 text-gray-800 dark:text-white/90">Results</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-medium mb-2">Success ({result.success.length})</h3>
-              <ul className="list-disc ml-6 text-sm">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4 dark:border-white/[0.05] dark:bg-white/[0.03]">
+              <h3 className="font-medium mb-2 text-gray-800 dark:text-white/90">Success ({result.success.length})</h3>
+              <ul className="list-disc ml-6 text-sm text-gray-600 dark:text-gray-300">
                 {result.success.map((row, idx) => (
                   <li key={idx}>{row.fullName} - {row.phone || '-'} - {row.notes || '-'}</li>
                 ))}
               </ul>
             </div>
-            <div>
-              <h3 className="font-medium mb-2">Errors ({result.errors.length})</h3>
-              <ul className="list-disc ml-6 text-sm text-red-600">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4 dark:border-white/[0.05] dark:bg-white/[0.03]">
+              <h3 className="font-medium mb-2 text-gray-800 dark:text-white/90">Errors ({result.errors.length})</h3>
+              <ul className="list-disc ml-6 text-sm text-red-600 dark:text-red-400">
                 {result.errors.map((err, idx) => (
                   <li key={idx}>{err.data.fullName} - {err.data.phone || '-'} - {err.data.notes || '-'}: {err.error}</li>
                 ))}

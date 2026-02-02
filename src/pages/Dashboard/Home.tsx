@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Label from "../../components/form/Label";
 import useOrganizationsApi from "@hooks/api/useOrganizationApi";
+import { UserIcon, MailIcon, CalenderIcon, TimeIcon, GroupIcon, AlertIcon } from "../../icons";
 
    interface TopMarker {
                       markerId: string | number;
@@ -250,21 +251,31 @@ export default function Home() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
-          <KpiCard label="Users" value={usersTotal ?? 0} onClick={() => navigate('/users')} />
-          <KpiCard label="Contacts" value={contactsTotal ?? 0} onClick={() => navigate('/admin/contacts')} />
+          <KpiCard
+            label="Users"
+            value={usersTotal ?? 0}
+            icon={<UserIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />}
+            onClick={() => navigate('/users')}
+          />
+          <KpiCard
+            label="Contacts"
+            value={contactsTotal ?? 0}
+            icon={<MailIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />}
+            onClick={() => navigate('/admin/contacts')}
+          />
           {enableOfficeReservations && (
             <>
-              <KpiCard label="Total Bookings" value={orgStats.totalBookings} />
-              <KpiCard label="Hours Booked" value={orgStats.totalHoursBooked} />
-              <KpiCard label="Hours Used" value={orgStats.totalHoursUsed} />
-              <KpiCard label="Active Users" value={orgStats.activeUsers} />
+              <KpiCard label="Total Bookings" value={orgStats.totalBookings} icon={<CalenderIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} />
+              <KpiCard label="Hours Booked" value={orgStats.totalHoursBooked} icon={<TimeIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} />
+              <KpiCard label="Hours Used" value={orgStats.totalHoursUsed} icon={<TimeIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} />
+              <KpiCard label="Active Users" value={orgStats.activeUsers} icon={<GroupIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} />
             </>
           )}
           {allowAssetTracking && (
-            <KpiCard label="Open Issues" value={openIssuesCount} onClick={() => navigate('/assets/issues')} />
+            <KpiCard label="Open Issues" value={openIssuesCount} icon={<AlertIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} onClick={() => navigate('/assets/issues')} />
           )}
           {enableOfficeReservations && (
-            <KpiCard label="My Upcoming Bookings" value={upcomingBookingsCount} onClick={() => navigate('/bookings')} />
+            <KpiCard label="My Upcoming Bookings" value={upcomingBookingsCount} icon={<CalenderIcon className="w-6 h-6 fill-gray-800 dark:fill-white/90" />} onClick={() => navigate('/bookings')} />
           )}
       </div>
 
@@ -345,24 +356,22 @@ export default function Home() {
               <Table>
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>
-                    <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Description</TableCell>
-                    <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Priority</TableCell>
-                    <TableCell isHeader className="px-5 py-3 text-gray-500 text-start text-theme-xs dark:text-gray-400">Created</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Description</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Priority</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Created</TableCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {(recentOpenIssues ?? []).length === 0 ? (
                     <TableRow>
-                      <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">No open issues</TableCell>
-                      <TableCell><span /></TableCell>
-                      <TableCell><span /></TableCell>
+                      <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400" colSpan={3}>No open issues</TableCell>
                     </TableRow>
                   ) : (
                     recentOpenIssues.map((i) => (
                       <TableRow key={i.id}>
-                        <TableCell className="px-5 py-4">{i.description}</TableCell>
-                        <TableCell className="px-5 py-4">{i.priorityName}</TableCell>
-                        <TableCell className="px-5 py-4">{new Date(i.createdAt).toLocaleString()}</TableCell>
+                        <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{i.description}</TableCell>
+                        <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{i.priorityName}</TableCell>
+                        <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(i.createdAt).toLocaleString()}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -447,11 +456,11 @@ export default function Home() {
   );
 }
 
-function KpiCard({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
+function KpiCard({ label, value, icon, onClick }: { label: string; value: number; icon?: React.ReactNode; onClick?: () => void }) {
   const clickable = typeof onClick === 'function';
   return (
     <div
-      className={`rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 ${clickable ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors' : ''}`}
+      className={`rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 md:p-6 ${clickable ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors' : ''}`}
       onClick={onClick}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
@@ -463,8 +472,17 @@ function KpiCard({ label, value, onClick }: { label: string; value: number; onCl
         }
       }}
     >
-      <div className="text-sm text-gray-500 dark:text-gray-400">{label}</div>
-      <div className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{value}</div>
+      {icon && (
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+          {icon}
+        </div>
+      )}
+      <div className="mt-5 flex items-end justify-between">
+        <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+          <h4 className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">{value}</h4>
+        </div>
+      </div>
     </div>
   );
 }

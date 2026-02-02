@@ -52,15 +52,14 @@ const useUser = () => {
         Payload.userId,
       ),
     onSuccess: () => {
+      // Invalidate all user list queries (including those scoped by companyId)
       queryClient.invalidateQueries({
-        queryKey: [
-        QueryKeyUserList
-        ],
+        queryKey: QueryKeyUserList,
       });
     },
   });
-  const bulkUploadUsers = useMutation({
-    mutationFn: (users: CreateUserInput[]) => bulkUploadUsersApi(users),
+  const bulkUploadUsers = useMutation<unknown, unknown, CreateUserInput[]>({
+    mutationFn: (users) => bulkUploadUsersApi(users),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: QueryKeyUserList,

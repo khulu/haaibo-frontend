@@ -13,6 +13,8 @@ export async function parseBulkUserFile(file: File): Promise<Record<string, unkn
         const parsed = Papa.parse(data as string, {
           header: true,
           skipEmptyLines: true,
+          transformHeader: (h) => (h ?? '').trim().replace(/^\uFEFF/, ''),
+          transform: (value) => (typeof value === 'string' ? value.trim() : value),
         });
         resolve(parsed.data as Record<string, unknown>[]);
       } else if (ext === "xlsx") {

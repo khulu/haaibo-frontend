@@ -186,19 +186,19 @@ const useUserApi = () => {
   // Bulk upload users using JSON payload
   const bulkUploadUsers = async (users: CreateUserInput[]): Promise<User[]> => {
       const authApi = getCompanyId();
-      const companyId = authApi.getCompanyId();
+      const authCompanyId = authApi.getCompanyId();
+      const paramCompanyId = (users && users.length > 0 && typeof users[0].companyId === 'string') ? users[0].companyId : undefined;
     try {
 
       const response = await axios.request({
         baseURL,
         url: '/Users/bulk-upload',
         method: 'POST',
-        params: companyId ? { companyId } : undefined,
+        params: (paramCompanyId ?? authCompanyId) ? { companyId: (paramCompanyId ?? authCompanyId) } : undefined,
         data: users, 
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           'Content-Type': 'application/json',
-          'Accept': 'text/plain',
         },
       });
       return response.data;
