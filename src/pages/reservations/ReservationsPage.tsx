@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { resolveImageSrc } from '../../utils/resolveImageSrc';
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -485,14 +486,7 @@ export default function ReservationsPage() {
     }
   };
 
-  const resolveImageSrc = (p?: string) => {
-    const isProd = (import.meta.env as unknown as Record<string, unknown>).ASPNETCORE_ENVIRONMENT === 'Production' || import.meta.env.PROD;
-      const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
-                  const path = p ?? '';
-    if (!path) return undefined;
-    if (!isProd) return path;
-    return /^https?:\/\//.test(path) ? path : `${baseUrl}${path}`;
-  };
+  
 
   return (
     <div className="space-y-6">

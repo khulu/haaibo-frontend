@@ -8,6 +8,7 @@ import PhotoModal from '../users/PhotoModal';
 import Select from '../../components/form/Select';
 import useCollections from '@hooks/collections/useCollections';
 import getAuth from '@hooks/api/useAuthApi';
+import { resolveImageSrc } from '../../utils/resolveImageSrc';
 import { useToast } from '../../context/useToast';
 
 const AssetDetails: React.FC = () => {
@@ -132,22 +133,12 @@ const AssetDetails: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center cursor-pointer" onClick={() => setPhotoModalOpen(true)}>
             {asset.imageUrls && asset.imageUrls.length > 0 ? (
-              (() => {
-                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                  const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
-                  const firstUrl = asset.imageUrls[0];
-                const imgSrc = isProd
-                  ? (/^https?:\/\//.test(firstUrl) ? firstUrl : `${baseUrl}${firstUrl}`)
-                  : normalizeImageUrl(firstUrl);
-                return (
-                  <img
-                    width={64}
-                    height={64}
-                    src={imgSrc}
-                    alt={asset.make || 'Device'}
-                  />
-                );
-              })()
+              <img
+                width={64}
+                height={64}
+                src={resolveImageSrc(asset.imageUrls[0])}
+                alt={asset.make || 'Device'}
+              />
             ) : (
               <span className="text-gray-400 text-2xl font-bold">
                 {asset.make?.[0] || '?'}

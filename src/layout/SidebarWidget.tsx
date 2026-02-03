@@ -12,7 +12,7 @@ export default function SidebarWidget() {
       >
         <img
           src="/images/logo/powered-by-haibo-white.png"
-          alt="Powered by Haaibo Logo"
+          alt="Powered by Haiibo Logo"
           className="w-full h-full object-cover rounded-2xl"
         />
       </a>

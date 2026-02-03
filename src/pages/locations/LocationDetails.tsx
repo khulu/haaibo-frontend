@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { resolveImageSrc } from '../../utils/resolveImageSrc';
 import { useParams, useNavigate } from 'react-router-dom';
 import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/useLocationsApi';
 import ComponentCard from '../../components/common/ComponentCard';
@@ -52,12 +53,7 @@ export default function LocationDetails() {
     return message;
   };
 
-  // Helper to construct static file URL (removes /api from base URL)
-  const getStaticFileUrl = (path: string) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    const staticBaseUrl = baseUrl.replace(/\/api\/?$/, '');
-    return `${staticBaseUrl}${path}`;
-  };
+  // Using shared resolver for image URLs
 
   useEffect(() => {
     if (!id) return;
@@ -272,22 +268,12 @@ export default function LocationDetails() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleMarkerDragEnd}
             >
-              {(() => {
-                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                   const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
-                                 const p = location.floorplanPath;
-                const imgSrc = isProd
-                  ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
-                  : getStaticFileUrl(p);
-                return (
-                  <img 
-                    src={imgSrc} 
-                    alt="Floorplan"
-                    className="w-full h-auto select-none"
-                    draggable={false}
-                  />
-                );
-              })()}
+              <img 
+                src={resolveImageSrc(location.floorplanPath)} 
+                alt="Floorplan"
+                className="w-full h-auto select-none"
+                draggable={false}
+              />
               {markers.map((marker) => (
                 <div
                   key={marker.id}

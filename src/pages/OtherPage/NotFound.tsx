@@ -1,6 +1,7 @@
 import GridShape from "../../components/common/GridShape";
 import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
+import { resolveImageSrc } from "../../utils/resolveImageSrc";
 
 export default function NotFound() {
   return (
@@ -17,9 +18,9 @@ export default function NotFound() {
           </h1>
 
           {(() => {
-            const PRODUCTION_LOGO_URL = "https://haiibo-backend-api.azurewebsites.net/logos/499a630a-3cff-4dc2-835a-b0fc4b7ef26a/logo_639057404444561776.jpg";
-            const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-            const imgSrc = isProd ? PRODUCTION_LOGO_URL : "/images/error/404.svg";
+            const prodPath = "/logos/499a630a-3cff-4dc2-835a-b0fc4b7ef26a/logo_639057404444561776.jpg";
+            const isProd = (import.meta.env as unknown as Record<string, unknown>).ASPNETCORE_ENVIRONMENT === "Production" || import.meta.env.PROD;
+            const imgSrc = isProd ? resolveImageSrc(prodPath) : "/images/error/404.svg";
             return <img src={imgSrc} alt="404" className="dark:hidden" />;
           })()}
           <img

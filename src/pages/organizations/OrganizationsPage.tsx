@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
+import { resolveImageSrc } from "../../utils/resolveImageSrc";
 
 export default function OrganizationsPage() {
   const { useOrganizationList } = useOrganization();
@@ -49,15 +50,11 @@ export default function OrganizationsPage() {
                   </div>
                 </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
-                  {(() => {
-                    const isProd = (import.meta.env as unknown as Record<string, unknown>).ASPNETCORE_ENVIRONMENT === "Production" || import.meta.env.PROD;
-                    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
-                    const p = org.logo ?? '';
-                    const logoSrc = isProd
-                      ? (/^https?:\/\//.test(p) ? p : (baseUrl ? `${baseUrl}${p}` : p))
-                      : p || undefined;
-                    return org.logo ? <img src={logoSrc} alt={org.name ?? ""} className="h-8" /> : "-";
-                  })()}
+                  {org.logo ? (
+                    <img src={resolveImageSrc(org.logo)} alt={org.name ?? ""} className="h-8" />
+                  ) : (
+                    "-"
+                  )}
                 </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   <div className="flex gap-2">
