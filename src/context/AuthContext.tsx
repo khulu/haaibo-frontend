@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type AuthUser = {
   id?: string;
@@ -28,6 +28,22 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
+
+  // Hydrate initial auth state from localStorage
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      const storedToken = localStorage.getItem("token");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+      if (storedToken) {
+        setToken(storedToken);
+      }
+    } catch {
+      // ignore malformed localStorage
+    }
+  }, []);
 
   const login = (userData: AuthUser, tokenData: string) => {
     setUser(userData);

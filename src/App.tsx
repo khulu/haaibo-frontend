@@ -7,6 +7,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import { GlobalSpinner } from "./components/ui/spinner";
 import Home from "./pages/Dashboard/Home";
 // Lazy-loaded routes for performance
+const Unauthorized = lazy(() => import("./pages/OtherPage/Unauthorized"));
 const UsersPage = lazy(() => import("./pages/users/UsersPage"));
 const UserDetails = lazy(() => import("./pages/users/UserDetails"));
 const UserEdit = lazy(() => import("./pages/users/UserEdit"));
@@ -74,6 +75,15 @@ export default function App() {
           <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
+            <Route
+              path="/unauthorized"
+              element={
+                <PrivateRoute>
+                  <Unauthorized />
+                </PrivateRoute>
+              }
+            />
+
             <Route
               index
               path="/"

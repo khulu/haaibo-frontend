@@ -504,6 +504,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     return true;
   });
 
+  // Auto-close mobile sidebar on route changes, improving mobile UX
+  useEffect(() => {
+    if (isMobileOpen) {
+      toggleMobileSidebar();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   // If user is an employee, restrict the sidebar to only Employee Dashboard and Reservations
   if (isEmployee) {
     const employeeItems: NavItem[] = [];
