@@ -84,7 +84,7 @@ export default function AssetsPage() {
                            const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
                   const firstUrl = asset.imageUrls[0];
                         const imgSrc = isProd
-                          ? (/^https?:\/\//.test(firstUrl) ? firstUrl : `${baseUrl}${firstUrl}`)
+                          ?  `${baseUrl}${firstUrl}`
                           : firstUrl;
                         return (
                           <img

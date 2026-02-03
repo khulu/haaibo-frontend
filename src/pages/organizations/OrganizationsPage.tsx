@@ -54,7 +54,7 @@ export default function OrganizationsPage() {
                     const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
                     const p = org.logo ?? '';
                     const logoSrc = isProd
-                      ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                      ?  `${baseUrl}${p}`
                       : p || undefined;
                     return org.logo ? <img src={logoSrc} alt={org.name ?? ""} className="h-8" /> : "-";
                   })()}
