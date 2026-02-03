@@ -51,7 +51,7 @@ export default function OrganizationsPage() {
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   {(() => {
                     const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                    const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
                     const p = org.logo ?? '';
                     const logoSrc = isProd
                       ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)

@@ -151,7 +151,7 @@ export default function UsersPage() {
                         {user.profilePicture ? (
                           (() => {
                             const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                            const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                            const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
                             const p = user.profilePicture;
                             const imgSrc = isProd
                               ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)

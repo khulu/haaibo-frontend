@@ -274,8 +274,8 @@ export default function LocationDetails() {
             >
               {(() => {
                 const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
-                const p = location.floorplanPath;
+                   const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
+                                 const p = location.floorplanPath;
                 const imgSrc = isProd
                   ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
                   : getStaticFileUrl(p);

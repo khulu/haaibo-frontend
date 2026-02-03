@@ -134,8 +134,8 @@ const AssetDetails: React.FC = () => {
             {asset.imageUrls && asset.imageUrls.length > 0 ? (
               (() => {
                 const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
-                const firstUrl = asset.imageUrls[0];
+                  const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
+                  const firstUrl = asset.imageUrls[0];
                 const imgSrc = isProd
                   ? (/^https?:\/\//.test(firstUrl) ? firstUrl : `${baseUrl}${firstUrl}`)
                   : normalizeImageUrl(firstUrl);
