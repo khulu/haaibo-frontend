@@ -351,7 +351,6 @@ export default function ReservationsPage() {
     setLoading(true);
     try {
       await deleteReservation(selectedReservation.id);
-      alert('Reservation cancelled');
       setShowEventModal(false);
       setSelectedReservation(null);
       await fetchAndMapReservations();
