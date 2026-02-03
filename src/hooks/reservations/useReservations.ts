@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect, useCallback } from 'react';
 import useReservationsApi from '@hooks/api/useReservationsApi';
 import type { ReservationDto } from '@hooks/api/useReservationsApi';
 
