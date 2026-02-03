@@ -178,21 +178,16 @@ export default function LocationDetails() {
     <div className="space-y-6">
       <ComponentCard title="Location Details">
         <div className="flex items-center justify-between mb-6">
-              {(() => {
-                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
-                const p = location.floorplanPath;
-                const imgSrc = isProd
-                  ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
-                  : getStaticFileUrl(p);
-                return (
-                  <img
-                    src={imgSrc}
-                    alt={location.name}
-                    className="max-h-[70vh] w-auto object-contain rounded-lg shadow"
-                  />
-                );
-              })()}
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white/90">{location.name}</h2>
+            <div className="flex items-center gap-2 mt-2">
+              {location.active !== false ? (
+                <Badge color="success" size="sm">Active</Badge>
+              ) : (
+                <Badge color="warning" size="sm">Inactive</Badge>
+              )}
+              {location.allowColleagueSearch && (
+                <Badge color="info" size="sm">Colleague Search Enabled</Badge>
               )}
             </div>
           </div>
@@ -285,8 +280,8 @@ export default function LocationDetails() {
                   ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
                   : getStaticFileUrl(p);
                 return (
-                  <img
-                    src={imgSrc}
+                  <img 
+                    src={imgSrc} 
                     alt="Floorplan"
                     className="w-full h-auto select-none"
                     draggable={false}
