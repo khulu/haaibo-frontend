@@ -178,16 +178,21 @@ export default function LocationDetails() {
     <div className="space-y-6">
       <ComponentCard title="Location Details">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white/90">{location.name}</h2>
-            <div className="flex items-center gap-2 mt-2">
-              {location.active !== false ? (
-                <Badge color="success" size="sm">Active</Badge>
-              ) : (
-                <Badge color="warning" size="sm">Inactive</Badge>
-              )}
-              {location.allowColleagueSearch && (
-                <Badge color="info" size="sm">Colleague Search Enabled</Badge>
+              {(() => {
+                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                const p = location.floorplanPath;
+                const imgSrc = isProd
+                  ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                  : getStaticFileUrl(p);
+                return (
+                  <img
+                    src={imgSrc}
+                    alt={location.name}
+                    className="max-h-[70vh] w-auto object-contain rounded-lg shadow"
+                  />
+                );
+              })()}
               )}
             </div>
           </div>
@@ -272,12 +277,22 @@ export default function LocationDetails() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleMarkerDragEnd}
             >
-              <img 
-                src={getStaticFileUrl(location.floorplanPath)} 
-                alt="Floorplan"
-                className="w-full h-auto select-none"
-                draggable={false}
-              />
+              {(() => {
+                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                const p = location.floorplanPath;
+                const imgSrc = isProd
+                  ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                  : getStaticFileUrl(p);
+                return (
+                  <img
+                    src={imgSrc}
+                    alt="Floorplan"
+                    className="w-full h-auto select-none"
+                    draggable={false}
+                  />
+                );
+              })()}
               {markers.map((marker) => (
                 <div
                   key={marker.id}

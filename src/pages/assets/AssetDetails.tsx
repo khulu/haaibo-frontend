@@ -132,13 +132,23 @@ const AssetDetails: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center cursor-pointer" onClick={() => setPhotoModalOpen(true)}>
             {asset.imageUrls && asset.imageUrls.length > 0 ? (
-              <img
-                width={64}
-                height={64}
-                src={normalizeImageUrl(asset.imageUrls[0])}
-                alt={asset.make || 'Device'}
-              />
-            )  : (
+              (() => {
+                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                const firstUrl = asset.imageUrls[0];
+                const imgSrc = isProd
+                  ? (/^https?:\/\//.test(firstUrl) ? firstUrl : `${baseUrl}${firstUrl}`)
+                  : normalizeImageUrl(firstUrl);
+                return (
+                  <img
+                    width={64}
+                    height={64}
+                    src={imgSrc}
+                    alt={asset.make || 'Device'}
+                  />
+                );
+              })()
+            ) : (
               <span className="text-gray-400 text-2xl font-bold">
                 {asset.make?.[0] || '?'}
               </span>

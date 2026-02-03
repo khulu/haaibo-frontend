@@ -79,13 +79,23 @@ export default function AssetsPage() {
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
                     {asset.imageUrls && asset.imageUrls.length > 0 ? (
-                      <img
-                        width={40}
-                        height={40}
-                        src={asset.imageUrls[0]}
-                        alt={asset.make || "Device"}
-                      />
-                    )  : (
+                      (() => {
+                        const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                        const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                        const firstUrl = asset.imageUrls[0];
+                        const imgSrc = isProd
+                          ? (/^https?:\/\//.test(firstUrl) ? firstUrl : `${baseUrl}${firstUrl}`)
+                          : firstUrl;
+                        return (
+                          <img
+                            width={40}
+                            height={40}
+                            src={imgSrc}
+                            alt={asset.make || 'Device'}
+                          />
+                        );
+                      })()
+                    ) : (
                       <span className="text-gray-400 text-lg font-bold">
                         {asset.make?.[0] || "?"}
                       </span>

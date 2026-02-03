@@ -16,7 +16,12 @@ export default function NotFound() {
             ERROR
           </h1>
 
-          <img src="/images/error/404.svg" alt="404" className="dark:hidden" />
+          {(() => {
+            const PRODUCTION_LOGO_URL = "https://haiibo-backend-api.azurewebsites.net/logos/499a630a-3cff-4dc2-835a-b0fc4b7ef26a/logo_639057404444561776.jpg";
+            const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+            const imgSrc = isProd ? PRODUCTION_LOGO_URL : "/images/error/404.svg";
+            return <img src={imgSrc} alt="404" className="dark:hidden" />;
+          })()}
           <img
             src="/images/error/404-dark.svg"
             alt="404"

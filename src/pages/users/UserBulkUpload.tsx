@@ -177,12 +177,22 @@ export default function UserBulkUpload() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
                           {row.profilePicture ? (
-                            <img
-                              width={40}
-                              height={40}
-                              src={row.profilePicture}
-                              alt={row.fullName}
-                            />
+                            (() => {
+                                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                              const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                              const p = row.profilePicture;
+                              const imgSrc = isProd
+                                ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                                : p;
+                              return (
+                                <img
+                                  width={40}
+                                  height={40}
+                                  src={imgSrc}
+                                  alt={row.fullName}
+                                />
+                              );
+                            })()
                           ) : (
                             <span className="text-gray-400 text-lg font-bold">
                               {row.fullName?.[0] || "?"}

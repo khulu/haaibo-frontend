@@ -79,12 +79,22 @@ export default function OrganizationDetails() {
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
             {org.logo ? (
-              <img
-                width={64}
-                height={64}
-                src={org.logo}
-                alt={org.name}
-              />
+              (() => {
+                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                const p = org.logo;
+                const imgSrc = isProd
+                  ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                  : p;
+                return (
+                  <img
+                    width={64}
+                    height={64}
+                    src={imgSrc}
+                    alt={org.name}
+                  />
+                );
+              })()
             ) : (
               <span className="text-gray-400 text-2xl font-bold">
                 {org.name?.[0] || "?"}

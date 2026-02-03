@@ -8,18 +8,23 @@ import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/u
 import useReservationsApi, { MarkerAvailability, ReservationDto, AvailabilityResponse } from '../../hooks/api/useReservationsApi';
 import ComponentCard from '../../components/common/ComponentCard';
 import Label from '../../components/form/Label';
-
-import { EventInput } from "@fullcalendar/core";
-
-type BookingModalData = {
-  date: string;
-  locationId: string;
-  locationName: string;
-  floorplanPath?: string;
-};
-
-export default function ReservationsPage() {
-  const { listTree, getMarkers } = useLocationsApi();
+                    {(() => {
+                      const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                      const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                      const p = bookingModalData.floorplanPath;
+                      const imgSrc = isProd
+                        ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                        : getStaticFileUrl(p);
+                      return (
+                        <img
+                          width={selectedMarker?.imageUrls?.length ? 280 : 0}
+                          height={selectedMarker?.imageUrls?.length ? 280 : 0}
+                          src={imgSrc}
+                          alt={bookingModalData.name}
+                          className="mx-auto max-h-[60vh] w-auto object-contain rounded-lg shadow"
+                        />
+                      );
+                    })()}
   const { getMarkerAvailability, createReservation, getReservations, deleteReservation } = useReservationsApi();
   const calendarRef = useRef<FullCalendar>(null);
   
@@ -709,12 +714,22 @@ export default function ReservationsPage() {
           </span>
         </div>
                   <div className="relative border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900/50">
-                    <img
-                      src={getStaticFileUrl(bookingModalData.floorplanPath)}
-                      alt="Floorplan"
-                      className="w-full h-auto select-none"
-                      draggable={false}
-                    />
+                    {(() => {
+                      const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                      const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                      const p = bookingModalData.floorplanPath;
+                      const imgSrc = isProd
+                        ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                        : getStaticFileUrl(p);
+                      return (
+                        <img
+                          src={imgSrc}
+                          alt="Floorplan"
+                          className="w-full h-auto select-none"
+                          draggable={false}
+                        />
+                      );
+                    })()}
                     {markerAvailability.map((marker) => {
                       const getMarkerStatus = () => {
                         if (marker.isMyBooking) return 'My Booking';

@@ -149,12 +149,22 @@ export default function UsersPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
                         {user.profilePicture ? (
-                          <img
-                            width={40}
-                            height={40}
-                            src={user.profilePicture}
-                            alt={user.fullName}
-                          />
+                          (() => {
+                            const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                            const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+                            const p = user.profilePicture;
+                            const imgSrc = isProd
+                              ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
+                              : p;
+                            return (
+                              <img
+                                width={40}
+                                height={40}
+                                src={imgSrc}
+                                alt={user.fullName}
+                              />
+                            );
+                          })()
                         ) : (
                           <span className="text-gray-400 text-lg font-bold">
                             {user.fullName?.[0] || "?"}
