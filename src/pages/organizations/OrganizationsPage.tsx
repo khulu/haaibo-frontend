@@ -13,6 +13,7 @@ export default function OrganizationsPage() {
   const navigate = useNavigate();
 
   const { data: dataOrganizations, isLoading } = useOrganizationList();
+  const envName = (import.meta.env.ASPNETCORE_ENVIRONMENT as string) || (import.meta.env.MODE === 'production' ? 'Production' : 'Development');
 
   if (isLoading) return <div className="p-6">Loading organizations...</div>;
 
@@ -40,7 +41,12 @@ export default function OrganizationsPage() {
             {dataOrganizations?.map((org) => (
               <TableRow key={org.id}>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
-                  {org.name}
+                  <div className="flex items-center gap-2">
+                    <span>{org.name}</span>
+                    <span className="px-2 py-0.5 text-[10px] rounded border border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                      {envName}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   {(() => {
