@@ -205,7 +205,7 @@ export default function Home() {
   return (
     <>
       <PageMeta
-        title={activeOrgName ? `Haaibo Dashboard — ${activeOrgName}` : "Haaibo Dashboard"}
+        title={activeOrgName ? `Haiibo Dashboard — ${activeOrgName}` : "Haiibo Dashboard"}
         description={activeOrgName ? `Overview for ${activeOrgName}: users, contacts, issues, bookings, and events.` : "Overview of users, contacts, issues, bookings, and events."}
       />
 
@@ -284,41 +284,51 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {enableOfficeReservations && (
             <Section title="Most-used Desks">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-             
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                 <div className="space-y-2">
-                 
-
-                    {topMarkers.map((m: TopMarker) => {
-                      const max = (topMarkers[0] as TopMarker).count || 1;
-                      const pct = Math.round((m.count / max) * 100);
-                      return (
-                        <div key={m.markerId} className="flex items-center gap-3">
-                          <div className="w-40 text-sm text-gray-600 dark:text-gray-400">{m.markerName}</div>
-                          <div className="flex-1 bg-gray-100 dark:bg-white/[0.06] h-3 rounded overflow-hidden">
-                            <div className="h-3 bg-indigo-600" style={{ width: `${pct}%` }} />
-                          </div>
-                          <div className="w-10 text-right text-sm text-gray-700 dark:text-gray-300">{m.count}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+              {topMarkers.length === 0 ? (
+                <div className="p-4 rounded-lg border border-gray-100 bg-gray-50 text-sm text-gray-600 dark:border-white/[0.05] dark:bg-white/[0.02] dark:text-gray-400">
+                  No desk usage data yet. Make a booking to see stats.
+                  <button
+                    className="ml-3 inline-flex items-center px-3 py-1.5 rounded bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+                    onClick={() => navigate('/reservations')}
+                  >
+                    Book a desk
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4" />
 
-                <div className="md:col-span-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-white/90 mb-2">Rates</h3>
-                  <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                    <div>Check-in rate: {orgStats.checkinRatePercent}%</div>
-                    <div>No-shows: {orgStats.noShowCount}</div>
-                    <div>Cancelled: {orgStats.cancelledCount}</div>
-                    <div>Avg duration: {orgStats.averageBookingDurationMinutes} mins</div>
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <div className="space-y-2">
+                        {topMarkers.map((m: TopMarker) => {
+                          const max = (topMarkers[0] as TopMarker).count || 1;
+                          const pct = Math.round((m.count / max) * 100);
+                          return (
+                            <div key={m.markerId} className="flex items-center gap-3">
+                              <div className="w-40 text-sm text-gray-600 dark:text-gray-400">{m.markerName}</div>
+                              <div className="flex-1 bg-gray-100 dark:bg-white/[0.06] h-3 rounded overflow-hidden">
+                                <div className="h-3 bg-indigo-600" style={{ width: `${pct}%` }} />
+                              </div>
+                              <div className="w-10 text-right text-sm text-gray-700 dark:text-gray-300">{m.count}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-1">
+                      <h3 className="text-sm font-semibold text-gray-700 dark:text-white/90 mb-2">Rates</h3>
+                      <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                        <div>Check-in rate: {orgStats.checkinRatePercent}%</div>
+                        <div>No-shows: {orgStats.noShowCount}</div>
+                        <div>Cancelled: {orgStats.cancelledCount}</div>
+                        <div>Avg duration: {orgStats.averageBookingDurationMinutes} mins</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </>
+              )}
             </Section>
             )}
 

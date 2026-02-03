@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import useOrganizationsApi, { Organization } from "../../hooks/api/useOrganizationApi";
 import Badge from "../../components/ui/badge/Badge";
 import Label from "../../components/form/Label";
+import { resolveImageSrc } from "../../utils/resolveImageSrc";
 
 export default function OrganizationDetails() {
   const { id } = useParams<{ id: string }>();
@@ -79,22 +80,12 @@ export default function OrganizationDetails() {
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
             {org.logo ? (
-              (() => {
-                const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                   const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
-                  const p = org.logo;
-                const imgSrc = isProd
-                  ? (/^https?:\/\//.test(p) ? p : `${baseUrl}${p}`)
-                  : p;
-                return (
-                  <img
-                    width={64}
-                    height={64}
-                    src={imgSrc}
-                    alt={org.name}
-                  />
-                );
-              })()
+              <img
+                width={64}
+                height={64}
+                src={resolveImageSrc(org.logo)}
+                alt={org.name}
+              />
             ) : (
               <span className="text-gray-400 text-2xl font-bold">
                 {org.name?.[0] || "?"}
