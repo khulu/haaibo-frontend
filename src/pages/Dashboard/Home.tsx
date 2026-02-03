@@ -8,7 +8,7 @@ import useEvents from "@hooks/event/useEvent";
 import useOrganization from "@hooks/organization/useOrganization";
 import useAdminMetrics from '@hooks/admin/useAdminMetrics';
 import getAuth from "@hooks/api/useAuthApi";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Label from "../../components/form/Label";
 import useOrganizationsApi from "@hooks/api/useOrganizationApi";
@@ -458,6 +458,20 @@ export default function Home() {
 
 function KpiCard({ label, value, icon, onClick }: { label: string; value: number; icon?: React.ReactNode; onClick?: () => void }) {
   const clickable = typeof onClick === 'function';
+  const renderedIcon = React.isValidElement(icon)
+    ? (() => {
+        const iconEl = icon as React.ReactElement<{ className?: string }>;
+        const mergedClassName = [
+          'w-6 h-6',
+          'fill-current stroke-current',
+          'text-gray-800 dark:text-white/90',
+          iconEl.props?.className || ''
+        ]
+          .join(' ')
+          .trim();
+        return React.cloneElement(iconEl, { className: mergedClassName });
+      })()
+    : icon;
   return (
     <div
       className={`rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] p-5 md:p-6 ${clickable ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors' : ''}`}
@@ -474,7 +488,7 @@ function KpiCard({ label, value, icon, onClick }: { label: string; value: number
     >
       {icon && (
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
-          {icon}
+          {renderedIcon}
         </div>
       )}
       <div className="mt-5 flex items-end justify-between">
