@@ -160,7 +160,7 @@ interface AppSidebarProps {
 const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
 
 
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
   const location = useLocation();
   const auth = getAuth();
   const companyId = auth.getCompanyId();
@@ -350,6 +350,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
                 className={`menu-item group ${
                   isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                 }`}
+                onClick={() => {
+                  if (isMobileOpen) toggleMobileSidebar();
+                }}
               >
                 <span
                   className={`menu-item-icon-size ${
@@ -392,6 +395,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
                       }`}
                       aria-label={subItem.name}
                       title={subItem.name}
+                      onClick={() => {
+                        if (isMobileOpen) toggleMobileSidebar();
+                      }}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
