@@ -21,6 +21,7 @@ import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
 import getAuth from "../hooks/api/useAuthApi";
 import useOrganizationsApi from "../hooks/api/useOrganizationApi";
+import { resolveImageSrc } from "../utils/resolveImageSrc";
 
 type NavItem = {
   name: string;
@@ -242,9 +243,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   const defaultDarkLogo = "/images/haiibo-logo.jpeg";
   const defaultCollapsedLogo = "/images/haaibo-logo.jpeg";
 
-  const lightLogoSrc = companyLogoUrl || defaultLightLogo;
-  const darkLogoSrc = companyLogoUrl || defaultDarkLogo;
-  const collapsedLogoSrc = companyLogoUrl || defaultCollapsedLogo;
+  const lightLogoSrc = resolveImageSrc(companyLogoUrl || undefined) || defaultLightLogo;
+  const darkLogoSrc = resolveImageSrc(companyLogoUrl || undefined) || defaultDarkLogo;
+  const collapsedLogoSrc = resolveImageSrc(companyLogoUrl || undefined) || defaultCollapsedLogo;
 
   useEffect(() => {
     let submenuMatched = false;
