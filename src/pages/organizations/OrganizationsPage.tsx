@@ -50,11 +50,11 @@ export default function OrganizationsPage() {
                 </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   {(() => {
-                    const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                    const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
+                    const isProd = (import.meta.env as unknown as Record<string, unknown>).ASPNETCORE_ENVIRONMENT === "Production" || import.meta.env.PROD;
+                    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
                     const p = org.logo ?? '';
                     const logoSrc = isProd
-                      ?  `${baseUrl}${p}`
+                      ? (/^https?:\/\//.test(p) ? p : (baseUrl ? `${baseUrl}${p}` : p))
                       : p || undefined;
                     return org.logo ? <img src={logoSrc} alt={org.name ?? ""} className="h-8" /> : "-";
                   })()}
