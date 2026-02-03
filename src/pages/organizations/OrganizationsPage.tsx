@@ -43,7 +43,12 @@ export default function OrganizationsPage() {
                   {org.name}
                 </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
-                  {org.logo ? <img src={org.logo} alt={org.name} className="h-8" /> : "-"}
+                  {(() => {
+                    const PRODUCTION_LOGO_URL = "https://haiibo-backend-api.azurewebsites.net/logos/499a630a-3cff-4dc2-835a-b0fc4b7ef26a/logo_639057404444561776.jpg";
+                    const isProd = import.meta.env.MODE === "production";
+                    const logoSrc = isProd ? PRODUCTION_LOGO_URL : org.logo ?? undefined;
+                    return org.logo ? <img src={logoSrc} alt={org.name ?? ""} className="h-8" /> : "-";
+                  })()}
                 </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   <div className="flex gap-2">
