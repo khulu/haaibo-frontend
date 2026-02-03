@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import NotificationDropdown from "../components/header/NotificationDropdown";
@@ -112,13 +112,13 @@ const AppHeader: React.FC = () => {
             <img
               className="dark:hidden"
               src="./images/haaibo-logo.jpeg"
-              alt="Haaibo Logo"
+              alt="Haiibo Logo"
               style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8 }}
             />
             <img
               className="hidden dark:block"
               src="./images/haaibo-logo.jpeg"
-              alt="Haaibo Logo"
+              alt="Haiibo Logo"
               style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8 }}
             />
             <span className="font-bold text-lg text-gray-900 dark:text-white ml-2">Haaibo</span>
