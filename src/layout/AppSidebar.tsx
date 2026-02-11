@@ -454,6 +454,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
         path: "/reservation-reports",
       });
     }
+    // Admin-only Import Resources main item when office reservations are enabled
+    if (companyDetails?.enableOfficeReservations && (role === 1 || role === "Admin")) {
+      items.push({
+        icon: <DocsIcon />,
+        name: "Import Resources",
+        path: "/resources-import",
+      });
+    }
     // Show Employee Dashboard menu item if enabled and user role is 'Employee'
     if (companyDetails?.enableEmployeeDashboardMenu && (role === 'Employee' || role === 2)) {
       items.push({

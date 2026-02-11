@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import PrivateRoute from "./components/auth/PrivateRoute";
+import RoleRoute from "./components/auth/RoleRoute";
 import NotFound from "./pages/OtherPage/NotFound";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
@@ -37,6 +38,7 @@ const ContactEdit = lazy(() => import("./pages/contacts/ContactEdit"));
 const ContactsBulkUpload = lazy(() => import("./pages/contacts/ContactsBulkUpload"));
 const ReportsPage = lazy(() => import("./pages/reports/ReportsPage"));
 const ReservationReports = lazy(() => import("./pages/reservation_reports/ReservationReports"));
+const ImportResources = lazy(() => import("./pages/reservation_reports/ImportResources"));
 const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
 const OrganizationsPage = lazy(() => import("./pages/organizations/OrganizationsPage"));
 const OrganizationDetails = lazy(() => import("./pages/organizations/OrganizationDetails"));
@@ -58,6 +60,7 @@ const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
 const SignUp = lazy(() => import("./pages/AuthPages/SignUp"));
 const ResetPassword = lazy(() => import("./pages/AuthPages/ResetPassword"));
 const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
+const NotificationsPage = lazy(() => import("./pages/notifications/NotificationsPage"));
 
 export default function App() {
   return (
@@ -202,6 +205,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <Images />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <PrivateRoute>
+                  <NotificationsPage />
                 </PrivateRoute>
               }
             />
@@ -362,6 +373,16 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <ReservationReports />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/resources-import"
+              element={
+                <PrivateRoute>
+                  <RoleRoute allowed={[1, "Admin"]}>
+                    <ImportResources />
+                  </RoleRoute>
                 </PrivateRoute>
               }
             />
