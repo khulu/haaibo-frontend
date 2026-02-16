@@ -61,6 +61,7 @@ const SignUp = lazy(() => import("./pages/AuthPages/SignUp"));
 const ResetPassword = lazy(() => import("./pages/AuthPages/ResetPassword"));
 const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
 const NotificationsPage = lazy(() => import("./pages/notifications/NotificationsPage"));
+const PeakUsageHeatmap = lazy(() => import("./pages/reports/PeakUsageHeatmap"));
 
 export default function App() {
   return (
@@ -488,6 +489,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <ReportsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/reports/peak-usage"
+              element={
+                <PrivateRoute>
+                  <PeakUsageHeatmap />
                 </PrivateRoute>
               }
             />

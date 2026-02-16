@@ -8,11 +8,13 @@ import useEvents from "@hooks/event/useEvent";
 import useOrganization from "@hooks/organization/useOrganization";
 import useAdminMetrics from '@hooks/admin/useAdminMetrics';
 import getAuth from "@hooks/api/useAuthApi";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Label from "../../components/form/Label";
 import useOrganizationsApi from "@hooks/api/useOrganizationApi";
 import { UserIcon, MailIcon, CalenderIcon, TimeIcon, GroupIcon, AlertIcon } from "../../icons";
+import useAnalyticsApi from "../../hooks/api/useAnalyticsApi";
+import type { HeatmapResponse } from "../../types/analytics";
 
    interface TopMarker {
                       markerId: string | number;
@@ -139,15 +141,68 @@ export default function Home() {
   }, [metricsData]);
 
   const topMarkers = orgStats.mostUsedMarkers;
-  const heatmapMatrix = useMemo(() => {
-    const days = 7; const hours = 24;
-    const m: number[][] = Array.from({ length: days }, () => Array(hours).fill(0));
-    (orgStats.buckets ?? []).forEach((b: { day: number; hour: number; count: number }) => {
-      const d = ((b.day % 7) + 7) % 7; // normalize
-      if (d >= 0 && d < days && b.hour >= 0 && b.hour < hours) m[d][b.hour] += b.count;
-    });
-    return m;
-  }, [orgStats]);
+  // Peak Usage Heatmap (analytics API)
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const { getHeatmap } = useAnalyticsApi();
+  const getHeatmapRef = useRef(getHeatmap);
+  useEffect(() => { getHeatmapRef.current = getHeatmap; }, [getHeatmap]);
+  const [period, setPeriod] = useState<'12m' | '30d' | '7d' | '24h'>('30d');
+  const [heatmapData, setHeatmapData] = useState<HeatmapResponse | null>(null);
+  const [hmLoading, setHmLoading] = useState(false);
+  const [hmError, setHmError] = useState<string | null>(null);
+
+  const { fromDateStr, toDateStr, subtitle } = useMemo(() => {
+    const now = new Date();
+    let from = new Date();
+    switch (period) {
+      case '12m': from = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); break;
+      case '30d': from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); break;
+      case '7d': from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break;
+      case '24h': from = new Date(now.getTime() - 24 * 60 * 60 * 1000); break;
+    }
+    const fromStr = from.toISOString().slice(0, 10);
+    const toStr = now.toISOString().slice(0, 10);
+    const subtitleMap: Record<typeof period, string> = {
+      '12m': 'Visitor analytics of last 12 months',
+      '30d': 'Visitor analytics of last 30 days',
+      '7d': 'Visitor analytics of last 7 days',
+      '24h': 'Visitor analytics of last 24 hours',
+    };
+    return { fromDateStr: fromStr, toDateStr: toStr, subtitle: subtitleMap[period] };
+  }, [period]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setHmLoading(true); setHmError(null);
+      try {
+        const res = await getHeatmapRef.current({
+          companyId: effectiveCompanyId ?? undefined,
+          from: fromDateStr,
+          to: toDateStr,
+          normalize: false,
+        });
+        if (!cancelled) setHeatmapData(res);
+      } catch (e) {
+        if (!cancelled) setHmError(e instanceof Error ? e.message : 'Failed to load heatmap');
+      } finally {
+        if (!cancelled) setHmLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [effectiveCompanyId, fromDateStr, toDateStr]);
+
+  const peakCount = useMemo(() => {
+    if (!heatmapData) return 0;
+    return heatmapData.peak?.count ?? 0;
+  }, [heatmapData]);
+
+  const scaleColor = (value: number) => {
+    const intensity = peakCount > 0 ? (value / peakCount) : 0;
+    const alpha = Math.min(1, Math.max(0.08, intensity));
+    return `rgba(37, 99, 235, ${alpha})`;
+  };
 
   // Totals
   const { useContactsTotal } = useContacts();
@@ -333,28 +388,80 @@ export default function Home() {
             )}
 
             {enableOfficeReservations && (
-            <Section title="Peak Usage Heatmap">
-              <div className="mt-6">
-                <div className="overflow-x-auto">
-                  <div className="grid grid-cols-24 gap-1 text-xs">
-                    {/* Simple heatmap: days rows, hours columns */}
-                    {heatmapMatrix.map((row, dayIdx) => (
-                      <div key={dayIdx} className="flex items-center gap-1 mb-1">
-                        <div className="w-16 text-xs text-gray-600 dark:text-gray-400">Day {dayIdx}</div>
-                        <div className="flex-1 flex gap-1">
-                          {row.map((val, h) => {
-                            const max = Math.max(...row, 1);
-                            const intensity = Math.min(1, val / max);
-                            const bg = `rgba(79,70,229,${0.15 + intensity * 0.7})`;
-                            return <div key={h} style={{ width: 10, height: 12, background: bg }} title={`H${h}: ${val}`} />;
-                          })}
-                        </div>
+              <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
+                <div className="flex flex-wrap items-start justify-between gap-5">
+                  <div>
+                    <h3 className="mb-1 text-lg font-semibold text-gray-800 dark:text-white/90">Peak Usage Heatmap</h3>
+                    <span className="block text-theme-sm text-gray-500 dark:text-gray-400">{subtitle}</span>
+                  </div>
+
+                  <div className="flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900">
+                    <button
+                      onClick={() => setPeriod('12m')}
+                      className={`rounded-md px-3 py-2 text-theme-sm font-medium ${period === '12m' ? 'shadow-theme-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                      12 months
+                    </button>
+                    <button
+                      onClick={() => setPeriod('30d')}
+                      className={`rounded-md px-3 py-2 text-theme-sm font-medium ${period === '30d' ? 'shadow-theme-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                      30 days
+                    </button>
+                    <button
+                      onClick={() => setPeriod('7d')}
+                      className={`rounded-md px-3 py-2 text-theme-sm font-medium ${period === '7d' ? 'shadow-theme-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                      7 days
+                    </button>
+                    <button
+                      onClick={() => setPeriod('24h')}
+                      className={`rounded-md px-3 py-2 text-theme-sm font-medium ${period === '24h' ? 'shadow-theme-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                      24 hours
+                    </button>
+                  </div>
+                </div>
+
+                {hmError && (
+                  <div className="mt-3 p-3 border rounded text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-300">{hmError}</div>
+                )}
+
+                <div className="custom-scrollbar max-w-full overflow-x-auto mt-4">
+                  <div className="-ml-5 min-w-[900px] pl-2" style={{ minHeight: 365 }}>
+                    <div className="grid grid-cols-[80px_1fr] gap-3">
+                      <div className="flex flex-col gap-2">
+                        {dayLabels.map((d) => (
+                          <div key={d} className="h-8 flex items-center text-xs text-gray-600 dark:text-gray-400">{d}</div>
+                        ))}
                       </div>
-                    ))}
+                      <div className="flex flex-col gap-2">
+                        <div className="grid grid-cols-24 gap-1">
+                          {Array.from({ length: 24 }).map((_, h) => (
+                            <div key={h} className="text-[10px] text-gray-500 text-center">{h}</div>
+                          ))}
+                        </div>
+                        {Array.from({ length: 7 }).map((_, day) => (
+                          <div key={day} className="grid grid-cols-24 gap-1">
+                            {Array.from({ length: 24 }).map((_, hour) => {
+                              const value = heatmapData?.matrix?.[day]?.[hour] ?? 0;
+                              const color = scaleColor(value);
+                              const percent = peakCount > 0 ? Math.round((value / peakCount) * 100) : 0;
+                              const title = `${dayLabels[day]} ${hour}:00\nCount: ${value}\nIntensity: ${percent}%`;
+                              return (
+                                <div key={hour} title={title} className="h-8 rounded" style={{ backgroundColor: color }} />
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {hmLoading && (
+                      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">Loading heatmap…</div>
+                    )}
                   </div>
                 </div>
               </div>
-            </Section>
             )}
           </div>
         </div>
