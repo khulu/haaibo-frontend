@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import ComponentCard from "../../components/common/ComponentCard";
 import Button from "../../components/ui/button/Button";
@@ -7,6 +7,11 @@ import Input from "../../components/form/input/InputField";
 import Checkbox from "../../components/form/input/Checkbox";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "../../components/ui/table";
 import { useToast } from "../../context/useToast";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { resolveImageSrc } from "../../utils/resolveImageSrc";
 
 import getAuth from "../../hooks/api/useAuthApi";
 import useOrganizationsApi from "../../hooks/api/useOrganizationApi";
@@ -29,7 +34,7 @@ type ResourceRow = {
 export default function ImportResources() {
   const [step, setStep] = useState<number>(1);
   const [method, setMethod] = useState<ImportMethod>("api");
-  const [isImporting, setIsImporting] = useState(false);
+  const [isImporting] = useState(false);
   const [resources, setResources] = useState<ResourceRow[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<'All' | 0 | 1>('All');
@@ -46,8 +51,8 @@ export default function ImportResources() {
   // API: Test Graph Connection
   const { testGraphConnection, syncResources, getUnplottedResources } = useResourceImportApi();
   const [testLoading, setTestLoading] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [syncLog, setSyncLog] = useState<import("../../hooks/api/useResourceImportApi").SyncLog | null>(null);
+  const [, setSyncLoading] = useState(false);
+  const [, setSyncLog] = useState<import("../../hooks/api/useResourceImportApi").SyncLog | null>(null);
   type TestGraphConnectionResult = {
     ok?: boolean;
     message?: string;
@@ -62,8 +67,8 @@ export default function ImportResources() {
     setTestResult(null);
     try {
       const res = await testGraphConnection({ tenantId, clientId, clientSecret });
-      const ok = (res as any)?.ok ?? (res as any)?.success ?? false;
-      const message = (res as any)?.message ?? (ok ? "Connection successful" : "Connection failed");
+      const ok = res.ok;
+      const message = res.message ?? (ok ? "Connection successful" : "Connection failed");
       setTestResult({ ok, message });
       if (ok) {
         toast.success(message);
@@ -114,12 +119,16 @@ export default function ImportResources() {
   const auth = getAuth();
   const companyId = auth.getCompanyId();
   const { getOrganizationById } = useOrganizationsApi();
-  const { listTree, getMarkers, createMarker } = useLocationsApi();
+  const { listTree, getMarkers, createMarker, deleteMarker } = useLocationsApi();
   const [locations, setLocations] = useState<LocationDto[]>([]);
   const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
   const [officeEnabled, setOfficeEnabled] = useState<boolean | null>(null);
   const [markers, setMarkers] = useState<FloorplanMarker[]>([]);
-  const [placementMode, setPlacementMode] = useState<'desk' | 'room' | null>(null);
+  const [placementMode] = useState<'desk' | 'room' | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const imageOverlayRef = useRef<L.ImageOverlay | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -150,7 +159,7 @@ export default function ImportResources() {
           setLocations(all);
           if (all.length > 0 && !selectedFloorId) setSelectedFloorId(all[0].id);
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     };
@@ -169,11 +178,21 @@ export default function ImportResources() {
       try {
         const res = await getUnplottedResources(companyId as string, 1, 50);
         if (!mounted) return;
-        setResources(res.items || []);
-      } catch (e: any) {
-        toast.error(e?.message || "Failed to load resources");
+        const mapped = (res.items || []).map((i) => ({
+          id: i.resourceId || i.id,
+          type: (i.type ?? 0) as 0 | 1,
+          name: i.name || i.resourceId || 'Resource',
+          email: i.email,
+          capacity: i.capacity,
+          features: i.features,
+          status: i.status || 'Unassigned',
+        }));
+        setResources(mapped);
+      } catch (e: unknown) {
+        const msg = typeof e === 'object' && e && 'message' in e ? (e as { message?: string }).message : undefined;
+        toast.error(msg || "Failed to load resources");
       } finally {
-        mounted && setUnplottedLoading(false);
+        if (mounted) setUnplottedLoading(false);
       }
     };
     load();
@@ -194,14 +213,128 @@ export default function ImportResources() {
         const m = await getMarkers(selectedFloorId);
         if (!mounted) return;
         setMarkers(m || []);
-      } catch (e: any) {
-        toast.error(e?.message || "Failed to load markers");
+      } catch (e: unknown) {
+        const msg = typeof e === 'object' && e && 'message' in e ? (e as { message?: string }).message : undefined;
+        toast.error(msg || "Failed to load markers");
       }
     };
     loadMarkers();
     return () => { mounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFloorId]);
+
+  // Initialize Leaflet map
+  useEffect(() => {
+    if (step !== 3) return;
+    if (mapRef.current) return; // Already initialized
+
+    const mapContainer = document.getElementById('floorplan-map');
+    if (!mapContainer) return;
+
+    // Initialize map
+    const map = L.map('floorplan-map', {
+      crs: L.CRS.Simple,
+      minZoom: -2,
+      maxZoom: 2,
+      zoomControl: true,
+      attributionControl: false,
+    });
+
+    // Create marker layer
+    const markersLayer = L.layerGroup().addTo(map);
+    markersLayerRef.current = markersLayer;
+
+    mapRef.current = map;
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        imageOverlayRef.current = null;
+        markersLayerRef.current = null;
+      }
+    };
+  }, [step]);
+
+  // Update map when floor changes
+  useEffect(() => {
+    if (!mapRef.current || !selectedFloorId) return;
+
+    const selectedLocation = locations.find(l => l.id === selectedFloorId);
+    if (!selectedLocation?.floorplanPath) return;
+
+    // Remove old image overlay if exists
+    if (imageOverlayRef.current) {
+      imageOverlayRef.current.remove();
+    }
+
+    // Create temporary image to get dimensions
+    const img = new Image();
+    img.onload = () => {
+      const width = img.width;
+      const height = img.height;
+      const bounds: L.LatLngBoundsExpression = [[0, 0], [height, width]];
+
+      // Add image overlay
+      const imageOverlay = L.imageOverlay(selectedLocation.floorplanPath!, bounds).addTo(mapRef.current!);
+      imageOverlayRef.current = imageOverlay;
+
+      // Fit map to bounds
+      mapRef.current!.fitBounds(bounds);
+    };
+    img.src = selectedLocation.floorplanPath;
+  }, [selectedFloorId, locations]);
+
+  // Update markers on map
+  useEffect(() => {
+    if (!mapRef.current || !markersLayerRef.current) return;
+
+    // Clear existing markers
+    markersLayerRef.current.clearLayers();
+
+    // Add markers
+    markers.forEach((marker) => {
+      if (marker.locationId !== selectedFloorId) return;
+
+      const markerIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="
+          background: ${marker.type === 0 ? '#16a34a' : '#2563eb'};
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          white-space: nowrap;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        ">${marker.deskCode || marker.name}</div>`,
+        iconSize: [60, 24],
+        iconAnchor: [30, 12],
+      });
+
+      const leafletMarker = L.marker([marker.yPosition, marker.xPosition], {
+        icon: markerIcon,
+        draggable: false,
+      }).addTo(markersLayerRef.current!);
+
+      // Add click handler to remove marker
+      leafletMarker.on('click', async () => {
+        if (!window.confirm(`Remove ${marker.name}?`)) return;
+
+        try {
+          await deleteMarker(marker.id);
+          setMarkers(prev => prev.filter(m => m.id !== marker.id));
+          if (marker.deskCode) {
+            setResources(prev => prev.map(p => p.id === marker.deskCode ? { ...p, status: 'Unassigned' } : p));
+          }
+          toast.success(`Removed ${marker.name}`);
+        } catch (e: unknown) {
+          const msg = typeof e === 'object' && e && 'message' in e ? (e as { message?: string }).message : undefined;
+          toast.error(msg || 'Failed to remove marker');
+        }
+      });
+    });
+  }, [markers, selectedFloorId, deleteMarker, toast]);
 
   const filteredResources = useMemo(() => {
     return resources.filter((r) => {
@@ -212,72 +345,56 @@ export default function ImportResources() {
     });
   }, [resources, search, typeFilter]);
 
+  // Calculate unassigned resources for Step 3
+  const unassignedResources = useMemo(() => {
+    return resources.filter(r => (r.status || 'Unassigned') !== 'Assigned');
+  }, [resources]);
+
+  // Step 4 removed: floor summary no longer needed
+
   const goToStep = (n: number) => setStep(n);
 
   const selectImportMethod = (m: ImportMethod) => setMethod(m);
 
   // CSV/manual upload removed in Step 1 per requirements
 
-  const importViaApi = async () => {
-    // Simulate an API import; in real impl, call Graph import endpoint
-    setIsImporting(true);
-    setTimeout(() => {
-      const demo: ResourceRow[] = [];
-      for (let i = 1; i <= 50; i++) {
-        demo.push({
-          id: `DESK-${String(i).padStart(3, "0")}`,
-          type: 0,
-          name: `Individual Desk ${i}`,
-          email: `desk-${String(i).padStart(3, "0")}@company.com`,
-          capacity: 1,
-          features: "Monitor, Sit-Stand",
-          status: "Unassigned",
-        });
-      }
-      for (let i = 1; i <= 10; i++) {
-        demo.push({
-          id: `MTG-${String(i).padStart(3, "0")}`,
-          type: 1,
-          name: `Meeting Room ${String.fromCharCode(64 + i)}`,
-          email: `mtg-${String(i).padStart(3, "0")}@company.com`,
-          capacity: 6 + (i % 3) * 2,
-          features: "Video Conf, Whiteboard",
-          status: "Unassigned",
-        });
-      }
-      setResources(demo);
-      toast.success("Imported resources via Microsoft Graph API");
-      setStep(2);
-      setIsImporting(false);
-    }, 1000);
-  };
+  // importViaApi removed (not used)
 
-  const handleCellClick = async (index: number) => {
+  const handleMapClick = useCallback(async (e: L.LeafletMouseEvent) => {
     if (!placementMode) return;
     if (!selectedFloorId) {
       toast.error('Select a floor first');
       return;
     }
 
+    const { lat, lng } = e.latlng;
+    const y = Math.round(lat);
+    const x = Math.round(lng);
+
     const desiredType = placementMode === 'desk' ? 0 : 1;
     const resource = resources.find(r => (r.status || 'Unassigned') !== 'Assigned' && r.type === desiredType);
     if (!resource) {
-      toast.info(`No unassigned ${placementMode}s available`);
+      toast.error(`No unassigned ${placementMode}s available`);
       return;
     }
 
-    // prevent placing on an occupied cell
-    const exists = markers.find(m => m.xPosition === x && m.yPosition === y);
+    // Check if position is occupied (within tolerance)
+    const tolerance = 10;
+    const exists = markers.find(m => 
+      m.locationId === selectedFloorId &&
+      Math.abs(m.xPosition - x) < tolerance && 
+      Math.abs(m.yPosition - y) < tolerance
+    );
     if (exists) {
-      toast.info('Cell already occupied');
-      console.log('handleCellClick: occupied', { index, x, y, exists });
+      toast.error('Position already occupied');
       return;
     }
 
-    const x = index % 12;
-    const y = Math.floor(index / 12);
-    console.log('handleCellClick: placing', { index, x, y, resource, selectedFloorId });
+    console.log('handleMapClick: placing', { x, y, resource, selectedFloorId });
+    
+    // Optimistically update UI
     setResources(prev => prev.map(p => p.id === resource.id ? { ...p, status: 'Assigned' } : p));
+    
     try {
       const created = await createMarker({
         name: resource.name,
@@ -287,15 +404,146 @@ export default function ImportResources() {
         locationId: selectedFloorId,
         deskCode: resource.id,
       });
-      console.log('handleCellClick: created marker', created);
+      console.log('handleMapClick: created marker', created);
       setMarkers(prev => [...prev, created]);
       toast.success(`Placed ${resource.name}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      // Revert optimistic update on error
       setResources(prev => prev.map(p => p.id === resource.id ? { ...p, status: 'Unassigned' } : p));
-      const errMsg = e?.response?.data?.message || e?.message || 'Failed to place resource';
-      console.error('handleCellClick: createMarker error', e);
+      let errMsg = 'Failed to place resource';
+      if (typeof e === 'object' && e !== null) {
+        const maybe = e as { response?: { data?: { message?: string } }; message?: string };
+        errMsg = maybe?.response?.data?.message || maybe?.message || errMsg;
+      }
+      console.error('handleMapClick: createMarker error', e);
       toast.error(errMsg);
     }
+  }, [placementMode, selectedFloorId, resources, markers, createMarker, toast]);
+
+  // Attach map click handler when placement mode changes
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (placementMode) {
+      mapRef.current.on('click', handleMapClick);
+      // Change cursor
+      const container = mapRef.current.getContainer();
+      container.style.cursor = 'crosshair';
+    } else {
+      mapRef.current.off('click', handleMapClick);
+      // Reset cursor
+      const container = mapRef.current.getContainer();
+      container.style.cursor = '';
+    }
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.off('click', handleMapClick);
+      }
+    };
+  }, [placementMode, handleMapClick]);
+
+  const handleAutoFill = async () => {
+    if (!selectedFloorId) {
+      toast.error('Select a floor first');
+      return;
+    }
+
+    const selectedLocation = locations.find(l => l.id === selectedFloorId);
+    if (!selectedLocation?.floorplanPath) {
+      toast.error('No floorplan available');
+      return;
+    }
+
+    const unassigned = resources.filter(r => (r.status || 'Unassigned') !== 'Assigned');
+    if (unassigned.length === 0) {
+      toast.error('No unassigned resources available');
+      return;
+    }
+
+    toast.success(`Auto-filling ${Math.min(unassigned.length, 20)} resources...`);
+
+    // Get image dimensions to determine placement area
+    const img = new Image();
+    img.onload = async () => {
+      const width = img.width;
+      const height = img.height;
+
+      // Create a grid of potential positions (percent coordinates)
+      const gridSpacing = 50; // pixels between markers
+      const positions: { xPct: number; yPct: number }[] = [];
+
+      for (let y = gridSpacing; y < height; y += gridSpacing) {
+        for (let x = gridSpacing; x < width; x += gridSpacing) {
+          // Convert to percent
+          const xPct = (x / width) * 100;
+          const yPct = (y / height) * 100;
+          // Check if position is occupied (tolerance in percent)
+          const tolerancePct = 2.5;
+          const exists = markers.find(m => 
+            m.locationId === selectedFloorId &&
+            Math.abs(m.xPosition - xPct) < tolerancePct && 
+            Math.abs(m.yPosition - yPct) < tolerancePct
+          );
+          if (!exists) {
+            positions.push({ xPct, yPct });
+          }
+        }
+      }
+
+      const toPlace = Math.min(unassigned.length, positions.length, 20); // Limit to 20 at a time
+      let placed = 0;
+
+      for (let i = 0; i < toPlace; i++) {
+        const pos = positions[i];
+        const resource = unassigned[i];
+
+        try {
+          const created = await createMarker({
+            name: resource.name,
+            type: resource.type,
+            xPosition: pos.xPct,
+            yPosition: pos.yPct,
+            locationId: selectedFloorId,
+            deskCode: resource.id,
+          });
+          setMarkers(prev => [...prev, created]);
+          setResources(prev => prev.map(p => p.id === resource.id ? { ...p, status: 'Assigned' } : p));
+          placed++;
+        } catch (e) {
+          console.error('Auto-fill error:', e);
+        }
+      }
+
+      if (placed > 0) {
+        toast.success(`Auto-filled ${placed} resources`);
+      }
+    };
+    img.src = selectedLocation.floorplanPath;
+  };
+
+  const handleClearFloor = () => {
+    if (!selectedFloorId) return;
+    
+    if (!window.confirm('Clear all markers from this floor? This will set all resources back to Unassigned.')) {
+      return;
+    }
+
+    const floorMarkers = markers.filter(m => m.locationId === selectedFloorId);
+    
+    Promise.all(floorMarkers.map(m => deleteMarker(m.id)))
+      .then(() => {
+        setMarkers(prev => prev.filter(m => m.locationId !== selectedFloorId));
+        // Update all resources back to Unassigned
+        const markerCodes = floorMarkers.map(m => m.deskCode).filter(Boolean);
+        setResources(prev => prev.map(p => 
+          markerCodes.includes(p.id) ? { ...p, status: 'Unassigned' } : p
+        ));
+        toast.success('Floor cleared');
+      })
+      .catch((e) => {
+        toast.error(e?.message || 'Failed to clear floor');
+      });
   };
 
   const allocationProgress = useMemo(() => {
@@ -304,6 +552,10 @@ export default function ImportResources() {
     const pct = Math.round((allocated / total) * 100);
     return { allocated, total, pct };
   }, [resources]);
+
+  // Step 4 removed: summary statistics no longer needed
+
+  console.log(locations);
 
   return (
     <div className="px-4 py-6 sm:px-6">
@@ -320,7 +572,7 @@ export default function ImportResources() {
         {/* Stepper */}
         <div className="mb-6">
           <div className="flex items-center justify-between relative">
-            {[1, 2, 3, 4].map((n) => (
+            {[1, 2, 3].map((n) => (
               <div key={n} className="flex-1 text-center relative cursor-pointer" onClick={() => goToStep(n)}>
                 {n !== 1 && <div className="absolute left-0 right-0 top-5 h-0.5 bg-gray-200" />}
                 <div className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${step === n ? "bg-brand-500 text-white" : step > n ? "bg-success-500 text-white" : "bg-gray-200 text-gray-600"}`}>{n}</div>
@@ -328,7 +580,6 @@ export default function ImportResources() {
                   {n === 1 && "Import Resources"}
                   {n === 2 && "Review Data"}
                   {n === 3 && "Allocate to Floors"}
-                  {n === 4 && "Summary & Export"}
                 </div>
               </div>
             ))}
@@ -441,9 +692,6 @@ export default function ImportResources() {
               <Table className="">
                 <TableHeader>
                   <TableRow>
-                    {step !== 2 && (
-                      <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">ID</TableCell>
-                    )}
                     <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Type</TableCell>
                     <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Name</TableCell>
                     <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Email</TableCell>
@@ -455,7 +703,6 @@ export default function ImportResources() {
                 <TableBody>
                   {filteredResources.slice(0, 50).map((r) => (
                     <TableRow key={r.id} className="border-t">
-                      {step !== 2 && <TableCell className="px-4 py-2 text-sm">{r.id}</TableCell>}
                       <TableCell className="px-4 py-2 text-sm">
                         <span className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${r.type === 0 ? "bg-green-50 text-green-700" : r.type === 1 ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"}`}>{r.type === 0 ? "Desk" : r.type === 1 ? "Room" : "Other"}</span>
                       </TableCell>
@@ -481,9 +728,7 @@ export default function ImportResources() {
         {step === 3 && (
           <div className="space-y-6">
             <h2 className="text-lg font-semibold text-gray-800">Step 3: Allocate Resources to Floor Plans</h2>
-
-            {/* UnplottedMarkersPanel removed per request */}
-
+            <DndProvider backend={HTML5Backend}>
             <div className="grid gap-4 lg:grid-cols-[250px_1fr_300px]">
               {/* Floors */}
               <div className="rounded-lg border bg-gray-50 p-3 overflow-y-auto max-h-[600px]">
@@ -491,7 +736,7 @@ export default function ImportResources() {
                   {locations.length === 0 && (
                     <div className="text-sm text-gray-600">No floors available</div>
                   )}
-                  {locations.map((loc, idx) => (
+                  {locations.map((loc) => (
                     <div
                       key={loc.id}
                       onClick={() => setSelectedFloorId(loc.id)}
@@ -505,146 +750,184 @@ export default function ImportResources() {
               {/* Canvas */}
               <div className="rounded-lg border p-4">
                 <div className="flex items-center justify-between border-b pb-3">
-                  <h3 className="text-sm font-semibold">Ground Floor Layout</h3>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant={placementMode === 'desk' ? undefined : 'outline'} onClick={() => setPlacementMode(prev => prev === 'desk' ? null : 'desk')}>Place Desks</Button>
-                    <Button size="sm" variant={placementMode === 'room' ? undefined : 'outline'} onClick={() => setPlacementMode(prev => prev === 'room' ? null : 'room')}>Place Rooms</Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.info('Auto-Fill not implemented')}>Auto-Fill</Button>
-                    <Button size="sm" variant="outline" onClick={() => { setMarkers([]); toast.info('Cleared local markers (not deleted from server)'); }}>Clear</Button>
-                  </div>
+                  <h3 className="text-sm font-semibold">
+                    {locations.find(l => l.id === selectedFloorId)?.name || 'Floor Layout'}
+                  </h3>
                 </div>
-                <div className="mt-4 grid grid-cols-12 gap-2">
-                  {Array.from({ length: 144 }).map((_, i) => {
-                    const x = i % 12;
-                    const y = Math.floor(i / 12);
-                    const marker = markers.find(m => m.xPosition === x && m.yPosition === y);
+                {(() => {
+                  const selectedLocation = locations.find(l => l.id === selectedFloorId);
+                  if (!selectedLocation?.floorplanPath) {
                     return (
-                      <div key={i} onClick={() => handleCellClick(i)} className="aspect-square cursor-pointer rounded border bg-white hover:border-brand-400 text-[10px] flex items-center justify-center relative">
-                        {marker ? (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="rounded bg-brand-600 text-white px-1 text-[10px]">{marker.deskCode || marker.name}</div>
-                          </div>
-                        ) : (
-                          <div className="text-[10px]">{i + 1}</div>
+                      <div className="w-full h-[500px] bg-gray-100 rounded border flex items-center justify-center text-gray-500 text-sm">
+                        No floorplan image available. Showing blank map.
+                      </div>
+                    );
+                  }
+                  // Floorplan image with overlay + drop target
+                  const FloorImage = () => {
+                    // Drop target on image container
+                    const [{ isOver }, drop] = useDrop(() => ({
+                      accept: 'RESOURCE',
+                      drop: async (item: { id: string; name: string; type: 0 | 1 }, monitor) => {
+                        if (!selectedFloorId) {
+                          toast.error('Select a floor first');
+                          return;
+                        }
+                        if (!imgRef.current) return;
+                        const rect = imgRef.current.getBoundingClientRect();
+                        const client = monitor.getClientOffset();
+                        if (!client) return;
+                        const x = client.x - rect.left;
+                        const y = client.y - rect.top;
+                        const xPct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+                        const yPct = Math.max(0, Math.min(100, (y / rect.height) * 100));
+
+                        // prevent overlapping markers (tolerance in percent)
+                        const tolerancePct = 2.5;
+                        const exists = markers.find(m => 
+                          m.locationId === selectedFloorId &&
+                          Math.abs(m.xPosition - xPct) < tolerancePct &&
+                          Math.abs(m.yPosition - yPct) < tolerancePct
+                        );
+                        if (exists) {
+                          toast.error('Position already occupied');
+                          return;
+                        }
+
+                        // Optimistic assign
+                        setResources(prev => prev.map(p => p.id === item.id ? { ...p, status: 'Assigned' } : p));
+                        try {
+                          const created = await createMarker({
+                            name: item.name,
+                            type: item.type,
+                            xPosition: xPct,
+                            yPosition: yPct,
+                            locationId: selectedFloorId,
+                            deskCode: item.id,
+                          });
+                          setMarkers(prev => [...prev, created]);
+                          toast.success(`Placed ${item.name}`);
+                        } catch (e: unknown) {
+                          setResources(prev => prev.map(p => p.id === item.id ? { ...p, status: 'Unassigned' } : p));
+                          let msg = 'Failed to place resource';
+                          if (typeof e === 'object' && e !== null) {
+                            const maybe = e as { response?: { data?: { message?: string } }; message?: string };
+                            msg = maybe?.response?.data?.message || maybe?.message || msg;
+                          }
+                          toast.error(msg);
+                        }
+                      },
+                      collect: (monitor) => ({ isOver: monitor.isOver() })
+                    }), [selectedFloorId, markers, createMarker]);
+
+                    const floorMarkers = markers.filter(m => m.locationId === selectedFloorId);
+
+                    return (
+                      <div ref={(node) => { if (node) drop(node); }} className="relative w-full h-[500px] bg-gray-100 rounded border overflow-hidden">
+                        <img
+                          ref={imgRef}
+                          src={resolveImageSrc(selectedLocation.floorplanPath!)}
+                          alt="Floorplan"
+                          className="w-full h-full object-contain"
+                          draggable={false}
+                        />
+                        {floorMarkers.map((marker) => {
+                          const color = marker.type === 0 ? 'bg-green-500' : 'bg-yellow-500';
+                          return (
+                            <div
+                              key={marker.id}
+                              className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                              style={{ left: `${marker.xPosition}%`, top: `${marker.yPosition}%` }}
+                              title={`${marker.name}`}
+                              onClick={async () => {
+                                if (!window.confirm(`Remove ${marker.name}?`)) return;
+                                try {
+                                  await deleteMarker(marker.id);
+                                  setMarkers(prev => prev.filter(m => m.id !== marker.id));
+                                  if (marker.deskCode) {
+                                    setResources(prev => prev.map(p => p.id === marker.deskCode ? { ...p, status: 'Unassigned' } : p));
+                                  }
+                                  toast.success(`Removed ${marker.name}`);
+                                } catch (e: unknown) {
+                                  const msg = typeof e === 'object' && e && 'message' in e ? (e as { message?: string }).message : undefined;
+                                  toast.error(msg || 'Failed to remove marker');
+                                }
+                              }}
+                            >
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg border-2 border-white ${color}`}>
+                                {marker.type === 0 ? '🪑' : '👥'}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {isOver && (
+                          <div className="absolute inset-0 pointer-events-none border-2 border-brand-500/40 rounded" />
                         )}
                       </div>
                     );
-                  })}
-                </div>
+                  };
+
+                  return <FloorImage />;
+                })()}
               </div>
 
               {/* Unassigned */}
               <div className="rounded-lg border bg-gray-50 p-3 overflow-y-auto max-h-[600px]">
-                <h4 className="mb-3 text-sm font-semibold">Unassigned Resources ({Math.max(0, (resources.length || 0) - 125)})</h4>
-                {resources.slice(0, 30).map((r) => (
-                  <div key={r.id} className="mb-2 rounded border bg-white p-2 text-xs">
-                    <div className="font-semibold">{r.id}</div>
-                    <div className="text-gray-600">{r.type === 0 ? 'Desk' : r.type === 1 ? 'Room' : 'Resource'} — {r.name}</div>
+                <h4 className="mb-3 text-sm font-semibold">Unassigned Resources ({unassignedResources.length})</h4>
+                <div className="mb-3 text-xs text-gray-600">
+                  Desks: {unassignedResources.filter(r => r.type === 0).length} • 
+                  Rooms: {unassignedResources.filter(r => r.type === 1).length}
+                </div>
+                {unassignedResources.length === 0 && (
+                  <div className="text-sm text-gray-500 text-center py-8">
+                    All resources assigned! 🎉
                   </div>
-                ))}
+                )}
+                {unassignedResources.slice(0, 30).map((r) => {
+                  const DraggableItem = () => {
+                    const [{ isDragging }, drag] = useDrag(() => ({
+                      type: 'RESOURCE',
+                      item: { id: r.id, name: r.name, type: r.type },
+                      collect: (monitor) => ({ isDragging: monitor.isDragging() })
+                    }), [r.id, r.name, r.type]);
+                    return (
+                      <div ref={(node) => { if (node) drag(node); }} className={`mb-2 rounded border bg-white p-2 text-xs hover:border-brand-300 transition-colors ${isDragging ? 'opacity-50' : ''}`}>
+                        <div className="font-semibold">{r.id}</div>
+                        <div className="text-gray-600">{r.type === 0 ? 'Desk' : r.type === 1 ? 'Room' : 'Resource'} — {r.name}</div>
+                        {r.capacity && <div className="text-gray-500">Capacity: {r.capacity}</div>}
+                      </div>
+                    );
+                  };
+                  return <DraggableItem key={r.id} />;
+                })}
+                {unassignedResources.length > 30 && (
+                  <div className="text-xs text-gray-500 text-center mt-2">
+                    + {unassignedResources.length - 30} more
+                  </div>
+                )}
               </div>
             </div>
+            </DndProvider>
 
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => goToStep(2)}>← Back</Button>
-                <Button variant="outline">Save Progress</Button>
-              </div>
+                <Button variant="outline" onClick={handleAutoFill}>Auto Fill</Button>
+                <Button variant="outline" onClick={handleClearFloor}>Clear Floor</Button>
+                   </div>
               <div className="flex items-center gap-3 text-sm text-gray-700">
                 <span>Allocation Progress: {allocationProgress.allocated}/{allocationProgress.total} ({allocationProgress.pct}%)</span>
                 <div className="h-2 w-52 rounded bg-gray-200 overflow-hidden">
-                  <div className="h-2 bg-success-500" style={{ width: `${allocationProgress.pct}%` }} />
+                  <div className="h-2 bg-success-500 transition-all" style={{ width: `${allocationProgress.pct}%` }} />
                 </div>
-                <Button onClick={() => goToStep(4)}>Complete Allocation →</Button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Step 4: Summary */}
-        {step === 4 && (
-          <div className="space-y-6">
-            <div className="rounded-lg border-2 border-success-500 bg-green-50 p-6 text-center">
-              <h2 className="text-xl font-semibold text-success-700">✓ Allocation Complete!</h2>
-              <p className="text-sm text-success-800">All resources have been successfully allocated across floors</p>
-            </div>
-
-            <h2 className="text-lg font-semibold text-gray-800">Allocation Summary</h2>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-lg border bg-gray-50 p-4">
-                <h3 className="text-sm font-semibold text-brand-600 mb-2">By Resource Type</h3>
-                <div className="flex justify-between py-1 text-sm"><span>Desks</span><strong>{resources.filter(r => r.type === 0).length}</strong></div>
-                <div className="flex justify-between py-1 text-sm"><span>Meeting Rooms</span><strong>{resources.filter(r => r.type === 1).length}</strong></div>
-                <div className="flex justify-between py-1 text-sm"><span>Phone Booths</span><strong>{resources.filter(r => r.type !== 0 && r.type !== 1).length}</strong></div>
-              </div>
-              <div className="rounded-lg border bg-gray-50 p-4">
-                <h3 className="text-sm font-semibold text-brand-600 mb-2">By Floor Distribution</h3>
-                <div className="flex justify-between py-1 text-sm"><span>Average per Floor</span><strong>60</strong></div>
-                <div className="flex justify-between py-1 text-sm"><span>Total Floors</span><strong>10</strong></div>
-                <div className="flex justify-between py-1 text-sm"><span>Buildings</span><strong>2</strong></div>
-              </div>
-              <div className="rounded-lg border bg-gray-50 p-4">
-                <h3 className="text-sm font-semibold text-brand-600 mb-2">Capacity Overview</h3>
-                <div className="flex justify-between py-1 text-sm"><span>Individual Seats</span><strong>{resources.filter(r => r.type === 0).length}</strong></div>
-                <div className="flex justify-between py-1 text-sm"><span>Meeting Capacity</span><strong>560</strong></div>
-                <div className="flex justify-between py-1 text-sm"><span>Total Capacity</span><strong>1060</strong></div>
-              </div>
-            </div>
-
-            <h3 className="mt-4 text-sm font-semibold">Floor-by-Floor Breakdown</h3>
-            <div className="overflow-x-auto border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Floor</TableCell>
-                    <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Desks</TableCell>
-                    <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Meeting Rooms</TableCell>
-                    <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Phone Booths</TableCell>
-                    <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Total</TableCell>
-                    <TableCell isHeader className="bg-gray-50 px-4 py-2 text-left text-xs font-semibold">Capacity</TableCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {["Ground Floor", "Floor 2", "Floor 3", "Floor 4", "Floor 5", "Floor 6", "Floor 7", "Floor 8", "Floor 9", "Floor 10"].map((floor, idx) => (
-                    <TableRow key={idx} className="border-t">
-                      <TableCell className="px-4 py-2 text-sm">{floor}</TableCell>
-                      <TableCell className="px-4 py-2 text-sm">50</TableCell>
-                      <TableCell className="px-4 py-2 text-sm">8</TableCell>
-                      <TableCell className="px-4 py-2 text-sm">2</TableCell>
-                      <TableCell className="px-4 py-2 text-sm">60</TableCell>
-                      <TableCell className="px-4 py-2 text-sm">106</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Button variant="outline" onClick={() => goToStep(3)}>← Back to Allocation</Button>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => toast.success("Exported floor plans")}>Export Floor Plans (PDF)</Button>
-                <Button variant="outline" onClick={() => toast.success("Exported CSV")}>Export Data (CSV)</Button>
-                <Button onClick={() => { console.log("Sync button clicked"); handleSyncResources(); }} disabled={syncLoading}>
-                  {syncLoading ? "Syncing..." : "Sync to Microsoft 365"}
-                </Button>
-              </div>
-            </div>
-            {syncLog && (
-              <div className="mt-4 rounded border bg-gray-50 p-4 text-sm">
-                <div className="font-semibold mb-2">Sync Log</div>
-                <div>Status: <span className={syncLog.Status === "Failed" ? "text-error-600" : "text-success-600"}>{syncLog.Status}</span></div>
-                <div>Started: {syncLog.StartedAt}</div>
-                <div>Completed: {syncLog.CompletedAt}</div>
-                <div>Imported: {syncLog.ResourcesImported}</div>
-                <div>Updated: {syncLog.ResourcesUpdated}</div>
-                <div>Failed: {syncLog.ResourcesFailed}</div>
-                {syncLog.ErrorMessage && <div className="text-error-600">Error: {syncLog.ErrorMessage}</div>}
-              </div>
-            )}
           </div>
         )}
       </ComponentCard>
+            {unplottedLoading && (
+              <div className="text-xs text-gray-500">Loading unassigned resources…</div>
+            )}
     </div>
   );
 }
