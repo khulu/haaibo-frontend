@@ -427,8 +427,8 @@ export default function Home() {
                   <div className="mt-3 p-3 border rounded text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-300">{hmError}</div>
                 )}
 
-                <div className="custom-scrollbar max-w-full overflow-x-auto mt-4">
-                  <div className="-ml-5 min-w-[900px] pl-2" style={{ minHeight: 365 }}>
+                <div className="custom-scrollbar overflow-x-auto mt-4">
+                  <div className="min-w-[900px] pl-0" style={{ minHeight: 365 }}>
                     <div className="grid grid-cols-[80px_1fr] gap-3">
                       <div className="flex flex-col gap-2">
                         {dayLabels.map((d) => (

@@ -62,6 +62,7 @@ const ResetPassword = lazy(() => import("./pages/AuthPages/ResetPassword"));
 const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
 const NotificationsPage = lazy(() => import("./pages/notifications/NotificationsPage"));
 const PeakUsageHeatmap = lazy(() => import("./pages/reports/PeakUsageHeatmap"));
+const CheckinPage = lazy(() => import('./pages/checkin/CheckinPage'));
 
 export default function App() {
   return (
@@ -508,6 +509,8 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
+          {/* QR Check-in Route (public) */}
+          <Route path="/checkin/:markerId" element={<CheckinPage />} />
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

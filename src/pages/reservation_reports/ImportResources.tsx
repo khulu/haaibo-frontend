@@ -41,8 +41,8 @@ export default function ImportResources() {
   const toast = useToast();
 
   // API config state (mock/demo)
-  const [tenantId, setTenantId] = useState("12345678-1234-1234-1234-123456789abc");
-  const [clientId, setClientId] = useState("abcdef12-3456-7890-abcd-ef1234567890");
+  const [tenantId, setTenantId] = useState("");
+  const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [importDesks, setImportDesks] = useState(true);
   const [importRooms, setImportRooms] = useState(true);
