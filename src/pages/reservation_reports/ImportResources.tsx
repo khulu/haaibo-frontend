@@ -61,6 +61,7 @@ export default function ImportResources() {
   const [testResult, setTestResult] = useState<TestGraphConnectionResult | null>(null);
 
   const [unplottedLoading, setUnplottedLoading] = useState(false);
+  const [isPlacing, setIsPlacing] = useState(false);
 
   const handleTestConnection = async () => {
     setTestLoading(true);
@@ -68,7 +69,7 @@ export default function ImportResources() {
     try {
       const res = await testGraphConnection({ tenantId, clientId, clientSecret });
       console.log("Microsoft Graph API test connection response:", res);
-      const ok = res.ok ?? (res as any).success ?? false;
+      const ok = res.ok ?? (res as { success?: boolean }).success ?? false;
       const message = res.message ?? (ok ? "Connection successful" : "Connection failed");
       setTestResult({ ok, message });
       if (ok) {
@@ -802,6 +803,7 @@ export default function ImportResources() {
                           return;
                         }
 
+                        setIsPlacing(true);
                         // Optimistic assign
                         setResources(prev => prev.map(p => p.id === item.id ? { ...p, status: 'Assigned' } : p));
                         try {
@@ -823,6 +825,8 @@ export default function ImportResources() {
                             msg = maybe?.response?.data?.message || maybe?.message || msg;
                           }
                           toast.error(msg);
+                        } finally {
+                          setIsPlacing(false);
                         }
                       },
                       collect: (monitor) => ({ isOver: monitor.isOver() })
@@ -832,6 +836,11 @@ export default function ImportResources() {
 
                     return (
                       <div ref={(node) => { if (node) drop(node); }} className="relative w-full h-[500px] bg-gray-100 rounded border overflow-hidden">
+                        {isPlacing && (
+                          <div className="absolute inset-0 bg-black/20 z-50 flex items-center justify-center">
+                            <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                          </div>
+                        )}
                         <img
                           ref={imgRef}
                           src={resolveImageSrc(selectedLocation.floorplanPath!)}
@@ -920,9 +929,7 @@ export default function ImportResources() {
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => goToStep(2)}>← Back</Button>
-                <Button variant="outline" onClick={handleAutoFill}>Auto Fill</Button>
-                <Button variant="outline" onClick={handleClearFloor}>Clear Floor</Button>
-                   </div>
+              </div>
               <div className="flex items-center gap-3 text-sm text-gray-700">
                 <span>Allocation Progress: {allocationProgress.allocated}/{allocationProgress.total} ({allocationProgress.pct}%)</span>
                 <div className="h-2 w-52 rounded bg-gray-200 overflow-hidden">
