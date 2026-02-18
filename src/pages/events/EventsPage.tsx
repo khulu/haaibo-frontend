@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "../../components/ui/table";
 
-const EventsPage: React.FC = () => {
+export default function EventsPage() {
   const { useEventList } = useEvent();
 const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
@@ -124,6 +124,4 @@ const authApi = getCompanyId();
       </div>
     </div>
   );
-};
-
-export default EventsPage;
+}

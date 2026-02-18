@@ -15,6 +15,8 @@ type FormState = {
   floorplanPath?: string | null;
   active?: boolean;
   allowColleagueSearch?: boolean;
+  autoReleaseAfterMin?: number;
+  requiredSsoSecurityGroupId?: string | null;
 };
 
 type NodeState = Record<string, boolean>;
@@ -73,14 +75,14 @@ export default function LocationsPage() {
     setError(null);
     setAddingUnder(parentId ?? 'root');
     setEditingId(null);
-    setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false });
+    setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null });
   };
 
-  const startEdit = (node: { id: string; name: string; color?: string | null; floorplanPath?: string | null; active?: boolean; allowColleagueSearch?: boolean }) => {
+  const startEdit = (node: { id: string; name: string; color?: string | null; floorplanPath?: string | null; active?: boolean; allowColleagueSearch?: boolean; autoReleaseAfterMin?: number; requiredSsoSecurityGroupId?: string | null }) => {
     setError(null);
     setEditingId(node.id);
     setAddingUnder(null);
-    setForm({ name: node.name, color: node.color ?? '', floorplanFile: null, floorplanPath: node.floorplanPath ?? null, active: node.active ?? true, allowColleagueSearch: node.allowColleagueSearch ?? false });
+    setForm({ name: node.name, color: node.color ?? '', floorplanFile: null, floorplanPath: node.floorplanPath ?? null, active: node.active ?? true, allowColleagueSearch: node.allowColleagueSearch ?? false, autoReleaseAfterMin: (typeof node.autoReleaseAfterMin === 'number' ? node.autoReleaseAfterMin : 15), requiredSsoSecurityGroupId: node.requiredSsoSecurityGroupId ?? null });
   };
 
   const submit = async (parentId?: string | null) => {
@@ -106,7 +108,9 @@ export default function LocationsPage() {
             color: form.color || null,
             floorplanPath: floorplanPath || null,
             active: form.active,
-            allowColleagueSearch: form.allowColleagueSearch
+            allowColleagueSearch: form.allowColleagueSearch,
+            autoReleaseAfterMin: typeof form.autoReleaseAfterMin === 'number' ? form.autoReleaseAfterMin : 15,
+            requiredSsoSecurityGroupId: form.requiredSsoSecurityGroupId ?? null
           } 
         });
       } else {
@@ -122,6 +126,8 @@ export default function LocationsPage() {
           floorplanPath: floorplanPath || null,
           active: form.active ?? true,
           allowColleagueSearch: form.allowColleagueSearch ?? false,
+          autoReleaseAfterMin: typeof form.autoReleaseAfterMin === 'number' ? form.autoReleaseAfterMin : 15,
+          requiredSsoSecurityGroupId: form.requiredSsoSecurityGroupId ?? null,
         };
         const created = await createLocation.mutateAsync(payload);
         
@@ -136,7 +142,7 @@ export default function LocationsPage() {
       }
       setAddingUnder(null);
       setEditingId(null);
-      setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false });
+      setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null });
     } catch {
       setError('Failed to save location');
     }
@@ -159,6 +165,8 @@ export default function LocationsPage() {
     floorplanPath?: string | null;
     active?: boolean;
     allowColleagueSearch?: boolean;
+    autoReleaseAfterMin?: number;
+    requiredSsoSecurityGroupId?: string | null;
     children?: TreeNode[];
   };
 
@@ -212,10 +220,33 @@ export default function LocationsPage() {
               <div>
                 <Switch label="Allow Colleague Search" defaultChecked={form.allowColleagueSearch ?? false} onChange={(checked) => setForm((f) => ({ ...f, allowColleagueSearch: checked }))} />
               </div>
+              <div>
+                <Label>Auto Release After Minutes</Label>
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  value={typeof form.autoReleaseAfterMin === 'number' ? form.autoReleaseAfterMin : 15}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setForm((f) => ({ ...f, autoReleaseAfterMin: isNaN(val) ? 15 : Math.max(0, val) }));
+                  }}
+                />
+              </div>
+              <div>
+                <Label>Required SSO Security Group Id (optional)</Label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  value={form.requiredSsoSecurityGroupId ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, requiredSsoSecurityGroupId: e.target.value ? e.target.value : null }))}
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                />
+              </div>
             </div>
             <div className="mt-3 flex gap-2">
               <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(node.id)}>Save</button>
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false }); }}>Cancel</button>
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
             </div>
           </div>
         )}
@@ -243,10 +274,33 @@ export default function LocationsPage() {
               <div>
                 <Switch label="Allow Colleague Search" defaultChecked={form.allowColleagueSearch ?? false} onChange={(checked) => setForm((f) => ({ ...f, allowColleagueSearch: checked }))} />
               </div>
+              <div>
+                <Label>Auto Release After Minutes</Label>
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  value={typeof form.autoReleaseAfterMin === 'number' ? form.autoReleaseAfterMin : 15}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setForm((f) => ({ ...f, autoReleaseAfterMin: isNaN(val) ? 15 : Math.max(0, val) }));
+                  }}
+                />
+              </div>
+              <div>
+                <Label>Required SSO Security Group Id (optional)</Label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  value={form.requiredSsoSecurityGroupId ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, requiredSsoSecurityGroupId: e.target.value ? e.target.value : null }))}
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                />
+              </div>
             </div>
             <div className="mt-3 flex gap-2">
               <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(node.id)}>Update</button>
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditingId(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false }); }}>Cancel</button>
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditingId(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
             </div>
           </div>
         )}
@@ -322,10 +376,33 @@ export default function LocationsPage() {
                 <div>
                   <Switch label="Allow Colleague Search" defaultChecked={form.allowColleagueSearch ?? false} onChange={(checked) => setForm((f) => ({ ...f, allowColleagueSearch: checked }))} />
                 </div>
+                <div>
+                  <Label>Auto Release After Minutes</Label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                    value={typeof form.autoReleaseAfterMin === 'number' ? form.autoReleaseAfterMin : 15}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setForm((f) => ({ ...f, autoReleaseAfterMin: isNaN(val) ? 15 : Math.max(0, val) }));
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label>Required SSO Security Group Id (optional)</Label>
+                  <input
+                    type="text"
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                    value={form.requiredSsoSecurityGroupId ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, requiredSsoSecurityGroupId: e.target.value ? e.target.value : null }))}
+                    placeholder="00000000-0000-0000-0000-000000000000"
+                  />
+                </div>
               </div>
               <div className="mt-3 flex gap-2">
                 <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(null)}>Save</button>
-                <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false }); }}>Cancel</button>
+                <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
               </div>
             </div>
           )}

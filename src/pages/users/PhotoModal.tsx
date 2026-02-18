@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import Button from "../../components/ui/button/Button";
-import { Modal } from "../../components/ui/modal";
+import { Modal } from "../../components/ui/modal/Modal";
 
 interface PhotoModalProps {
   isOpen: boolean;

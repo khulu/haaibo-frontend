@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import useUserApi, { User } from "../../hooks/api/useUserApi";
+import useUserApi, { User } from "@hooks/api/useUserApi";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../../components/ui/modal/Modal";
 import Button from "../../components/ui/button/Button";
 import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
 import Badge from "../../components/ui/badge/Badge";
-import useUser from "../../hooks/user/useUser";
+import useUser from "@hooks/user/useUser";
 import PhotoModal from "./PhotoModal";
 
 export default function UserDetails() {

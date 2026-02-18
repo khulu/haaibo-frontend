@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useUserApi, { CreateUserInput } from "../../hooks/api/useUserApi";
+import useUserApi, { CreateUserInput } from "@hooks/api/useUserApi";
 import ComponentCard from "../../components/common/ComponentCard";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";

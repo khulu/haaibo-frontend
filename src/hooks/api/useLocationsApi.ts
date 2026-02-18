@@ -48,6 +48,8 @@ export type LocationDto = {
   floorplanPath?: string | null;
   active?: boolean;
   allowColleagueSearch?: boolean;
+  autoReleaseAfterMin?: number;
+  requiredSsoSecurityGroupId?: string | null;
   createdAt: string;
   updatedAt: string;
   children: LocationDto[];
@@ -62,6 +64,8 @@ export type CreateLocationDto = {
   floorplanPath?: string | null;
   active?: boolean;
   allowColleagueSearch?: boolean;
+  autoReleaseAfterMin?: number;
+  requiredSsoSecurityGroupId?: string | null;
 };
 
 export type UpdateLocationDto = {
@@ -71,6 +75,8 @@ export type UpdateLocationDto = {
   floorplanPath?: string | null;
   active?: boolean;
   allowColleagueSearch?: boolean;
+  autoReleaseAfterMin?: number;
+  requiredSsoSecurityGroupId?: string | null;
 };
 
 const useLocationsApi = () => {

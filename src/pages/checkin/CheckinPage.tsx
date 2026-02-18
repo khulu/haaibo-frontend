@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../../components/ui/button/Button';
-import getAuth from '../../hooks/api/useAuthApi';
+import getAuth from '@hooks/api/useAuthApi';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 

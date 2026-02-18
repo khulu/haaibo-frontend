@@ -4,7 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { EventInput, DateSelectArg, EventClickArg } from "@fullcalendar/core";
-import { Modal } from "../components/ui/modal";
+import { Modal } from "../components/ui/modal/Modal";
 import { useModal } from "../hooks/useModal";
 import PageMeta from "../components/common/PageMeta";
 
@@ -14,7 +14,7 @@ interface CalendarEvent extends EventInput {
   };
 }
 
-const Calendar: React.FC = () => {
+export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null
   );
@@ -266,7 +266,7 @@ const Calendar: React.FC = () => {
       </div>
     </>
   );
-};
+}
 
 const renderEventContent = (eventInfo: any) => {
   const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
