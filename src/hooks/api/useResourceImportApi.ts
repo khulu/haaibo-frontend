@@ -1,5 +1,6 @@
 import useAxios from "./useAxios";
 import getAuth from "./useAuthApi";
+const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 export interface TestGraphConnectionParams {
   tenantId: string;
@@ -41,7 +42,8 @@ export function useResourceImportApi() {
     try {
       const token = getAuth().getToken();
       const res = await request({
-        url: `/api/resources/unplotted?companyId=${encodeURIComponent(companyId)}&page=${page}&pageSize=${pageSize}`,
+        baseURL,
+        url: `/resources/unplotted?companyId=${encodeURIComponent(companyId)}&page=${page}&pageSize=${pageSize}`,
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
@@ -55,7 +57,8 @@ export function useResourceImportApi() {
     try {
       const token = getAuth().getToken();
       const res = await request({
-        url: "/api/resources/test-graph-connection",
+        baseURL,
+        url: "/resources/test-graph-connection",
         method: "POST",
         data: params,
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -77,7 +80,8 @@ export function useResourceImportApi() {
     try {
       const token = getAuth().getToken();
       const res = await request({
-        url: `/api/resources/sync?companyId=${companyId}`,
+        baseURL,
+        url: `/resources/sync?companyId=${companyId}`,
         method: "POST",
         data: credentials && (credentials.tenantId || credentials.clientId || credentials.clientSecret)
           ? credentials
