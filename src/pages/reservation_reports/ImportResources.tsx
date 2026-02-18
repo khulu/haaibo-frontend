@@ -67,7 +67,8 @@ export default function ImportResources() {
     setTestResult(null);
     try {
       const res = await testGraphConnection({ tenantId, clientId, clientSecret });
-      const ok = res.ok;
+      console.log("Microsoft Graph API test connection response:", res);
+      const ok = res.ok ?? (res as any).success ?? false;
       const message = res.message ?? (ok ? "Connection successful" : "Connection failed");
       setTestResult({ ok, message });
       if (ok) {
@@ -76,6 +77,7 @@ export default function ImportResources() {
         toast.error(message);
       }
     } catch (e: unknown) {
+      console.log("Microsoft Graph API test connection error:", e);
       let message = "Unknown error";
       if (typeof e === "object" && e !== null && "message" in e) {
         message = (e as { message?: string }).message || message;
@@ -98,6 +100,7 @@ export default function ImportResources() {
     const creds = tenantId || clientId || clientSecret ? { tenantId, clientId, clientSecret } : undefined;
     syncResources(companyId as string, creds)
       .then((log) => {
+        console.log("Microsoft Graph API sync resources response:", log);
         setSyncLog(log);
         if (log.Status === "Failed" || log.ErrorMessage) {
           toast.error(log.ErrorMessage || "Sync failed");
@@ -108,6 +111,7 @@ export default function ImportResources() {
         }
       })
       .catch((e) => {
+        console.log("Microsoft Graph API sync resources error:", e);
         toast.error(e?.message || "Sync failed");
       })
       .finally(() => {
@@ -177,6 +181,8 @@ export default function ImportResources() {
       setUnplottedLoading(true);
       try {
         const res = await getUnplottedResources(companyId as string, 1, 50);
+        console.log("Resources response from Microsoft:", res);
+        console.log("Resources items:", res.items);
         if (!mounted) return;
         const mapped = (res.items || []).map((i) => ({
           id: i.resourceId || i.id,
@@ -187,8 +193,10 @@ export default function ImportResources() {
           features: i.features,
           status: i.status || 'Unassigned',
         }));
+        console.log("Mapped resources:", mapped);
         setResources(mapped);
       } catch (e: unknown) {
+        console.log("Error loading resources from Microsoft:", e);
         const msg = typeof e === 'object' && e && 'message' in e ? (e as { message?: string }).message : undefined;
         toast.error(msg || "Failed to load resources");
       } finally {

@@ -68,6 +68,7 @@ export default function LocationsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({ name: '', color: '' });
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggle = (id: string) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
 
@@ -87,6 +88,7 @@ export default function LocationsPage() {
 
   const submit = async (parentId?: string | null) => {
     if (!canManage) return; // guard
+    setIsSubmitting(true);
     try {
       let floorplanPath = form.floorplanPath;
       
@@ -98,6 +100,7 @@ export default function LocationsPage() {
             floorplanPath = result.path;
           } catch {
             setError('Failed to upload floorplan');
+            setIsSubmitting(false);
             return;
           }
         }
@@ -116,6 +119,7 @@ export default function LocationsPage() {
       } else {
         if (!selectedCompanyId) {
           setError('Please select a company first.');
+          setIsSubmitting(false);
           return;
         }
         const payload = {
@@ -145,6 +149,8 @@ export default function LocationsPage() {
       setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null });
     } catch {
       setError('Failed to save location');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -245,7 +251,13 @@ export default function LocationsPage() {
               </div>
             </div>
             <div className="mt-3 flex gap-2">
-              <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(node.id)}>Save</button>
+              <button
+                className="px-3 py-1 bg-blue-600 text-white rounded"
+                onClick={() => submit(node.id)}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Saving…' : 'Save'}
+              </button>
               <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
             </div>
           </div>
@@ -299,7 +311,13 @@ export default function LocationsPage() {
               </div>
             </div>
             <div className="mt-3 flex gap-2">
-              <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(node.id)}>Update</button>
+              <button
+                className="px-3 py-1 bg-blue-600 text-white rounded"
+                onClick={() => submit(node.id)}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Updating…' : 'Update'}
+              </button>
               <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditingId(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
             </div>
           </div>
@@ -401,7 +419,13 @@ export default function LocationsPage() {
                 </div>
               </div>
               <div className="mt-3 flex gap-2">
-                <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => submit(null)}>Save</button>
+                <button
+                  className="px-3 py-1 bg-blue-600 text-white rounded"
+                  onClick={() => submit(null)}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving…' : 'Save'}
+                </button>
                 <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
               </div>
             </div>
