@@ -10,9 +10,13 @@ import Switch from '../../components/form/switch/Switch';
 
 type MarkerFormData = {
   name: string;
+  shortName: string;
   type: 0 | 1;
   description: string;
   active: boolean;
+  amenities: string;
+  tag: string;
+  meta: string;
 };
 
 export default function LocationDetails() {
@@ -28,9 +32,13 @@ export default function LocationDetails() {
   const [editingMarker, setEditingMarker] = useState<FloorplanMarker | null>(null);
   const [markerFormData, setMarkerFormData] = useState<MarkerFormData>({
     name: '',
+    shortName: '',
     type: 0,
     description: '',
     active: true,
+    amenities: '',
+    tag: '',
+    meta: '',
   });
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [draggedMarker, setDraggedMarker] = useState<FloorplanMarker | null>(null);
@@ -82,7 +90,7 @@ export default function LocationDetails() {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setPendingPosition({ x, y });
     setEditingMarker(null);
-    setMarkerFormData({ name: '', type: 0, description: '', active: true });
+    setMarkerFormData({ name: '', shortName: '', type: 0, description: '', active: true, amenities: '', tag: '', meta: '' });
     setShowMarkerModal(true);
   };
 
@@ -91,9 +99,13 @@ export default function LocationDetails() {
     setEditingMarker(marker);
     setMarkerFormData({
       name: marker.name,
+      shortName: marker.shortName || '',
       type: marker.type,
       description: marker.description || '',
       active: marker.active,
+      amenities: marker.amenities || '',
+      tag: marker.tag || '',
+      meta: marker.meta || '',
     });
     setPendingPosition(null);
     setShowMarkerModal(true);
@@ -127,19 +139,27 @@ export default function LocationDetails() {
       if (editingMarker) {
         const updated = await updateMarker(editingMarker.id, {
           name: markerFormData.name,
+          shortName: markerFormData.shortName || null,
           type: markerFormData.type,
           description: markerFormData.description || null,
           active: markerFormData.active,
+          amenities: markerFormData.amenities || null,
+          tag: markerFormData.tag || null,
+          meta: markerFormData.meta || null,
         });
         setMarkers(prev => prev.map(m => m.id === updated.id ? updated : m));
       } else if (pendingPosition) {
         const created = await createMarker({
           name: markerFormData.name,
+          shortName: markerFormData.shortName || null,
           type: markerFormData.type,
           xPosition: pendingPosition.x,
           yPosition: pendingPosition.y,
           description: markerFormData.description || null,
           active: markerFormData.active,
+          amenities: markerFormData.amenities || null,
+          tag: markerFormData.tag || null,
+          meta: markerFormData.meta || null,
           locationId: id,
         });
         setMarkers(prev => [...prev, created]);
@@ -377,6 +397,18 @@ export default function LocationDetails() {
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    Short Name (Max 2 chars, used in Outlook add-in)
+                  </label>
+                  <Input
+                    value={markerFormData.shortName}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMarkerFormData({ ...markerFormData, shortName: e.target.value.slice(0, 2) })}
+                    placeholder="e.g., A1"
+                    maxLength={2}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                     Type
                   </label>
                   <select
@@ -399,6 +431,39 @@ export default function LocationDetails() {
                     placeholder="Additional details..."
                     className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                     rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    Amenities
+                  </label>
+                  <Input
+                    value={markerFormData.amenities}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMarkerFormData({ ...markerFormData, amenities: e.target.value })}
+                    placeholder="e.g., Monitor · USB-C · Chair"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    Tag
+                  </label>
+                  <Input
+                    value={markerFormData.tag}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMarkerFormData({ ...markerFormData, tag: e.target.value })}
+                    placeholder="e.g., Window, Quiet, Standing"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    Meta
+                  </label>
+                  <Input
+                    value={markerFormData.meta}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMarkerFormData({ ...markerFormData, meta: e.target.value })}
+                    placeholder="e.g., Window seat · Ergonomic"
                   />
                 </div>
 

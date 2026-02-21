@@ -10,6 +10,7 @@ import useLocationsApi from '../../hooks/api/useLocationsApi';
 
 type FormState = {
   name: string;
+  shortName?: string;
   color?: string;
   floorplanFile?: File | null;
   floorplanPath?: string | null;
@@ -76,14 +77,14 @@ export default function LocationsPage() {
     setError(null);
     setAddingUnder(parentId ?? 'root');
     setEditingId(null);
-    setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null });
+    setForm({ name: '', shortName: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null });
   };
 
-  const startEdit = (node: { id: string; name: string; color?: string | null; floorplanPath?: string | null; active?: boolean; allowColleagueSearch?: boolean; autoReleaseAfterMin?: number; requiredSsoSecurityGroupId?: string | null }) => {
+  const startEdit = (node: { id: string; name: string; shortName?: string | null; color?: string | null; floorplanPath?: string | null; active?: boolean; allowColleagueSearch?: boolean; autoReleaseAfterMin?: number; requiredSsoSecurityGroupId?: string | null }) => {
     setError(null);
     setEditingId(node.id);
     setAddingUnder(null);
-    setForm({ name: node.name, color: node.color ?? '', floorplanFile: null, floorplanPath: node.floorplanPath ?? null, active: node.active ?? true, allowColleagueSearch: node.allowColleagueSearch ?? false, autoReleaseAfterMin: (typeof node.autoReleaseAfterMin === 'number' ? node.autoReleaseAfterMin : 15), requiredSsoSecurityGroupId: node.requiredSsoSecurityGroupId ?? null });
+    setForm({ name: node.name, shortName: node.shortName ?? '', color: node.color ?? '', floorplanFile: null, floorplanPath: node.floorplanPath ?? null, active: node.active ?? true, allowColleagueSearch: node.allowColleagueSearch ?? false, autoReleaseAfterMin: (typeof node.autoReleaseAfterMin === 'number' ? node.autoReleaseAfterMin : 15), requiredSsoSecurityGroupId: node.requiredSsoSecurityGroupId ?? null });
   };
 
   const submit = async (parentId?: string | null) => {
@@ -108,6 +109,7 @@ export default function LocationsPage() {
           id: editingId, 
           data: { 
             name: form.name, 
+            shortName: form.shortName || null,
             color: form.color || null,
             floorplanPath: floorplanPath || null,
             active: form.active,
@@ -124,6 +126,7 @@ export default function LocationsPage() {
         }
         const payload = {
           name: form.name,
+          shortName: form.shortName || null,
           color: form.color || null,
           parentId: parentId && parentId !== 'root' ? parentId : null,
           companyId: selectedCompanyId,
@@ -146,7 +149,7 @@ export default function LocationsPage() {
       }
       setAddingUnder(null);
       setEditingId(null);
-      setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null });
+      setForm({ name: '', shortName: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null });
     } catch {
       setError('Failed to save location');
     } finally {
@@ -167,6 +170,7 @@ export default function LocationsPage() {
   type TreeNode = {
     id: string;
     name: string;
+    shortName?: string | null;
     color?: string | null;
     floorplanPath?: string | null;
     active?: boolean;
@@ -211,6 +215,17 @@ export default function LocationsPage() {
               <div>
                 <Label>Name</Label>
                 <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Short Name (Max 2 chars, used in Outlook add-in)</Label>
+                <input 
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" 
+                  value={form.shortName ?? ''} 
+                  onChange={(e) => setForm((f) => ({ ...f, shortName: e.target.value.slice(0, 2) }))} 
+                  maxLength={2}
+                  placeholder="e.g., NY"
+                  title="Used in Outlook add-in"
+                />
               </div>
               <div>
                 <Label>Color (optional)</Label>
@@ -258,7 +273,7 @@ export default function LocationsPage() {
               >
                 {isSubmitting ? 'Saving…' : 'Save'}
               </button>
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', shortName: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
             </div>
           </div>
         )}
@@ -268,6 +283,17 @@ export default function LocationsPage() {
               <div>
                 <Label>Name</Label>
                 <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Short Name (Max 2 chars, used in Outlook add-in)</Label>
+                <input 
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" 
+                  value={form.shortName ?? ''} 
+                  onChange={(e) => setForm((f) => ({ ...f, shortName: e.target.value.slice(0, 2) }))} 
+                  maxLength={2}
+                  placeholder="e.g., NY"
+                  title="Used in Outlook add-in"
+                />
               </div>
               <div>
                 <Label>Color (optional)</Label>
@@ -318,7 +344,7 @@ export default function LocationsPage() {
               >
                 {isSubmitting ? 'Updating…' : 'Update'}
               </button>
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditingId(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditingId(null); setForm({ name: '', shortName: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
             </div>
           </div>
         )}
@@ -381,6 +407,17 @@ export default function LocationsPage() {
                   <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
                 </div>
                 <div>
+                  <Label>Short Name (Max 2 chars, used in Outlook add-in)</Label>
+                  <input 
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" 
+                    value={form.shortName ?? ''} 
+                    onChange={(e) => setForm((f) => ({ ...f, shortName: e.target.value.slice(0, 2) }))} 
+                    maxLength={2}
+                    placeholder="e.g., NY"
+                    title="Used in Outlook add-in"
+                  />
+                </div>
+                <div>
                   <Label>Color (optional)</Label>
                   <input className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" value={form.color} onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))} placeholder="#RRGGBB or name" />
                 </div>
@@ -426,7 +463,7 @@ export default function LocationsPage() {
                 >
                   {isSubmitting ? 'Saving…' : 'Save'}
                 </button>
-                <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
+                <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => { setAddingUnder(null); setForm({ name: '', shortName: '', color: '', floorplanFile: null, floorplanPath: null, active: true, allowColleagueSearch: false, autoReleaseAfterMin: 15, requiredSsoSecurityGroupId: null }); }}>Cancel</button>
               </div>
             </div>
           )}

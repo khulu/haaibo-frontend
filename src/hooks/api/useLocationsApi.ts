@@ -6,6 +6,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL;
 export type FloorplanMarker = {
   id: string;
   name: string;
+  shortName?: string | null; // Max 2 chars, used in Outlook add-in
   type: 0 | 1; // 0 = desk, 1 = meeting room
   xPosition: number;
   yPosition: number;
@@ -14,12 +15,16 @@ export type FloorplanMarker = {
   locationId: string;
   deskCode?: string | null;
   description?: string | null;
+  amenities?: string | null;
+  tag?: string | null;
+  meta?: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
 export type CreateFloorplanMarkerDto = {
   name: string;
+  shortName?: string | null;
   type: 0 | 1;
   xPosition: number;
   yPosition: number;
@@ -27,21 +32,29 @@ export type CreateFloorplanMarkerDto = {
   locationId: string;
   deskCode?: string | null;
   description?: string | null;
+  amenities?: string | null;
+  tag?: string | null;
+  meta?: string | null;
 };
 
 export type UpdateFloorplanMarkerDto = {
   name?: string;
+  shortName?: string | null;
   type?: 0 | 1;
   xPosition?: number;
   yPosition?: number;
   active?: boolean;
   deskCode?: string | null;
   description?: string | null;
+  amenities?: string | null;
+  tag?: string | null;
+  meta?: string | null;
 };
 
 export type LocationDto = {
   id: string;
   name: string;
+  shortName?: string | null; // Max 2 chars, used in Outlook add-in
   color?: string | null;
   parentId?: string | null;
   companyId: string;
@@ -58,6 +71,7 @@ export type LocationDto = {
 
 export type CreateLocationDto = {
   name: string;
+  shortName?: string | null;
   color?: string | null;
   parentId?: string | null;
   companyId: string;
@@ -70,6 +84,7 @@ export type CreateLocationDto = {
 
 export type UpdateLocationDto = {
   name?: string;
+  shortName?: string | null;
   color?: string | null;
   parentId?: string | null;
   floorplanPath?: string | null;
