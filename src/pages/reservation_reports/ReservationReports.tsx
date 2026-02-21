@@ -211,8 +211,8 @@ export default function ReservationReports() {
                     <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                       {new Date(b.date).toLocaleDateString()} {formatTime(b.start ?? b.Start ?? b.startTime)} - {formatTime(b.end ?? b.End ?? b.endTime)}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.checkIn ? formatTime(b.checkIn) : '-'}</TableCell>
-                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.checkOut ? formatTime(b.checkOut) : '-'}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.checkedInAt ? formatTime(b.checkedInAt) : '-'}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.checkedOutAt ? formatTime(b.checkedOutAt) : '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

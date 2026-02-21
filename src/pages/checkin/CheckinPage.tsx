@@ -99,7 +99,7 @@ export default function CheckinPage() {
   const handleCheckout = async () => {
     setStatus('loading');
     try {
-      const res = await fetch(`${baseURL}/api/reservations/checkout/${markerId}`, {
+      const res = await fetch(`${baseURL}/reservations/checkout/${markerId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,14 +144,6 @@ export default function CheckinPage() {
         {status === 'success' && (
           <div className="mb-4 text-green-600">
             {message}
-            {reservation && (
-              <div className="mt-2 text-xs text-gray-700 dark:text-gray-300">
-                <div>Reservation:</div>
-                <pre className="bg-gray-100 dark:bg-gray-800 rounded p-2 overflow-x-auto">
-                  {JSON.stringify(reservation, null, 2)}
-                </pre>
-              </div>
-            )}
           </div>
         )}
         {status === 'error' && <div className="mb-4 text-red-600">{message}</div>}

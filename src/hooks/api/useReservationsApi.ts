@@ -21,8 +21,8 @@ export type ReservationDto = {
   End?: string;
   start?: string;
   end?: string;
-  checkIn?: string; // ISO datetime when user checked in
-  checkOut?: string; // ISO datetime when user checked out
+  checkedInAt?: string; // ISO datetime when user checked in
+  checkedOutAt?: string; // ISO datetime when user checked out
   companyId: string;
   createdAt: string;
   updatedAt: string;
