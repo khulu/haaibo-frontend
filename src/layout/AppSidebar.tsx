@@ -600,7 +600,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
                 height={40}
                 style={{ objectFit: 'contain', borderRadius: 8 }}
               />
-              <span className="font-bold text-lg text-gray-900 dark:text-white ml-2">Haaibo</span>
+              <span className="font-bold text-lg text-gray-900 dark:text-white ml-2">Haiibo</span>
             </div>
           ) : (
             <img

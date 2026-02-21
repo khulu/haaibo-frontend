@@ -234,7 +234,7 @@ export default function SupportPage() {
               </svg>
               <div>
                 <strong className="text-gray-800 dark:text-white/90">Email Support</strong>
-                <p className="text-gray-600 dark:text-gray-400">support@haaibo.com</p>
+                <p className="text-gray-600 dark:text-gray-400">support@haiibo.com</p>
               </div>
             </div>
             <div className="flex items-start gap-3">

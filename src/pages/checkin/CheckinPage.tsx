@@ -10,11 +10,8 @@ export default function CheckinPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'unauth'>('idle');
   const [message, setMessage] = useState<string>('');
   const [checkedIn, setCheckedIn] = useState(false);
-  interface Reservation {
-    id?: string;
-    [key: string]: unknown;
-  }
-  const [reservation, setReservation] = useState<Reservation | null>(null);
+
+
   const token = getAuth().getToken();
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,17 +41,10 @@ export default function CheckinPage() {
           },
         });
         if (res.status === 204 || res.status === 200) {
-          let details = null;
-          try {
-            const text = await res.text();
-            if (text) details = JSON.parse(text);
-          } catch {
-            // intentionally ignore JSON parse errors
-          }
           setStatus('success');
           setMessage('Check-in successful!');
           setCheckedIn(true);
-          setReservation(details);
+      
         } else if (res.status === 400) {
           setStatus('error');
           setMessage('Check-in failed: too early, reservation ended, or bad request.');
@@ -138,7 +128,6 @@ export default function CheckinPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-8 w-full max-w-md">
         <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white/90">QR Check-in</h2>
-        <div className="mb-4 text-sm text-gray-700 dark:text-gray-300">Marker ID: {markerId}</div>
         {status === 'loading' && <div className="mb-4 text-blue-600">Processing...</div>}
         {status === 'unauth' && <div className="mb-4 text-yellow-600">Not authenticated. Redirecting to login...</div>}
         {status === 'success' && (
