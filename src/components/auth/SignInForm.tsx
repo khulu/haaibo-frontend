@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {  EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
@@ -10,12 +10,14 @@ import { useNavigate } from "react-router-dom";
 
 export default function SignInForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { usePostLogin } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
+  const [loginError, setLoginError] = useState<string | null>(null);
 
 const postLogin = usePostLogin(email, password); 
 
@@ -43,8 +45,21 @@ const postLogin = usePostLogin(email, password);
     setErrors(newErrors);
     if (!valid) return;
 
+    // Clear previous login error
+    setLoginError(null);
+
     postLogin.mutate(undefined, {
       onSuccess: (data: any) => {
+        // Check for redirect parameter in URL
+        const redirectUrl = searchParams.get('redirect');
+        
+        if (redirectUrl) {
+          // Decode and navigate to the redirect URL
+          navigate(decodeURIComponent(redirectUrl));
+          return;
+        }
+
+        // Default navigation based on role
         // Prefer role from response, fallback to stored user
         const respUser = data?.user;
         let role = respUser?.role;
@@ -63,6 +78,29 @@ const postLogin = usePostLogin(email, password);
         } else {
           navigate('/');
         }
+      },
+      onError: (error: any) => {
+        // Extract error message from different possible error formats
+        let errorMessage = "Login failed. Please check your credentials and try again.";
+        
+        if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error?.response?.data) {
+          const data = error.response.data;
+          if (typeof data === 'string') {
+            errorMessage = data;
+          } else if (data.message) {
+            errorMessage = data.message;
+          } else if (data.title) {
+            errorMessage = data.title;
+          } else if (data.detail) {
+            errorMessage = data.detail;
+          }
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        setLoginError(errorMessage);
       },
     });
   };
@@ -89,6 +127,13 @@ const postLogin = usePostLogin(email, password);
               Enter your email and password to sign in!
             </p>
           </div>
+          
+          {loginError && (
+            <div className="w-full mb-5 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/10 dark:text-red-300">
+              {loginError}
+            </div>
+          )}
+          
           <div className="w-full flex flex-col items-center">
             <form className="w-full" onSubmit={handleSubmit}>
               <div className="space-y-6">

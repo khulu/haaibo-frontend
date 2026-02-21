@@ -195,9 +195,9 @@ export default function ReservationReports() {
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">User</TableCell>
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Email</TableCell>
                   <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Status</TableCell>
-                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Date</TableCell>
-                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Start</TableCell>
-                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">End</TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Date & Time</TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Check In</TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Check Out</TableCell>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -208,9 +208,11 @@ export default function ReservationReports() {
                     <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.userName}</TableCell>
                     <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.userEmail ?? '-'}</TableCell>
                     <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.status ?? '-'}</TableCell>
-                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(b.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{formatTime(b.start ?? b.Start ?? b.startTime)}</TableCell>
-                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{formatTime(b.end ?? b.End ?? b.endTime)}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
+                      {new Date(b.date).toLocaleDateString()} {formatTime(b.start ?? b.Start ?? b.startTime)} - {formatTime(b.end ?? b.End ?? b.endTime)}
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.checkIn ? formatTime(b.checkIn) : '-'}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{b.checkOut ? formatTime(b.checkOut) : '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

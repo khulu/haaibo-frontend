@@ -14,6 +14,7 @@ const UserDetails = lazy(() => import("./pages/users/UserDetails"));
 const UserEdit = lazy(() => import("./pages/users/UserEdit"));
 const UserCreate = lazy(() => import("./pages/users/UserCreate"));
 const UserBulkUpload = lazy(() => import("./pages/users/UserBulkUpload"));
+const SupportPage = lazy(() => import("./pages/support/SupportPage"));
 const AssetsPage = lazy(() => import("./pages/assets/AssetsPage"));
 const AssetCreate = lazy(() => import("./pages/assets/AssetCreate"));
 const AssetDetails = lazy(() => import("./pages/assets/AssetDetails"));
@@ -24,6 +25,8 @@ const CollectionsPage = lazy(() => import("./pages/collections/CollectionsPage")
 const CollectionsCreate = lazy(() => import("./pages/collections/CollectionsCreate"));
 const CollectionsEdit = lazy(() => import("./pages/collections/CollectionsEdit"));
 const CollectionDetails = lazy(() => import("./pages/collections/CollectionDetails"));
+const TeamsPage = lazy(() => import("./pages/teams/TeamsPage"));
+const TeamDetailPage = lazy(() => import("./pages/teams/TeamDetailPage"));
 const AssetBookingsCreate = lazy(() => import("./pages/bookings/AssetBookingsCreate"));
 const BookingsPage = lazy(() => import("./pages/bookings/BookingsPage"));
 const LocationsPage = lazy(() => import("./pages/locations/LocationsPage"));
@@ -136,6 +139,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <UserBulkUpload />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/support"
+              element={
+                <PrivateRoute>
+                  <SupportPage />
                 </PrivateRoute>
               }
             />
@@ -441,6 +452,23 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <CollectionsEdit />
+                </PrivateRoute>
+              }
+            />
+            {/* Teams */}
+            <Route
+              path="/teams"
+              element={
+                <PrivateRoute>
+                  <TeamsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/teams/:id"
+              element={
+                <PrivateRoute>
+                  <TeamDetailPage />
                 </PrivateRoute>
               }
             />

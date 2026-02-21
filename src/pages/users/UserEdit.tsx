@@ -157,12 +157,20 @@ export default function UserEdit() {
         <div>
           <Label htmlFor="role">Role</Label>
           <Select
-            options={[
-              { value: "0", label: "Super Admin" },
-              { value: "1", label: "Company Admin" },
-              { value: "2", label: "Security" },
-              { value: "3", label: "Employee" },
-            ]}
+            options={
+              isSuperAdmin
+                ? [
+                    { value: "0", label: "Super Admin" },
+                    { value: "1", label: "Company Admin" },
+                    { value: "2", label: "Security" },
+                    { value: "3", label: "Employee" },
+                  ]
+                : [
+                    { value: "1", label: "Company Admin" },
+                    { value: "2", label: "Security" },
+                    { value: "3", label: "Employee" },
+                  ]
+            }
             defaultValue={String(user?.role)}
             onChange={handleRoleChange}
             required
