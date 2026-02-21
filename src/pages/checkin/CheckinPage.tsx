@@ -36,7 +36,7 @@ export default function CheckinPage() {
     const checkin = async () => {
       setStatus('loading');
       try {
-        const res = await fetch(`${baseURL}/api/reservations/checkin/${markerId}`, {
+        const res = await fetch(`${baseURL}/reservations/checkin/${markerId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
