@@ -164,9 +164,13 @@ export default function TeamDetailPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={updateMutation.isPending}>
+              <button
+                type="submit"
+                disabled={updateMutation.isPending}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {updateMutation.isPending ? 'Saving...' : 'Save'}
-              </Button>
+              </button>
               <button
                 type="button"
                 className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"

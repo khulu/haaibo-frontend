@@ -4,11 +4,9 @@ import ComponentCard from "../../components/common/ComponentCard";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Select from "../../components/form/Select";
-import useAuthApi from "@hooks/api/useAuthApi";
 
 export default function SupportPage() {
   const navigate = useNavigate();
-  const auth = useAuthApi();
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);

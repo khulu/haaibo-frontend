@@ -403,7 +403,6 @@ export default function LocationDetails() {
                     value={markerFormData.shortName}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMarkerFormData({ ...markerFormData, shortName: e.target.value.slice(0, 2) })}
                     placeholder="e.g., A1"
-                    maxLength={2}
                   />
                 </div>
 

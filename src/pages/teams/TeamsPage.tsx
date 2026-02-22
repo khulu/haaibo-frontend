@@ -195,9 +195,13 @@ export default function TeamsPage() {
                 >
                   Cancel
                 </button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {createMutation.isPending ? 'Creating...' : 'Create Team'}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
