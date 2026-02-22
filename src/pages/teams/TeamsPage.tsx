@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import getCompanyId from '@hooks/api/useAuthApi';
 import useTeamsApi, { CreateTeamDto } from '@hooks/api/useTeamsApi';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../components/ui/table';
-import Button from '../../components/ui/button/Button';
 import Input from '../../components/form/input/InputField';
 import Label from '../../components/form/Label';
 
