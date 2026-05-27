@@ -17,7 +17,7 @@ import {
 import Badge from "../../components/ui/badge/Badge";
 
 export default function UsersPage() {
-  const { useUserList, deleteSingleUser, useRoles } = useUser();
+  const { useUserList, deleteSingleUser } = useUser();
   const authApi = getCompanyId();
   const companyId = authApi.getCompanyId();
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(companyId ?? undefined);
@@ -30,7 +30,6 @@ export default function UsersPage() {
     return (organizations ?? []).map((org) => ({ value: org.id, label: org.name }));
   }, [organizations]);
 
-  const { data: dataRoles } = useRoles();
 
   const [isSuperAdmin] = useState(() => {
     try {
@@ -38,25 +37,29 @@ export default function UsersPage() {
       if (!raw) return false;
       const user = JSON.parse(raw);
       const role = user?.role;
-      return role === 0 || role === 'SuperAdmin';
+      return role === 0 || role === '0' || role === 'SuperAdmin';
     } catch {
       return false;
     }
   });
 
-  // Map roles: if not superadmin, filter out SuperAdmin (index 0) and start values from 1
+  // Static role map matching backend role values
+  const ROLE_MAP: Record<number, string> = {
+    0: "Super Admin",
+    1: "Company Admin",
+    2: "Security",
+    3: "Employee",
+  };
+
   const dropdownRoles = useMemo(() => {
-    if (!dataRoles) return undefined;
     if (isSuperAdmin) {
-      // SuperAdmin sees all roles with 0-based indexing
-      return dataRoles.map((role, index) => ({ value: index, text: role }));
+      return Object.entries(ROLE_MAP).map(([value, text]) => ({ value: Number(value), text }));
     } else {
-      // Non-superadmin: skip SuperAdmin role (index 0), values start from 1
-      return dataRoles
-        .slice(1)
-        .map((role, index) => ({ value: index + 1, text: role }));
+      return Object.entries(ROLE_MAP)
+        .filter(([value]) => Number(value) !== 0)
+        .map(([value, text]) => ({ value: Number(value), text }));
     }
-  }, [dataRoles, isSuperAdmin]);
+  }, [isSuperAdmin]);
 
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -141,7 +144,7 @@ export default function UsersPage() {
               </TableRow>
             )}
             {filteredUsers.map((user) => {
-              const role = dropdownRoles?.find((r) => r.value === user.role);
+              const role = dropdownRoles?.find((r) => Number(r.value) === Number(user.role));
        
               return (
                 <TableRow key={user.id}>

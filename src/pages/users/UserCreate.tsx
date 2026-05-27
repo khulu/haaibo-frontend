@@ -24,7 +24,7 @@ export default function UserCreate() {
       if (!raw) return false;
       const user = JSON.parse(raw);
       const role = user?.role;
-      return role === 0 || role === 'SuperAdmin';
+      return role === 0 || role === '0' || role === 'SuperAdmin';
     } catch {
       return false;
     }

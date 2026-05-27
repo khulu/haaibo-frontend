@@ -25,7 +25,7 @@ export default function UserEdit() {
       if (!raw) return false;
       const u = JSON.parse(raw);
       const role = u?.role;
-      return role === 0 || role === 'SuperAdmin';
+      return role === 0 || role === '0' || role === 'SuperAdmin';
     } catch {
       return false;
     }
