@@ -7,6 +7,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { DateSelectArg, EventContentArg, EventClickArg } from "@fullcalendar/core";
 import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/useLocationsApi';
 import useReservationsApi, { MarkerAvailability, ReservationDto, AvailabilityResponse } from '../../hooks/api/useReservationsApi';
+import useAssetReservationApi from '../../hooks/api/useAssetReservationApi';
+import useFeatureFlags from '../../hooks/useFeatureFlags';
 import ComponentCard from '../../components/common/ComponentCard';
 import Label from '../../components/form/Label';
 
@@ -22,6 +24,8 @@ type BookingModalData = {
 export default function ReservationsPage() {
   const { listTree, getMarkers } = useLocationsApi();
   const { getMarkerAvailability, createReservation, getReservations, deleteReservation } = useReservationsApi();
+  const { getAssetCountForReservations } = useAssetReservationApi();
+  const { integration } = useFeatureFlags();
   const calendarRef = useRef<FullCalendar>(null);
   
   const [locations, setLocations] = useState<LocationDto[]>([]);
@@ -45,6 +49,7 @@ export default function ReservationsPage() {
   // reservation selected from calendar for actions
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<ReservationDto | null>(null);
+  const [reservationAssetCounts, setReservationAssetCounts] = useState<Record<string, number>>({});
 
   // Get user's company ID from localStorage
   const getUserCompanyId = () => {
@@ -324,6 +329,13 @@ export default function ReservationsPage() {
     if (!res) return;
     setSelectedReservation(res);
     setShowEventModal(true);
+
+    // Fetch asset count for this reservation
+    if (integration && !reservationAssetCounts[res.id]) {
+      getAssetCountForReservations([res.id])
+        .then(counts => setReservationAssetCounts(prev => ({ ...prev, ...counts })))
+        .catch(() => {});
+    }
   };
 
   const canCancelReservation = (r: ReservationDto) => {
@@ -380,6 +392,16 @@ export default function ReservationsPage() {
         r.userName?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setColleagueReservations(filtered);
+
+      // Fetch asset counts for found reservations if integration enabled
+      if (integration && filtered.length > 0) {
+        try {
+          const counts = await getAssetCountForReservations(filtered.map(r => r.id));
+          setReservationAssetCounts(prev => ({ ...prev, ...counts }));
+        } catch {
+          // non-critical
+        }
+      }
     } catch (err) {
       console.error('Failed to search colleague:', err);
     } finally {
@@ -605,6 +627,11 @@ export default function ReservationsPage() {
                       {colleagueReservations.map((res) => (
                         <div key={res.id} className="text-sm text-gray-600 dark:text-gray-400">
                           {res.userName} - {res.markerName} ({res.startTime} - {res.endTime})
+                          {integration && reservationAssetCounts[res.id] != null && (
+                            <span className="ml-2 text-xs text-brand-500">
+                              ({reservationAssetCounts[res.id]} asset{reservationAssetCounts[res.id] !== 1 ? 's' : ''})
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -776,6 +803,12 @@ export default function ReservationsPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Seat: {selectedReservation.markerName || selectedReservation.markerId}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Date: {new Date(selectedReservation.date).toLocaleDateString()}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Time: {selectedReservation.startTime ?? selectedReservation.start ?? selectedReservation.Start ?? '-'} - {selectedReservation.endTime ?? selectedReservation.end ?? selectedReservation.End ?? '-'}</p>
+
+              {integration && reservationAssetCounts[selectedReservation.id] != null && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Assets checked out: <span className="font-medium text-brand-500">{reservationAssetCounts[selectedReservation.id]}</span>
+                </p>
+              )}
 
               <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 {canCancelReservation(selectedReservation) ? (

@@ -35,6 +35,7 @@ export type CreateBookingsPayload = {
   externalContactPhone?: string;
   notes?: string;
   companyId?: string | null;
+  reservationId?: string;
 };
 
 

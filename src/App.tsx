@@ -6,6 +6,7 @@ import NotFound from "./pages/OtherPage/NotFound";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { GlobalSpinner } from "./components/ui/spinner";
+import FeatureGate from "./components/common/FeatureGate";
 import Home from "./pages/Dashboard/Home";
 // Lazy-loaded routes for performance
 const Unauthorized = lazy(() => import("./pages/OtherPage/Unauthorized"));
@@ -289,7 +290,9 @@ export default function App() {
               path="/assets"
               element={
                 <PrivateRoute>
-                  <AssetsPage />
+                  <FeatureGate feature="assetTracking">
+                    <AssetsPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -297,7 +300,9 @@ export default function App() {
               path="/assets/issues"
               element={
                 <PrivateRoute>
-                  <IssuesPage />
+                  <FeatureGate feature="assetTracking">
+                    <IssuesPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -305,7 +310,9 @@ export default function App() {
               path="/assets/issues/:id"
               element={
                 <PrivateRoute>
-                  <IssueDetails />
+                  <FeatureGate feature="assetTracking">
+                    <IssueDetails />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -313,7 +320,9 @@ export default function App() {
               path="/assets/:assetId/issues/new"
               element={
                 <PrivateRoute>
-                  <IssueCreate />
+                  <FeatureGate feature="assetTracking">
+                    <IssueCreate />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -321,7 +330,9 @@ export default function App() {
               path="/assets/create"
               element={
                 <PrivateRoute>
-                  <AssetCreate />
+                  <FeatureGate feature="assetTracking">
+                    <AssetCreate />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -329,7 +340,9 @@ export default function App() {
               path="/assets/create-bulk"
               element={
                 <PrivateRoute>
-                  <AssetBulkUpload />
+                  <FeatureGate feature="assetTracking">
+                    <AssetBulkUpload />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -337,7 +350,9 @@ export default function App() {
               path="/assets/:id"
               element={
                 <PrivateRoute>
-                  <AssetDetails />
+                  <FeatureGate feature="assetTracking">
+                    <AssetDetails />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -345,7 +360,9 @@ export default function App() {
               path="/assets/edit/:id"
               element={
                 <PrivateRoute>
-                  <AssetEdit />
+                  <FeatureGate feature="assetTracking">
+                    <AssetEdit />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -353,7 +370,9 @@ export default function App() {
               path="/events"
               element={
                 <PrivateRoute>
-                  <EventsPage />
+                  <FeatureGate feature="assetTracking">
+                    <EventsPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -361,7 +380,9 @@ export default function App() {
               path="/locations"
               element={
                 <PrivateRoute>
-                  <LocationsPage />
+                  <FeatureGate feature="deskBooking">
+                    <LocationsPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -369,7 +390,9 @@ export default function App() {
               path="/locations/:id"
               element={
                 <PrivateRoute>
-                  <LocationDetails />
+                  <FeatureGate feature="deskBooking">
+                    <LocationDetails />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -377,7 +400,9 @@ export default function App() {
               path="/reservations"
               element={
                 <PrivateRoute>
-                  <ReservationsPage />
+                  <FeatureGate feature="deskBooking">
+                    <ReservationsPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -385,7 +410,9 @@ export default function App() {
               path="/reservation-reports"
               element={
                 <PrivateRoute>
-                  <ReservationReports />
+                  <FeatureGate feature="deskBooking">
+                    <ReservationReports />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -393,9 +420,11 @@ export default function App() {
               path="/resources-import"
               element={
                 <PrivateRoute>
-                  <RoleRoute allowed={[1, "Admin"]}>
-                    <ImportResources />
-                  </RoleRoute>
+                  <FeatureGate feature="deskBooking">
+                    <RoleRoute allowed={[1, "Admin"]}>
+                      <ImportResources />
+                    </RoleRoute>
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -411,7 +440,9 @@ export default function App() {
               path="/collections"
               element={
                 <PrivateRoute>
-                  <CollectionsPage />
+                  <FeatureGate feature="assetTracking">
+                    <CollectionsPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -419,7 +450,9 @@ export default function App() {
               path="/collections/create"
               element={
                 <PrivateRoute>
-                  <CollectionsCreate />
+                  <FeatureGate feature="assetTracking">
+                    <CollectionsCreate />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -427,7 +460,9 @@ export default function App() {
               path="/bookings"
               element={
                 <PrivateRoute>
-                  <BookingsPage />
+                  <FeatureGate feature="assetTracking">
+                    <BookingsPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -435,7 +470,9 @@ export default function App() {
               path="/assets/bookings"
               element={
                 <PrivateRoute>
-                  <AssetBookingsCreate />
+                  <FeatureGate feature="assetTracking">
+                    <AssetBookingsCreate />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -443,7 +480,9 @@ export default function App() {
               path="/collections/:id"
               element={
                 <PrivateRoute>
-                  <CollectionDetails />
+                  <FeatureGate feature="assetTracking">
+                    <CollectionDetails />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -451,7 +490,9 @@ export default function App() {
               path="/collections/edit/:id"
               element={
                 <PrivateRoute>
-                  <CollectionsEdit />
+                  <FeatureGate feature="assetTracking">
+                    <CollectionsEdit />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -509,7 +550,9 @@ export default function App() {
               path="/assets/reports"
               element={
                 <PrivateRoute>
-                  <ReportsPage />
+                  <FeatureGate feature="assetTracking">
+                    <ReportsPage />
+                  </FeatureGate>
                 </PrivateRoute>
               }
             />
@@ -537,8 +580,8 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* QR Check-in Route (public) */}
-          <Route path="/checkin/:markerId" element={<CheckinPage />} />
+          {/* QR Check-in Route (public, gated by deskBooking) */}
+          <Route path="/checkin/:markerId" element={<FeatureGate feature="deskBooking"><CheckinPage /></FeatureGate>} />
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

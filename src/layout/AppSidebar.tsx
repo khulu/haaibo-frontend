@@ -22,6 +22,7 @@ import SidebarWidget from "./SidebarWidget";
 import getAuth from "../hooks/api/useAuthApi";
 import useOrganizationsApi from "../hooks/api/useOrganizationApi";
 import { resolveImageSrc } from "../utils/resolveImageSrc";
+import useFeatureFlags from "../hooks/useFeatureFlags";
 
 type NavItem = {
   name: string;
@@ -166,6 +167,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   const auth = getAuth();
   const companyId = auth.getCompanyId();
   const { getOrganizationById, getMyCompany } = useOrganizationsApi();
+  const { assetTracking, deskBooking } = useFeatureFlags();
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<{
     enableOfficeReservations?: boolean | null;
@@ -510,6 +512,22 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       if (item.name === 'Locations') return false;
     }
     
+    return true;
+  });
+
+  // Apply centralized feature flags to hide nav items for disabled features
+  filteredNavItems = filteredNavItems.filter(item => {
+    const assetTrackingNavNames = ["Collections", "Bookings", "Issues", "Events", "Devices", "Reminders", "Reports"];
+    const deskBookingNavNames = ["Reservations", "Import Resources"];
+
+    if (!assetTracking && assetTrackingNavNames.includes(item.name)) {
+      return false;
+    }
+    if (!deskBooking) {
+      // Hide desk booking items; also match custom reservation label
+      if (deskBookingNavNames.includes(item.name)) return false;
+      if (item.path === "/reservations" || item.path === "/reservation-reports" || item.path === "/resources-import") return false;
+    }
     return true;
   });
 

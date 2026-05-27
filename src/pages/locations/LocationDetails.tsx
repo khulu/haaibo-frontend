@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { resolveImageSrc } from '../../utils/resolveImageSrc';
 import { useParams, useNavigate } from 'react-router-dom';
 import useLocationsApi, { LocationDto, FloorplanMarker } from '../../hooks/api/useLocationsApi';
+import useAssetReservationApi, { AssetReservationLink } from '../../hooks/api/useAssetReservationApi';
+import useFeatureFlags from '../../hooks/useFeatureFlags';
 import ComponentCard from '../../components/common/ComponentCard';
 import Label from '../../components/form/Label';
 import Badge from '../../components/ui/badge/Badge';
@@ -23,8 +25,12 @@ export default function LocationDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getSingle, getMarkers, createMarker, updateMarker, deleteMarker } = useLocationsApi();
+  const { getAssetsForLocation } = useAssetReservationApi();
+  const { integration } = useFeatureFlags();
   const [location, setLocation] = useState<LocationDto | null>(null);
   const [markers, setMarkers] = useState<FloorplanMarker[]>([]);
+  const [locationAssets, setLocationAssets] = useState<AssetReservationLink[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -82,6 +88,22 @@ export default function LocationDetails() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !integration) return;
+    (async () => {
+      setAssetsLoading(true);
+      try {
+        const assets = await getAssetsForLocation(id);
+        setLocationAssets(assets);
+      } catch {
+        // Silently fail — assets section just won't display data
+      } finally {
+        setAssetsLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, integration]);
 
   const handleFloorplanClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!floorplanRef.current || !location?.floorplanPath) return;
@@ -352,6 +374,39 @@ export default function LocationDetails() {
           </div>
         )}
       </ComponentCard>
+
+      {integration && (
+        <ComponentCard title="Assets at this Location">
+          {assetsLoading ? (
+            <p className="text-sm text-gray-500">Loading assets...</p>
+          ) : locationAssets.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No assets assigned to this location.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Asset</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Serial Number</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Checked Out</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300">Returned</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locationAssets.map((asset) => (
+                    <tr key={`${asset.assetId}-${asset.reservationId}`} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-2 px-3 text-gray-800 dark:text-white/90">{asset.assetName || asset.assetId}</td>
+                      <td className="py-2 px-3 text-gray-600 dark:text-gray-400">{asset.assetSerialNumber || '-'}</td>
+                      <td className="py-2 px-3 text-gray-600 dark:text-gray-400">{new Date(asset.checkedOutAt).toLocaleString()}</td>
+                      <td className="py-2 px-3 text-gray-600 dark:text-gray-400">{asset.returnedAt ? new Date(asset.returnedAt).toLocaleString() : 'Not returned'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </ComponentCard>
+      )}
 
       {showMarkerModal && (
         <div className="modal fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto p-5">

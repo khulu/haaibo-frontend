@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import getAuth from '@hooks/api/useAuthApi';
@@ -6,6 +6,8 @@ import useAsset from '@hooks/asset/useAsset';
 import useUser from '@hooks/user/useUser';
 import useBookings from '@hooks/bookings/useBookings';
 import type { CreateBookingsPayload } from '@hooks/api/useBookingsApi';
+import useReservationsApi, { ReservationDto } from '@hooks/api/useReservationsApi';
+import useFeatureFlags from '../../hooks/useFeatureFlags';
 import Label from '../../components/form/Label';
 import useContacts from '@hooks/contacts/useContacts';
 import DatePicker from '../../components/form/date-picker';
@@ -37,6 +39,8 @@ export default function AssetBookingsCreate() {
   const { createBookings } = useBookings();
   const { useContactsList } = useContacts();
   const { data: contacts } = useContactsList(companyId);
+  const { getMyReservations } = useReservationsApi();
+  const { integration } = useFeatureFlags();
 
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [start, setStart] = useState<string>('');
@@ -48,8 +52,23 @@ export default function AssetBookingsCreate() {
   const [extPhone, setExtPhone] = useState<string>('');
   const [selectedContactId, setSelectedContactId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  const [selectedReservationId, setSelectedReservationId] = useState<string>('');
+  const [myReservations, setMyReservations] = useState<ReservationDto[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [serverErrors, setServerErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!integration) return;
+    (async () => {
+      try {
+        const reservations = await getMyReservations();
+        setMyReservations(reservations);
+      } catch {
+        // non-critical
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [integration]);
 
   const assetOptions = useMemo(() => (assets ?? []).map((a) => ({ value: a.id, label: `${a.make ?? ''} ${a.model ?? ''} ${a.serialNumber ?? a.assetId ?? a.laptopTagNumber ?? ''}`.trim() })), [assets]);
   const userOptions = useMemo(() => (users ?? []).map((u) => ({ value: u.id, label: u.fullName || u.email })), [users]);
@@ -82,6 +101,7 @@ export default function AssetBookingsCreate() {
       startDate: new Date(start).toISOString(),
       endDate: new Date(end).toISOString(),
       notes: notes || undefined,
+      reservationId: selectedReservationId || undefined,
       // companyId: typically omitted, inferred on server; uncomment if needed
       // companyId: companyId ?? undefined,
     };
@@ -253,6 +273,24 @@ export default function AssetBookingsCreate() {
                 className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
               />
             </div>
+          </div>
+        )}
+
+        {integration && myReservations.length > 0 && (
+          <div>
+            <Label>Link to Reservation (optional)</Label>
+            <select
+              value={selectedReservationId}
+              onChange={(e) => setSelectedReservationId(e.target.value)}
+              className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            >
+              <option value="">None</option>
+              {myReservations.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.locationName} - {r.markerName} ({r.date} {r.startTime}-{r.endTime})
+                </option>
+              ))}
+            </select>
           </div>
         )}
 

@@ -5,6 +5,10 @@ import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Select from "../../components/form/Select";
 
+// TODO: Integrate with a real support ticket API (e.g. POST /api/support/tickets).
+// Currently uses a simulated timeout. Replace handleSubmit logic with actual API hook
+// once the backend endpoint is available.
+
 export default function SupportPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
