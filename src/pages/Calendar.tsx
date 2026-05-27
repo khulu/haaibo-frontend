@@ -12,8 +12,8 @@ import useAuthApi from "../hooks/api/useAuthApi";
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
-    calendar: string;
     type: "reservation" | "booking";
+    color: string;
   };
 }
 
@@ -25,15 +25,17 @@ export default function Calendar() {
 
   // Fetch desk/room reservations
   const { useUpcomingReservations } = useReservations();
-  const { data: reservations = [] } = useUpcomingReservations(
+  const { data: reservations = [], isLoading: reservationsLoading } = useUpcomingReservations(
     deskBooking ? { companyId } : undefined
   );
 
   // Fetch asset bookings
   const { useMyBookings } = useBookings();
-  const { data: bookings = [] } = useMyBookings(
+  const { data: bookings = [], isLoading: bookingsLoading } = useMyBookings(
     assetTracking ? { companyId, includeAssigned: true, includeCreated: true } : undefined
   );
+
+  const loading = (deskBooking && reservationsLoading) || (assetTracking && bookingsLoading);
 
   // Merge both data sets into unified calendar events
   const events: CalendarEvent[] = useMemo(() => {
@@ -50,7 +52,7 @@ export default function Calendar() {
             : r.locationName || "Desk/Room Booking",
           start,
           end,
-          extendedProps: { calendar: "Primary", type: "reservation" },
+          extendedProps: { type: "reservation", color: "teal" },
         });
       });
     }
@@ -66,7 +68,7 @@ export default function Calendar() {
             : "Asset Booking",
           start: b.startDate,
           end: b.endDate,
-          extendedProps: { calendar: "Warning", type: "booking" },
+          extendedProps: { type: "booking", color: "purple" },
         });
       });
     }
@@ -85,46 +87,59 @@ export default function Calendar() {
         <div className="flex items-center gap-6 px-6 pt-5">
           {deskBooking && (
             <span className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <span className="inline-block h-3 w-3 rounded-full bg-brand-500" />
+              <span className="inline-block h-3 w-3 rounded-full bg-teal-500" />
               Desk/Room Bookings
             </span>
           )}
           {assetTracking && (
             <span className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <span className="inline-block h-3 w-3 rounded-full bg-yellow-500" />
+              <span className="inline-block h-3 w-3 rounded-full bg-purple-500" />
               Asset Bookings
             </span>
           )}
         </div>
 
-        <div className="custom-calendar">
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            events={events}
-            eventContent={renderEventContent}
-          />
-        </div>
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-500" />
+            <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">Loading events...</span>
+          </div>
+        )}
+
+        {!loading && events.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No events found in the visible date range.</p>
+          </div>
+        )}
+
+        {!loading && (
+          <div className="custom-calendar">
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              events={events}
+              eventContent={renderEventContent}
+            />
+          </div>
+        )}
       </div>
     </>
   );
 }
 
-const renderEventContent = (eventInfo: { event: { extendedProps: { calendar: string }; title: string }; timeText: string }) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
+const renderEventContent = (eventInfo: { event: { extendedProps: { type: string; color: string }; title: string }; timeText: string }) => {
+  const color = eventInfo.event.extendedProps.color;
+  const bgClass = color === "teal" ? "bg-teal-500" : "bg-purple-500";
   return (
-    <div
-      className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}
-    >
-      <div className="fc-daygrid-event-dot"></div>
+    <div className={`flex items-center gap-1 ${bgClass} text-white p-1 rounded-sm text-xs`}>
       <div className="fc-event-time">{eventInfo.timeText}</div>
-      <div className="fc-event-title">{eventInfo.event.title}</div>
+      <div className="fc-event-title truncate">{eventInfo.event.title}</div>
     </div>
   );
 };
