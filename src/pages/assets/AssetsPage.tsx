@@ -18,9 +18,22 @@ export default function AssetsPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [collectionFilter, setCollectionFilter] = useState<string>('all');
   const navigate = useNavigate();
 
   const { data: dataAssets, isLoading } = useAssetList({companyId: companyId});
+
+  const filteredAssets = dataAssets?.filter((asset: Asset) => {
+    if (collectionFilter === 'all') return true;
+    if (collectionFilter === 'unassigned-collection') {
+      const collectionId = (asset as unknown as { collectionId?: string | null }).collectionId;
+      return !collectionId;
+    }
+    if (collectionFilter === 'unassigned-user') {
+      return !asset.assignedUserId;
+    }
+    return true;
+  });
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this asset?')) {
@@ -43,6 +56,15 @@ export default function AssetsPage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Assets</h1>
         <div className="flex gap-2">
+          <select
+            value={collectionFilter}
+            onChange={(e) => setCollectionFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          >
+            <option value="all">All Assets</option>
+            <option value="unassigned-collection">Not Assigned to Collection</option>
+            <option value="unassigned-user">Not Assigned to User</option>
+          </select>
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded"
             onClick={() => navigate('/assets/create')}
@@ -74,7 +96,7 @@ export default function AssetsPage() {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-            {dataAssets?.map((asset: Asset) => (
+            {filteredAssets?.map((asset: Asset) => (
               <TableRow key={asset.id}>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">

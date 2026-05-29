@@ -167,7 +167,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   const auth = getAuth();
   const companyId = auth.getCompanyId();
   const { getOrganizationById, getMyCompany } = useOrganizationsApi();
-  const { assetTracking, deskBooking } = useFeatureFlags();
+  const { assetTracking, deskBooking, loading: flagsLoading } = useFeatureFlags();
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<{
     enableOfficeReservations?: boolean | null;
@@ -492,9 +492,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       const assetTrackingItems = [
         "Collections",
         "Bookings",
-        // Keep `Locations` visible to company Admins even when asset tracking is disabled
-        // so admins can manage locations independently of asset tracking settings.
-        // "Locations",
         "Issues",
         "Events",
         "Devices",
@@ -504,32 +501,33 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       if (assetTrackingItems.includes(item.name)) {
         return false;
       }
-      // allow Locations for company admins (role === 1 or 'Admin') and super admins
-      if (item.name === 'Locations' && (role === 1 || role === 'Admin' || isSuperAdmin)) {
-        return true;
-      }
-      // otherwise, if item is Locations and not allowed above, hide it
-      if (item.name === 'Locations') return false;
+    }
+
+    // Hide Locations if office reservations is disabled (except for SuperAdmin)
+    if (item.name === "Locations" && !isSuperAdmin && !companyDetails?.enableOfficeReservations) {
+      return false;
     }
     
     return true;
   });
 
   // Apply centralized feature flags to hide nav items for disabled features
-  filteredNavItems = filteredNavItems.filter(item => {
-    const assetTrackingNavNames = ["Collections", "Bookings", "Issues", "Events", "Devices", "Reminders", "Reports"];
-    const deskBookingNavNames = ["Reservations", "Import Resources"];
+  if (!flagsLoading) {
+    filteredNavItems = filteredNavItems.filter(item => {
+      const assetTrackingNavNames = ["Collections", "Bookings", "Issues", "Events", "Devices", "Reminders", "Reports"];
+      const deskBookingNavNames = ["Reservations", "Locations", "Import Resources"];
 
-    if (!assetTracking && assetTrackingNavNames.includes(item.name)) {
-      return false;
-    }
-    if (!deskBooking) {
-      // Hide desk booking items; also match custom reservation label
-      if (deskBookingNavNames.includes(item.name)) return false;
-      if (item.path === "/reservations" || item.path === "/reservation-reports" || item.path === "/resources-import") return false;
-    }
-    return true;
-  });
+      if (!assetTracking && assetTrackingNavNames.includes(item.name)) {
+        return false;
+      }
+      if (!deskBooking) {
+        // Hide desk booking items; also match custom reservation label
+        if (deskBookingNavNames.includes(item.name)) return false;
+        if (item.path === "/reservations" || item.path === "/reservation-reports" || item.path === "/resources-import" || item.path === "/locations") return false;
+      }
+      return true;
+    });
+  }
 
   // Auto-close mobile sidebar on route changes, improving mobile UX
   useEffect(() => {

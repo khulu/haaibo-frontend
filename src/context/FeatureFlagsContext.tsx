@@ -7,9 +7,9 @@ type FeatureFlagsContextType = {
 };
 
 const defaultFlags: FeatureFlags = {
-  assetTracking: true,
-  deskBooking: true,
-  integration: true,
+  assetTracking: false,
+  deskBooking: false,
+  integration: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextType>({
@@ -32,7 +32,10 @@ export const FeatureFlagsProvider = ({ children }: { children: ReactNode }) => {
           setFlags(data);
         }
       } catch {
-        // On error, keep defaults (all features enabled) so the app doesn't break
+        // On error, enable all features so the app doesn't break
+        if (!cancelled) {
+          setFlags({ assetTracking: true, deskBooking: true, integration: true });
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -40,11 +43,27 @@ export const FeatureFlagsProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // Only fetch if user is authenticated
+    // Skip fetching for super admins — they always get all features enabled
+    let isSuperAdmin = false;
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const user = JSON.parse(raw);
+        const role = user?.role;
+        isSuperAdmin = role === 0 || role === "SuperAdmin";
+      }
+    } catch {
+      // ignore parse errors
+    }
+
+    // Only fetch if user is authenticated and not a super admin
     const token = localStorage.getItem("token");
-    if (token) {
+    if (token && !isSuperAdmin) {
       fetchFlags();
     } else {
+      if (isSuperAdmin) {
+        setFlags({ assetTracking: true, deskBooking: true, integration: true });
+      }
       setLoading(false);
     }
 

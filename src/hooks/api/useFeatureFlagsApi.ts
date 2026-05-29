@@ -17,7 +17,7 @@ const useFeatureFlagsApi = () => {
   const getFeatureFlags = async (): Promise<FeatureFlags> => {
     const response = await request({
       baseURL,
-      url: '/api/features',
+      url: '/features',
       method: 'GET',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });

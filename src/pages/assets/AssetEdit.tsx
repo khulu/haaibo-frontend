@@ -63,7 +63,8 @@ const AssetEdit: React.FC = () => {
     e.preventDefault();
     if (form && id) {
       try {
-        await updateAsset(id, form);
+        const { id: _id, createdAt, updatedAt, statusName, companyName, assignedUserName, ...payload } = form;
+        await updateAsset(id, payload);
         navigate('/assets');
       } catch {
         setError('Failed to update asset');
@@ -132,6 +133,7 @@ const AssetEdit: React.FC = () => {
                   .filter((user) => user.role === 'Employee' || user.role === 2 || user.role === 'Admin' || user.role === 1)
                   .map((user) => ({ value: user.id, label: user.fullName }))}
                 placeholder="Select a user"
+                defaultValue={form.assignedUserId || ''}
                 onChange={(value) => setForm((prev) => (prev ? { ...prev, assignedUserId: value } : null))}
                 className="dark:bg-dark-900"
               />
