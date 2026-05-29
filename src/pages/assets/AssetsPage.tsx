@@ -35,11 +35,16 @@ export default function AssetsPage() {
     return true;
   });
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (asset: Asset) => {
+    if (asset.assignedUserId) {
+      setError('Cannot delete an asset that is assigned to a user. Unassign it first.');
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this asset?')) {
       try {
-        setDeletingId(id);
-        await deleteSingleAsset.mutateAsync(id);
+        setDeletingId(asset.id);
+        await deleteSingleAsset.mutateAsync(asset.id);
+        setError(null);
       } catch {
         setError('Failed to delete asset');
       } finally {
@@ -134,13 +139,15 @@ export default function AssetsPage() {
                   <div className="flex gap-2">
                     <button className="px-2 py-1 bg-gray-200 text-gray-800 rounded" onClick={() => navigate(`/assets/${asset.id}`)}>View</button>
                     <button className="px-2 py-1 bg-blue-500 text-white rounded" onClick={() => navigate(`/assets/edit/${asset.id}`)}>Edit</button>
-                    <button
-                      className="px-2 py-1 bg-red-500 text-white rounded"
-                      disabled={deletingId === asset.id}
-                      onClick={() => handleDelete(asset.id)}
-                    >
-                      {deletingId === asset.id ? 'Deleting...' : 'Delete'}
-                    </button>
+                    {!asset.assignedUserId && (
+                      <button
+                        className="px-2 py-1 bg-red-500 text-white rounded"
+                        disabled={deletingId === asset.id}
+                        onClick={() => handleDelete(asset)}
+                      >
+                        {deletingId === asset.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

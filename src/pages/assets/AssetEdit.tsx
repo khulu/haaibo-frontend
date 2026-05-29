@@ -52,7 +52,8 @@ const AssetEdit: React.FC = () => {
     };
 
     fetchAsset();
-  }, [id, getAssetById]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -70,7 +70,7 @@ export default function AssetBookingsCreate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integration]);
 
-  const assetOptions = useMemo(() => (assets ?? []).map((a) => ({ value: a.id, label: `${a.make ?? ''} ${a.model ?? ''} ${a.serialNumber ?? a.assetId ?? a.laptopTagNumber ?? ''}`.trim() })), [assets]);
+  const assetOptions = useMemo(() => (assets ?? []).filter((a) => !a.assignedUserId).map((a) => ({ value: a.id, label: `${a.make ?? ''} ${a.model ?? ''} ${a.serialNumber ?? a.assetId ?? a.laptopTagNumber ?? ''}`.trim() })), [assets]);
   const userOptions = useMemo(() => (users ?? []).map((u) => ({ value: u.id, label: u.fullName || u.email })), [users]);
   const contactOptions = useMemo(() => (contacts ?? []).map((c) => ({ value: c.id, label: c.fullName + (c.phone ? ` (${c.phone})` : '') })), [contacts]);
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useIssues from '@hooks/issues/useIssues';
 import Label from '../../components/form/Label';
@@ -19,10 +19,16 @@ export default function IssueDetails() {
   const { useFetchIssueById, updateIssueStatus } = useIssues();
 
   const { data: issue, isLoading, isError } = useFetchIssueById(id!);
-  const [status, setStatus] = useState<number>(issue?.status ?? 0);
+  const [status, setStatus] = useState<number>(0);
   const [resolutionNote, setResolutionNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (issue) {
+      setStatus(issue.status);
+    }
+  }, [issue]);
 
   const canSetResolutionNote = useMemo(() => status === 2 || status === 3, [status]);
 
