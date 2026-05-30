@@ -131,7 +131,6 @@ const AssetEdit: React.FC = () => {
               <Label htmlFor="assignedUserId">Assigned User</Label>
               <Select
                 options={(users || [])
-                  .filter((user) => user.role === 'Employee' || user.role === 2 || user.role === 'Admin' || user.role === 1)
                   .map((user) => ({ value: user.id, label: user.fullName }))}
                 placeholder="Select a user"
                 defaultValue={form.assignedUserId || ''}

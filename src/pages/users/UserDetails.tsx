@@ -9,6 +9,8 @@ import Label from "../../components/form/Label";
 import Badge from "../../components/ui/badge/Badge";
 import useUser from "@hooks/user/useUser";
 import PhotoModal from "./PhotoModal";
+import useAsset from "@hooks/asset/useAsset";
+import getAuth from "@hooks/api/useAuthApi";
 
 export default function UserDetails() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +24,11 @@ export default function UserDetails() {
   const navigate = useNavigate();
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const { uploadProfilePicture } = useUserApi();
+  const auth = getAuth();
+  const companyId = auth.getCompanyId?.();
+  const { useAssetList } = useAsset();
+  const { data: allAssets } = useAssetList({ companyId });
+  const userAssets = allAssets?.filter((a) => a.assignedUserId === id) ?? [];
 
   const dropdownRoles = dataRoles?.map((role, index) => ({ value: index, text: role }));
   const [isSuperAdmin] = useState(() => {
@@ -179,6 +186,38 @@ export default function UserDetails() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="mt-6">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
+          Assigned Assets
+        </h4>
+        {userAssets.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">No assets assigned to this user.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Make</th>
+                  <th className="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Model</th>
+                  <th className="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Serial Number</th>
+                  <th className="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Condition</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {userAssets.map((asset) => (
+                  <tr key={asset.id} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => navigate(`/assets/${asset.id}`)}>
+                    <td className="px-3 py-2 text-gray-800 dark:text-white/90">{asset.make || "-"}</td>
+                    <td className="px-3 py-2 text-gray-800 dark:text-white/90">{asset.model || "-"}</td>
+                    <td className="px-3 py-2 text-gray-800 dark:text-white/90">{asset.serialNumber || asset.assetId || "-"}</td>
+                    <td className="px-3 py-2 text-gray-800 dark:text-white/90">{asset.condition || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
