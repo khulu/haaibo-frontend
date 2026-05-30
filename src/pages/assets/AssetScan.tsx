@@ -18,7 +18,7 @@ interface ScanRecord {
 }
 
 export default function AssetScan() {
-  const { getAssetById } = useAssetApi();
+  const { getAssetBySerial } = useAssetApi();
   const auth = getAuth();
   const companyId = auth.getCompanyId?.() ?? '';
 
@@ -35,14 +35,14 @@ export default function AssetScan() {
     setError(null);
     setFoundAsset(null);
     try {
-      const asset = await getAssetById(searchValue.trim());
+      const asset = await getAssetBySerial(searchValue.trim());
       if (asset.companyId !== companyId) {
         setError('Asset does not belong to your company.');
         return;
       }
       setFoundAsset(asset);
     } catch {
-      setError('Asset not found. Please check the ID or serial number and try again.');
+      setError('Asset not found. Please check the serial number and try again.');
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export default function AssetScan() {
       <form onSubmit={handleSearch} className="flex gap-2 mb-6">
         <input
           type="text"
-          placeholder="Enter Asset ID or scan barcode..."
+          placeholder="Enter serial number or scan barcode..."
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           className="flex-1 h-11 rounded-lg border border-gray-300 px-4 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"

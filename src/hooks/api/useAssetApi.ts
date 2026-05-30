@@ -240,9 +240,26 @@ const useAssetApi = () => {
     }
   };
 
+  // Fetch a single asset by serial number
+  const getAssetBySerial = async (serial: string): Promise<Asset> => {
+    try {
+      const response = await request({
+        baseURL,
+        url: `/Assets/serial/${encodeURIComponent(serial)}`,
+        method: 'GET',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data;
+    } catch (error) {
+      console.error('getAssetBySerial error:', error);
+      throw error;
+    }
+  };
+
   return {
     getAssetsByCompany,
     getAssetById,
+    getAssetBySerial,
     createAsset,
     updateAsset,
     deleteAsset,
