@@ -256,10 +256,35 @@ const useAssetApi = () => {
     }
   };
 
+  // Scan an asset in/out via the Scanner endpoint
+  const scanAsset = async (tagOrSerial: string, photo?: File): Promise<unknown> => {
+    const formData = new FormData();
+    formData.append('TagOrSerial', tagOrSerial);
+    if (photo) {
+      formData.append('Photo', photo);
+    }
+    try {
+      const response = await request({
+        baseURL,
+        url: '/Scanner/scan',
+        method: 'POST',
+        data: formData,
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('scanAsset error:', error);
+      throw error;
+    }
+  };
+
   return {
     getAssetsByCompany,
     getAssetById,
     getAssetBySerial,
+    scanAsset,
     createAsset,
     updateAsset,
     deleteAsset,
