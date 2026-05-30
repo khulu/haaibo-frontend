@@ -23,12 +23,14 @@ export default function IssueDetails() {
   const [resolutionNote, setResolutionNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userModified, setUserModified] = useState(false);
 
   useEffect(() => {
-    if (issue) {
+    if (issue && !userModified) {
       setStatus(issue.status);
+      setResolutionNote(issue.resolutionNote ?? '');
     }
-  }, [issue]);
+  }, [issue, userModified]);
 
   const canSetResolutionNote = useMemo(() => status === 2 || status === 3, [status]);
 
@@ -38,6 +40,7 @@ export default function IssueDetails() {
     setError(null);
     try {
       await updateIssueStatus.mutateAsync({ id, data: { status, resolutionNote: canSetResolutionNote ? resolutionNote : undefined } });
+      setUserModified(false);
     } catch (err: unknown) {
       const msg = (err as { message?: string } | null)?.message || 'Failed to update status';
       setError(msg);
@@ -91,14 +94,14 @@ export default function IssueDetails() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Status</Label>
-            <select value={status} onChange={e=>setStatus(Number(e.target.value))} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+            <select value={status} onChange={e=>{setStatus(Number(e.target.value)); setUserModified(true);}} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
               {statusOptions.map(s => (<option key={s.value} value={s.value}>{s.label}</option>))}
             </select>
           </div>
           {canSetResolutionNote && (
             <div>
               <Label>Resolution Note (optional)</Label>
-              <textarea value={resolutionNote} onChange={e=>setResolutionNote(e.target.value)} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" rows={3} />
+              <textarea value={resolutionNote} onChange={e=>{setResolutionNote(e.target.value); setUserModified(true);}} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" rows={3} />
             </div>
           )}
         </div>
