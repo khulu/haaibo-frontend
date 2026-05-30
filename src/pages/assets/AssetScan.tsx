@@ -72,13 +72,6 @@ export default function AssetScan() {
   const handleScan = (direction: ScanDirection) => {
     if (!foundAsset) return;
 
-    // If user has no photo, require capturing one before scanning
-    if (assignedUser && !assignedUser.profilePicture) {
-      setPendingDirection(direction);
-      startCamera();
-      return;
-    }
-
     completeScan(direction);
   };
 
