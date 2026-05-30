@@ -5,10 +5,11 @@ type Role = number | string;
 
 type RoleRouteProps = {
   children: ReactNode;
-  allowed: Role[]; // e.g., [0, "SuperAdmin"], [1, "Admin"], [2, "Employee"]
+  allowed: Role[]; // e.g., [0, "SuperAdmin"], [1, "Admin"], [3, "Employee"]
+  redirectTo?: string; // custom redirect when role is not allowed
 };
 
-export default function RoleRoute({ children, allowed }: RoleRouteProps) {
+export default function RoleRoute({ children, allowed, redirectTo }: RoleRouteProps) {
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/signin" replace />;
 
@@ -24,5 +25,5 @@ export default function RoleRoute({ children, allowed }: RoleRouteProps) {
   }
 
   const isAllowed = userRole !== null && allowed.includes(userRole);
-  return isAllowed ? children : <Navigate to="/unauthorized" replace />;
+  return isAllowed ? children : <Navigate to={redirectTo || "/unauthorized"} replace />;
 }

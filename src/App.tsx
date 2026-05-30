@@ -67,6 +67,7 @@ const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
 const NotificationsPage = lazy(() => import("./pages/notifications/NotificationsPage"));
 const PeakUsageHeatmap = lazy(() => import("./pages/reports/PeakUsageHeatmap"));
 const CheckinPage = lazy(() => import('./pages/checkin/CheckinPage'));
+const AssetScan = lazy(() => import("./pages/assets/AssetScan"));
 
 export default function App() {
   return (
@@ -98,7 +99,9 @@ export default function App() {
               path="/"
               element={
                 <PrivateRoute>
-                  <Home />
+                  <RoleRoute allowed={[0, "SuperAdmin", 1, "Admin", 3, "Employee"]} redirectTo="/asset-scan">
+                    <Home />
+                  </RoleRoute>
                 </PrivateRoute>
               }
             />
@@ -569,6 +572,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <PeakUsageHeatmap />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/asset-scan"
+              element={
+                <PrivateRoute>
+                  <AssetScan />
                 </PrivateRoute>
               }
             />

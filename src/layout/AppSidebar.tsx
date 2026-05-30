@@ -476,7 +476,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     return items;
   })();
 
-  const isEmployee = role === 'Employee' || role === 2;
+  const isSecurity = role === 2 || role === 'Security';
+  const isEmployee = role === 3 || role === 'Employee';
 
   let filteredNavItems = dynamicNavItems.filter(item => {
     if (item.name === "Organizations") {
@@ -575,6 +576,17 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       });
     }
     filteredNavItems = employeeItems;
+  }
+
+  // If user is security, restrict the sidebar to only Asset Scan
+  if (isSecurity) {
+    filteredNavItems = [
+      {
+        icon: <BoxCubeIcon />,
+        name: 'Asset Scan',
+        path: '/asset-scan',
+      },
+    ];
   }
 
   return (
