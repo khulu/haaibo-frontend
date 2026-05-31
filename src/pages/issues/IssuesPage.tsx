@@ -142,7 +142,9 @@ export default function IssuesPage() {
               ) : (
                 filtered.map((i) => (
                   <TableRow key={i.id}>
-                    <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{i.description}</TableCell>
+                    <TableCell className="px-5 py-4 text-start text-theme-sm">
+                      <span className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onClick={() => navigate(`/assets/issues/${i.id}`)}>{i.description}</span>
+                    </TableCell>
                     <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{priorityName(i.priority)}</TableCell>
                     <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{statusName(i.status)}</TableCell>
                     <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">{new Date(i.createdAt).toLocaleString()}</TableCell>

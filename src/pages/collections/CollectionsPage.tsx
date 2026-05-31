@@ -55,7 +55,9 @@ export default function CollectionsPage() {
             ) : (
               (data ?? []).map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="px-5 py-4 sm:px-6 text-start font-medium text-gray-800 text-theme-sm dark:text-white/90">{c.name}</TableCell>
+                  <TableCell className="px-5 py-4 sm:px-6 text-start font-medium text-theme-sm">
+                    <span className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onClick={() => navigate(`/collections/${c.id}`)}>{c.name}</span>
+                  </TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{c.description || '-'}</TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '-'}</TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">

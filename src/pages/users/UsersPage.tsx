@@ -149,7 +149,7 @@ export default function UsersPage() {
               return (
                 <TableRow key={user.id}>
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate(`/users/${user.id}`)}>
                       <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
                         {user.profilePicture ? (
                           (() => {
@@ -175,7 +175,7 @@ export default function UsersPage() {
                         )}
                       </div>
                       <div>
-                        <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        <span className="block font-medium text-blue-600 text-theme-sm dark:text-blue-400 hover:underline">
                           {user.fullName}
                         </span>
                         <span className="block text-gray-500 text-theme-xs dark:text-gray-400">

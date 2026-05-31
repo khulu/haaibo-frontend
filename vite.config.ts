@@ -33,6 +33,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/organizations/': {
+        target: 'http://localhost:5251',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   resolve: {

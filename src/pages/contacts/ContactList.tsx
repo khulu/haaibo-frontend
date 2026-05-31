@@ -117,7 +117,7 @@ export default function ContactList() {
                 <TableCell className="px-5 py-4 sm:px-6 text-start">
                   <div className="flex items-center gap-3">
                     <div>
-                      <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{c.fullName}</span>
+                      <span className="block font-medium text-blue-600 dark:text-blue-400 text-theme-sm cursor-pointer hover:underline" onClick={() => navigate(`/admin/contacts/${c.id}/edit`)}>{c.fullName}</span>
                     </div>
                   </div>
                 </TableCell>

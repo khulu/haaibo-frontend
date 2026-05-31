@@ -19,9 +19,10 @@ export default function AssetsPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [collectionFilter, setCollectionFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
-  const { data: dataAssets, isLoading } = useAssetList({companyId: companyId});
+  const { data: dataAssets, isLoading } = useAssetList({companyId: companyId, search: search || undefined});
 
   const filteredAssets = dataAssets?.filter((asset: Asset) => {
     if (collectionFilter === 'all') return true;
@@ -61,6 +62,13 @@ export default function AssetsPage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Assets</h1>
         <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search assets..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          />
           <select
             value={collectionFilter}
             onChange={(e) => setCollectionFilter(e.target.value)}
@@ -95,7 +103,6 @@ export default function AssetsPage() {
           <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
             <TableRow>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Device</TableCell>
-              <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Make</TableCell>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Model</TableCell>
               <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
             </TableRow>
@@ -104,33 +111,33 @@ export default function AssetsPage() {
             {filteredAssets?.map((asset: Asset) => (
               <TableRow key={asset.id}>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
-                  <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
-                    {asset.imageUrls && asset.imageUrls.length > 0 ? (
-                      (() => {
-                        const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
-                           const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
-                  const firstUrl = asset.imageUrls[0];
-                        const imgSrc = isProd
-                          ?  `${baseUrl}${firstUrl}`
-                          : firstUrl;
-                        return (
-                          <img
-                            width={40}
-                            height={40}
-                            src={imgSrc}
-                            alt={asset.make || 'Device'}
-                          />
-                        );
-                      })()
-                    ) : (
-                      <span className="text-gray-400 text-lg font-bold">
-                        {asset.make?.[0] || "?"}
-                      </span>
-                    )}
+                  <div className="flex items-center gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate(`/assets/${asset.id}`)}>
+                    <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
+                      {asset.imageUrls && asset.imageUrls.length > 0 ? (
+                        (() => {
+                          const isProd = import.meta.env.ASPNETCORE_ENVIRONMENT === "Production";
+                          const baseUrl = 'https://haiibo-backend-api.azurewebsites.net';
+                          const firstUrl = asset.imageUrls[0];
+                          const imgSrc = isProd
+                            ? `${baseUrl}${firstUrl}`
+                            : firstUrl;
+                          return (
+                            <img
+                              width={40}
+                              height={40}
+                              src={imgSrc}
+                              alt={asset.make || 'Device'}
+                            />
+                          );
+                        })()
+                      ) : (
+                        <span className="text-gray-400 text-lg font-bold">
+                          {asset.make?.[0] || "?"}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{asset.make}</span>
                   </div>
-                </TableCell>
-                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
-                  {asset.make}
                 </TableCell>
                 <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                   {asset.model}

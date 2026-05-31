@@ -68,7 +68,9 @@ export default function BookingsPage() {
             ) : (
               (bookings ?? []).map((b) => (
                 <TableRow key={b.id}>
-                  <TableCell className="px-5 py-4 sm:px-6 text-start font-medium text-gray-800 text-theme-sm dark:text-white/90">{assetMap.get(b.assetId) ?? b.assetId}</TableCell>
+                  <TableCell className="px-5 py-4 sm:px-6 text-start font-medium text-theme-sm">
+                    <span className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onClick={() => navigate(`/assets/${b.assetId}`)}>{assetMap.get(b.assetId) ?? b.assetId}</span>
+                  </TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{b.assigneeUserName || b.externalContactName || '-'}</TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{new Date(b.startDate).toLocaleDateString()} → {new Date(b.endDate).toLocaleDateString()}</TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">{b.notes || '-'}</TableCell>

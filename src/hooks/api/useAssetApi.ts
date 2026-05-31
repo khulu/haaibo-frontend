@@ -60,20 +60,26 @@ const useAssetApi = () => {
   const tokenApi = getToken();
   const token = tokenApi.getToken();
 
-  // Fetch all assets for a company
-  const getAssetsByCompany = async (companyId?: string): Promise<Asset[]> => {
+  // Fetch all assets with optional filters
+  const getAssetsByCompany = async (params?: {
+    companyId?: string;
+    search?: string;
+    status?: number;
+    assignedUserId?: string;
+    collectionId?: string;
+    limit?: number;
+  }): Promise<Asset[]> => {
     try {
-
       const response = await request({
         baseURL,
         url: '/Assets',
         method: 'GET',
-        params: companyId ? { companyId } : undefined,
+        params: params || undefined,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       return response.data;
     } catch (error) {
-      console.error('getLaptopsByCompany error:', error);
+      console.error('getAssetsByCompany error:', error);
       throw error;
     }
   };
@@ -256,7 +262,7 @@ const useAssetApi = () => {
     }
   };
 
-  // Scan an asset in/out via the Scanner endpoint
+  // Scan an asset in via the Scanner endpoint
   const scanAsset = async (tagOrSerial: string, photo?: File): Promise<unknown> => {
     const formData = new FormData();
     formData.append('TagOrSerial', tagOrSerial);
@@ -281,11 +287,37 @@ const useAssetApi = () => {
     }
   };
 
+  // Scan an asset out via the Scanner endpoint
+  const scanOutAsset = async (tagOrSerial: string, photo?: File): Promise<unknown> => {
+    const formData = new FormData();
+    formData.append('TagOrSerial', tagOrSerial);
+    if (photo) {
+      formData.append('Photo', photo);
+    }
+    try {
+      const response = await request({
+        baseURL,
+        url: '/Scanner/scan-out',
+        method: 'POST',
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('scanOutAsset error:', error);
+      throw error;
+    }
+  };
+
   return {
     getAssetsByCompany,
     getAssetById,
     getAssetBySerial,
     scanAsset,
+    scanOutAsset,
     createAsset,
     updateAsset,
     deleteAsset,

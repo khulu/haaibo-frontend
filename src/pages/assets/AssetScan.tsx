@@ -20,7 +20,7 @@ interface ScanRecord {
 }
 
 export default function AssetScan() {
-  const { getAssetBySerial, scanAsset } = useAssetApi();
+  const { getAssetBySerial, scanAsset, scanOutAsset } = useAssetApi();
   const { getUserById } = useUserApi();
   const auth = getAuth();
   const companyId = auth.getCompanyId?.() ?? '';
@@ -78,7 +78,12 @@ export default function AssetScan() {
   const completeScan = async (direction: ScanDirection, photo?: File) => {
     if (!foundAsset) return;
     try {
-      await scanAsset(searchValue.trim() || foundAsset.serialNumber || foundAsset.assetId || '', photo);
+      const tag = searchValue.trim() || foundAsset.serialNumber || foundAsset.assetId || '';
+      if (direction === 'out') {
+        await scanOutAsset(tag, photo);
+      } else {
+        await scanAsset(tag, photo);
+      }
     } catch {
       setError('Failed to record scan. Please try again.');
       return;

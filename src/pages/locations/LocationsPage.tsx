@@ -192,7 +192,7 @@ export default function LocationsPage() {
             </button>
           )}
           <div className="flex-1">
-            <span className={`font-medium ${isInactive ? 'text-gray-400 line-through dark:text-gray-600' : 'text-gray-800 dark:text-white/90'}`}>{node.name}</span>
+            <span className={`font-medium cursor-pointer hover:underline ${isInactive ? 'text-gray-400 line-through dark:text-gray-600' : 'text-blue-600 dark:text-blue-400'}`} onClick={() => navigate(`/locations/${node.id}`)}>{node.name}</span>
             {node.color && <span className="ml-2 inline-block w-3 h-3 rounded" style={{ background: node.color }} />}
             {isInactive && <span className="ml-2 text-xs text-red-500">(Inactive)</span>}
             {node.floorplanPath && <span className="ml-2 text-xs text-blue-500" title="Has floorplan">📐</span>}

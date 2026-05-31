@@ -24,14 +24,24 @@ const useAsset = () => {
   const queryClient = useQueryClient();
 
   const useAssetList = (payload: {
-      companyId?: string; 
+      companyId?: string;
+      search?: string;
+      status?: number;
+      assignedUserId?: string;
+      collectionId?: string;
+      limit?: number;
     }) =>
     useQuery({
       queryKey: [
         ...QueryKeyAssetList,
         payload.companyId,
+        payload.search,
+        payload.status,
+        payload.assignedUserId,
+        payload.collectionId,
+        payload.limit,
       ],
-      queryFn: () => getAssetsByCompany(payload.companyId).then((data: Asset[]) => data),
+      queryFn: () => getAssetsByCompany(payload).then((data: Asset[]) => data),
     });
 
   const createNewAsset = useMutation({

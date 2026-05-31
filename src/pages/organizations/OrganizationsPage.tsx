@@ -40,9 +40,9 @@ export default function OrganizationsPage() {
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
             {dataOrganizations?.map((org) => (
               <TableRow key={org.id}>
-                <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
+                <TableCell className="px-5 py-4 text-start text-theme-sm">
                   <div className="flex items-center gap-2">
-                    <span>{org.name}</span>
+                    <span className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onClick={() => navigate(`/organizations/${org.id}`)}>{org.name}</span>
                
                   </div>
                 </TableCell>

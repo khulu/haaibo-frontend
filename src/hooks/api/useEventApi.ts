@@ -7,10 +7,12 @@ export interface Event {
   id: string;
   assetId: string;
   assetTag: string;
+  assetPhoto: string | null;
   companyId: string;
   companyName: string;
   userId: string;
   userName: string;
+  userPhoto: string | null;
   eventType: number;
   entryTime: string;
   exitTime: string | null;

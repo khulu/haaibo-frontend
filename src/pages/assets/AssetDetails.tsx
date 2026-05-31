@@ -203,6 +203,19 @@ const AssetDetails: React.FC = () => {
             <Label>Company</Label>
             <p className="text-sm font-medium text-gray-800 dark:text-white/90">{asset.companyName}</p>
           </div>
+          <div>
+            <Label>Assigned User</Label>
+            {asset.assignedUserId ? (
+              <p
+                className="text-sm font-medium text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                onClick={() => navigate(`/users/${asset.assignedUserId}`)}
+              >
+                {asset.assignedUserName || asset.assignedUserId}
+              </p>
+            ) : (
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">Unassigned</p>
+            )}
+          </div>
           {isAdminOrSuperAdmin && (
             <div className="lg:col-span-2">
               <Label>Assign to Collection</Label>

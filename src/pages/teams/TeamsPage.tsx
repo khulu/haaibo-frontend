@@ -114,8 +114,8 @@ export default function TeamsPage() {
                 <TableRow 
                   key={team.id}
                 >
-                  <TableCell className="px-5 py-4 sm:px-6 text-start font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                    {team.name}
+                  <TableCell className="px-5 py-4 sm:px-6 text-start font-medium text-theme-sm">
+                    <span className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onClick={() => navigate(`/teams/${team.id}`)}>{team.name}</span>
                   </TableCell>
                   <TableCell className="px-5 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
                     {team.description || '-'}
