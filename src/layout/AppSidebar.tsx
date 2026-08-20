@@ -48,6 +48,11 @@ const navItems: NavItem[] = [
       { name: "Teams", path: "/teams" },
     ],
   },
+  {
+    icon: <DocsIcon />,
+    name: "Onboarding",
+    path: "/onboarding",
+  },
       {
     icon: <GroupIcon />,
     name: "Organizations",

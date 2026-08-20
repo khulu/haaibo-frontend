@@ -15,6 +15,7 @@ const UserDetails = lazy(() => import("./pages/users/UserDetails"));
 const UserEdit = lazy(() => import("./pages/users/UserEdit"));
 const UserCreate = lazy(() => import("./pages/users/UserCreate"));
 const UserBulkUpload = lazy(() => import("./pages/users/UserBulkUpload"));
+const AdminOnboardingPage = lazy(() => import("./pages/onboarding/AdminOnboardingPage"));
 const SupportPage = lazy(() => import("./pages/support/SupportPage"));
 const AssetsPage = lazy(() => import("./pages/assets/AssetsPage"));
 const AssetCreate = lazy(() => import("./pages/assets/AssetCreate"));
@@ -143,6 +144,16 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <UserBulkUpload />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/onboarding"
+              element={
+                <PrivateRoute>
+                  <RoleRoute allowed={[0, "SuperAdmin", 1, "Admin"]}>
+                    <AdminOnboardingPage />
+                  </RoleRoute>
                 </PrivateRoute>
               }
             />
