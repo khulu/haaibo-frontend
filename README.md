@@ -186,7 +186,14 @@ A major update with comprehensive redesign and modern React patterns implementat
 
 TailAdmin React.js Free Version is released under the MIT License.
 
+## Product Roadmap
+
+This repository also contains a focused product expansion roadmap for desk-booking SaaS differentiators:
+
+- [Desk Booking SaaS Bells and Whistles Roadmap](./docs/desk-booking-bells-and-whistles-roadmap.md)
+
 ## Support
 
 If you find this project helpful, please consider giving it a star on GitHub. Your support helps us continue developing
 and maintaining this template.
+# haaibo-frontend
