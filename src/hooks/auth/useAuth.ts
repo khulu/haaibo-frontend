@@ -1,5 +1,6 @@
 import useAuthApi from "../../hooks/api/useAuthApi";
 import { useMutation } from '@tanstack/react-query';
+import { normalizeUserRole } from "../../utils/roles";
 
 
 
@@ -21,7 +22,7 @@ const useAuth = () => {
         if (data?.token) {
           localStorage.setItem("token", data.token);
           if (data && data.user) {
-            localStorage.setItem("user", JSON.stringify(data.user));
+            localStorage.setItem("user", JSON.stringify(normalizeUserRole(data.user)));
           }
         }
       },

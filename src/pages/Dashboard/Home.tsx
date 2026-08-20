@@ -15,6 +15,7 @@ import useOrganizationsApi from "@hooks/api/useOrganizationApi";
 import { UserIcon, MailIcon, CalenderIcon, TimeIcon, GroupIcon, AlertIcon } from "../../icons";
 import useAnalyticsApi from "../../hooks/api/useAnalyticsApi";
 import type { HeatmapResponse } from "../../types/analytics";
+import { isSuperAdminRole, normalizeRole } from "../../utils/roles";
 
    interface TopMarker {
                       markerId: string | number;
@@ -56,8 +57,8 @@ export default function Home() {
       const raw = localStorage.getItem('user');
       if (!raw) return false;
       const user = JSON.parse(raw);
-      const role = user?.role;
-      return role === 0 || role === 'SuperAdmin';
+      const role = normalizeRole(user?.role);
+      return isSuperAdminRole(role);
     } catch {
       return false;
     }

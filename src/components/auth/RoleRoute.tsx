@@ -1,11 +1,10 @@
 import { Navigate } from "react-router-dom";
 import { ReactNode } from "react";
-
-type Role = number | string;
+import { normalizeRole } from "../../utils/roles";
 
 type RoleRouteProps = {
   children: ReactNode;
-  allowed: Role[]; // e.g., [0, "SuperAdmin"], [1, "Admin"], [3, "Employee"]
+  allowed: number[];
   redirectTo?: string; // custom redirect when role is not allowed
 };
 
@@ -13,12 +12,12 @@ export default function RoleRoute({ children, allowed, redirectTo }: RoleRoutePr
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/signin" replace />;
 
-  let userRole: Role | null = null;
+  let userRole: number | null = null;
   try {
     const raw = localStorage.getItem("user");
     if (raw) {
       const parsed = JSON.parse(raw);
-      userRole = parsed?.role ?? null;
+      userRole = normalizeRole(parsed?.role);
     }
   } catch {
     userRole = null;

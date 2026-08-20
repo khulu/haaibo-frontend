@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { normalizeUserRole } from "../utils/roles";
 
 type AuthUser = {
   id?: string;
@@ -35,7 +36,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const storedUser = localStorage.getItem("user");
       const storedToken = localStorage.getItem("token");
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const normalizedUser = normalizeUserRole(JSON.parse(storedUser));
+        setUser(normalizedUser);
+        localStorage.setItem("user", JSON.stringify(normalizedUser));
       }
       if (storedToken) {
         setToken(storedToken);
@@ -46,9 +49,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const login = (userData: AuthUser, tokenData: string) => {
-    setUser(userData);
+    const normalizedUser = normalizeUserRole(userData);
+    setUser(normalizedUser);
     setToken(tokenData);
-    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("user", JSON.stringify(normalizedUser));
     localStorage.setItem("token", tokenData);
   };
 

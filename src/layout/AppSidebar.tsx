@@ -23,6 +23,7 @@ import getAuth from "../hooks/api/useAuthApi";
 import useOrganizationsApi from "../hooks/api/useOrganizationApi";
 import { resolveImageSrc } from "../utils/resolveImageSrc";
 import useFeatureFlags from "../hooks/useFeatureFlags";
+import { isAdminRole, isEmployeeRole, isSecurityRole, isSuperAdminRole, normalizeRole } from "../utils/roles";
 
 type NavItem = {
   name: string;
@@ -191,7 +192,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     {}
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const isSuperAdmin = role === 0 || role === "0" || role === "SuperAdmin";
+  const normalizedRole = normalizeRole(role);
+  const isSuperAdmin = isSuperAdminRole(normalizedRole);
 
   // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
@@ -200,8 +202,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
   );
 
   useEffect(() => {
-    const isCompanyAdmin = role === 1 || role === "Admin";
-    const isEmployee = role === 2 || role === "Employee";
+    const isCompanyAdmin = isAdminRole(normalizedRole);
+    const isEmployee = isEmployeeRole(normalizedRole);
 
     (async () => {
       try {
@@ -246,7 +248,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, companyId]);
+  }, [normalizedRole, companyId]);
 
   const defaultLightLogo = "/images/haiibo-logo.jpeg";
   const defaultDarkLogo = "/images/haiibo-logo.jpeg";
@@ -464,7 +466,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       });
     }
     // Admin-only Import Resources main item when office reservations are enabled
-    if (companyDetails?.enableOfficeReservations && (role === 1 || role === "Admin")) {
+    if (companyDetails?.enableOfficeReservations && isAdminRole(normalizedRole)) {
       items.push({
         icon: <DocsIcon />,
         name: "Import Resources",
@@ -472,7 +474,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
       });
     }
     // Show Employee Dashboard menu item if enabled and user role is 'Employee'
-    if (companyDetails?.enableEmployeeDashboardMenu && (role === 'Employee' || role === 2)) {
+    if (companyDetails?.enableEmployeeDashboardMenu && isEmployeeRole(normalizedRole)) {
       items.push({
         icon: <GridIcon />,
         name: companyDetails.employeeDashboardName || "Employee Dashboard",
@@ -482,15 +484,15 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     return items;
   })();
 
-  const isSecurity = role === 2 || role === 'Security';
-  const isEmployee = role === 3 || role === 'Employee';
+  const isSecurity = isSecurityRole(normalizedRole);
+  const isEmployee = isEmployeeRole(normalizedRole);
 
   let filteredNavItems = dynamicNavItems.filter(item => {
     if (item.name === "Organizations") {
       return isSuperAdmin;
     }
     if (item.name === "Admin") {
-      return isSuperAdmin || role === 1 || role === "Admin";
+      return isSuperAdmin || isAdminRole(normalizedRole);
     }
     
     // Hide asset tracking related items if allowAssetTracking is false (except for SuperAdmin)

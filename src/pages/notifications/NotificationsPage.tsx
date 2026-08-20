@@ -3,16 +3,14 @@ import { Link } from 'react-router-dom';
 import useNotificationsApi, { type NotificationItem, type Scope } from '../../hooks/api/useNotificationsApi';
 import { useAuthContext } from '../../context/AuthContext';
 import PageBreadCrumb from '../../components/common/PageBreadCrumb';
+import { getNotificationScopeFromRole } from '../../utils/roles';
 
 export default function NotificationsPage() {
   const { user } = useAuthContext();
   const { list, markSeen, markAllSeen } = useNotificationsApi();
 
   const scope: Scope = useMemo(() => {
-    const role = user?.role as number | string | undefined;
-    if (role === 0 || role === 'SuperAdmin') return 'global';
-    if (role === 1 || role === 'Admin') return 'company';
-    return 'user';
+    return getNotificationScopeFromRole(user?.role);
   }, [user?.role]);
 
   const [items, setItems] = useState<NotificationItem[]>([]);

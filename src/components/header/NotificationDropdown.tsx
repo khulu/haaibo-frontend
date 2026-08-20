@@ -4,6 +4,7 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Link } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext";
 import useNotificationsApi, { type NotificationItem, type Scope } from "../../hooks/api/useNotificationsApi";
+import { getNotificationScopeFromRole } from "../../utils/roles";
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,10 +17,7 @@ export default function NotificationDropdown() {
   const { list, markSeen } = useNotificationsApi();
 
   const scope: Scope = useMemo(() => {
-    const role = user?.role as number | string | undefined;
-    if (role === 0 || role === "SuperAdmin") return "global";
-    if (role === 1 || role === "Admin") return "company";
-    return "user";
+    return getNotificationScopeFromRole(user?.role);
   }, [user?.role]);
 
   function formatTimeAgo(iso: string) {

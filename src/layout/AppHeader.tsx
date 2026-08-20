@@ -6,6 +6,7 @@ import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
 import { Modal } from "../components/ui/modal";
+import { isSuperAdminRole, normalizeRole } from "../utils/roles";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -17,8 +18,8 @@ const AppHeader: React.FC = () => {
       const raw = localStorage.getItem('user');
       if (!raw) return false;
       const user = JSON.parse(raw);
-      const role = user?.role;
-      return role === 0 || role === 'SuperAdmin';
+      const role = normalizeRole(user?.role);
+      return isSuperAdminRole(role);
     } catch {
       return false;
     }

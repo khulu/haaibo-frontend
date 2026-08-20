@@ -6,6 +6,7 @@ import useAsset from '@hooks/asset/useAsset';
 import getAuth from '@hooks/api/useAuthApi';
 import Label from '../../components/form/Label';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../components/ui/table';
+import { isEmployeeRole, isSuperAdminRole, normalizeRole } from '../../utils/roles';
 
 const statusName = (s: number) => ({ 0: 'Open', 1: 'In Progress', 2: 'Resolved', 3: 'Closed' }[s] || String(s));
 const priorityName = (p: number) => ({ 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Critical' }[p] || String(p));
@@ -27,8 +28,8 @@ export default function IssuesPage() {
       const raw = localStorage.getItem('user');
       if (!raw) return false;
       const user = JSON.parse(raw);
-      const role = user?.role;
-      return role === 'Employee' || role === 2;
+      const role = normalizeRole(user?.role);
+      return isEmployeeRole(role);
     } catch {
       return false;
     }
@@ -50,8 +51,8 @@ export default function IssuesPage() {
       const raw = localStorage.getItem('user');
       if (!raw) return false;
       const user = JSON.parse(raw);
-      const role = user?.role;
-      return role === 0 || role === 'SuperAdmin';
+      const role = normalizeRole(user?.role);
+      return isSuperAdminRole(role);
     } catch {
       return false;
     }

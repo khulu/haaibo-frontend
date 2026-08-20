@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import useFeatureFlagsApi, { type FeatureFlags } from "../hooks/api/useFeatureFlagsApi";
+import { isSuperAdminRole, normalizeRole } from "../utils/roles";
 
 type FeatureFlagsContextType = {
   flags: FeatureFlags;
@@ -49,8 +50,8 @@ export const FeatureFlagsProvider = ({ children }: { children: ReactNode }) => {
       const raw = localStorage.getItem("user");
       if (raw) {
         const user = JSON.parse(raw);
-        const role = user?.role;
-        isSuperAdmin = role === 0 || role === "0" || role === "SuperAdmin";
+        const role = normalizeRole(user?.role);
+        isSuperAdmin = isSuperAdminRole(role);
       }
     } catch {
       // ignore parse errors

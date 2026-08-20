@@ -100,7 +100,7 @@ export default function App() {
               path="/"
               element={
                 <PrivateRoute>
-                  <RoleRoute allowed={[0, "SuperAdmin", 1, "Admin", 3, "Employee"]} redirectTo="/asset-scan">
+                  <RoleRoute allowed={[0, 1, 3]} redirectTo="/asset-scan">
                     <Home />
                   </RoleRoute>
                 </PrivateRoute>
@@ -151,7 +151,7 @@ export default function App() {
               path="/onboarding"
               element={
                 <PrivateRoute>
-                  <RoleRoute allowed={[0, "SuperAdmin", 1, "Admin"]}>
+                  <RoleRoute allowed={[0, 1]}>
                     <AdminOnboardingPage />
                   </RoleRoute>
                 </PrivateRoute>
@@ -435,7 +435,7 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <FeatureGate feature="deskBooking">
-                    <RoleRoute allowed={[1, "Admin"]}>
+                    <RoleRoute allowed={[1]}>
                       <ImportResources />
                     </RoleRoute>
                   </FeatureGate>

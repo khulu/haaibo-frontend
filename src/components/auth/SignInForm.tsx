@@ -7,6 +7,7 @@ import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
 import useAuth from "@hooks/auth/useAuth";
 import { useNavigate } from "react-router-dom";
+import { isEmployeeRole, normalizeRole } from "../../utils/roles";
 
 export default function SignInForm() {
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ const postLogin = usePostLogin(email, password);
           } catch {}
         }
 
-        if (role === 'Employee' || role === 2) {
+        if (isEmployeeRole(normalizeRole(role))) {
           navigate('/employee-dashboard');
         } else {
           navigate('/');
