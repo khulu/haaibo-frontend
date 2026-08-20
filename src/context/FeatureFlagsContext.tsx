@@ -50,7 +50,7 @@ export const FeatureFlagsProvider = ({ children }: { children: ReactNode }) => {
       if (raw) {
         const user = JSON.parse(raw);
         const role = user?.role;
-        isSuperAdmin = role === 0 || role === "SuperAdmin";
+        isSuperAdmin = role === 0 || role === "0" || role === "SuperAdmin";
       }
     } catch {
       // ignore parse errors

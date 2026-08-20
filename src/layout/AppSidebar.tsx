@@ -191,6 +191,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
     {}
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const isSuperAdmin = role === 0 || role === "0" || role === "SuperAdmin";
 
   // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
@@ -486,14 +487,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ role }) => {
 
   let filteredNavItems = dynamicNavItems.filter(item => {
     if (item.name === "Organizations") {
-      return role === 0 || role === "SuperAdmin";
+      return isSuperAdmin;
     }
     if (item.name === "Admin") {
-      return role === 0 || role === "SuperAdmin" || role === 1 || role === "Admin";
+      return isSuperAdmin || role === 1 || role === "Admin";
     }
     
     // Hide asset tracking related items if allowAssetTracking is false (except for SuperAdmin)
-    const isSuperAdmin = role === 0 || role === "SuperAdmin";
     if (!isSuperAdmin && companyDetails?.allowAssetTracking === false) {
       const assetTrackingItems = [
         "Collections",
