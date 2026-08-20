@@ -101,23 +101,6 @@ export default function AssetScan() {
     setPendingDirection(null);
   };
 
-  const startCamera = async () => {
-    setCameraError(null);
-    setShowCamera(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      streamRef.current = stream;
-      // Wait for next frame so the video element is mounted
-      requestAnimationFrame(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      });
-    } catch {
-      setCameraError('Unable to access camera. Please allow camera permissions.');
-    }
-  };
-
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());

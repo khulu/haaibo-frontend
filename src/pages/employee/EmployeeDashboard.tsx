@@ -1,7 +1,6 @@
 import PageMeta from "../../components/common/PageMeta";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/ui/table";
 import useReservations from "@hooks/reservations/useReservations";
-import useUser from "@hooks/user/useUser";
 import useAsset from "@hooks/asset/useAsset";
 import useBookings from "@hooks/bookings/useBookings";
 import useEvents from "@hooks/event/useEvent";
