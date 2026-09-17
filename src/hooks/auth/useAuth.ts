@@ -24,6 +24,7 @@ const useAuth = () => {
           if (data && data.user) {
             localStorage.setItem("user", JSON.stringify(normalizeUserRole(data.user)));
           }
+          window.dispatchEvent(new Event("auth-changed"));
         }
       },
       onError: (error) => {

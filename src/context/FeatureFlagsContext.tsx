@@ -22,9 +22,17 @@ export const FeatureFlagsProvider = ({ children }: { children: ReactNode }) => {
   const { getFeatureFlags } = useFeatureFlagsApi();
   const [flags, setFlags] = useState<FeatureFlags>(defaultFlags);
   const [loading, setLoading] = useState(true);
+  const [authVersion, setAuthVersion] = useState(0);
+
+  useEffect(() => {
+    const handleAuthChanged = () => setAuthVersion((v) => v + 1);
+    window.addEventListener("auth-changed", handleAuthChanged);
+    return () => window.removeEventListener("auth-changed", handleAuthChanged);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
 
     const fetchFlags = async () => {
       try {
@@ -64,6 +72,8 @@ export const FeatureFlagsProvider = ({ children }: { children: ReactNode }) => {
     } else {
       if (isSuperAdmin) {
         setFlags({ assetTracking: true, deskBooking: true, integration: true });
+      } else {
+        setFlags(defaultFlags);
       }
       setLoading(false);
     }
@@ -71,8 +81,7 @@ export const FeatureFlagsProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authVersion, getFeatureFlags]);
 
   return (
     <FeatureFlagsContext.Provider value={{ flags, loading }}>

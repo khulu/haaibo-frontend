@@ -11,15 +11,23 @@ const LayoutContent: React.FC = () => {
   const [role, setRole] = useState<number | string | null>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        setRole(user.role);
-      } catch {
+    const syncRole = () => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          setRole(user.role);
+        } catch {
+          setRole(null);
+        }
+      } else {
         setRole(null);
       }
-    }
+    };
+
+    syncRole();
+    window.addEventListener("auth-changed", syncRole);
+    return () => window.removeEventListener("auth-changed", syncRole);
   }, []);
 
   return (
